@@ -60,4 +60,21 @@ def amplification_factor(w,y):
 
     f = exponential_component*gamma_component*hyper_component
 
-    return f 
+    return f
+
+def generate_amplification_factor_matrix(dim_freq_array, impact_array, lens_model="Point"):
+    '''Inputs:
+            dim_freq_array - Array of dimensionless_frequency to generate the amplification factor over
+            impact_array - Array of impact parameter variable y, to generate the amplification factor over
+            lens_model - Which lens model to use, defaults to point mass.
+
+        Outputs:
+            amp_fac_matrix - Matrix containing all values of the amplification factor calculated
+
+        Function takes arrays of dimensionless frequency and impact parameter and calculates the amplification factor for all values using the specified lens model.'''
+
+    amp_fac_func = np.vectorize(amplification_factor, excluded="w")
+
+    amp_fac_matrix = np.stack(amp_fac_func(w=dim_freq_array, y=impact_array), axis=1).astype(complex)
+
+    return(amp_fac_matrix)
