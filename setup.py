@@ -17,8 +17,9 @@ setuptools.setup(
         'console_scripts': ['gwlensing_test=gwlensing.inference.testing:main'],
     },
     classifiers=[
+        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Operating System :: Linux",
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.8',
 )
