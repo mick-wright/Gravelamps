@@ -91,5 +91,19 @@ def main():
 
     result = bilby.run_sampler(likelihood=likelihood, priors=priors, sampler=config.get("sampler_settings","sampler"), nlive=config.getint("sampler_settings","nlive"), npool=config.getint("sampler_settings","npool"),nact=config.getint("sampler_settings","nact"),nparallel=config.getint("sampler_settings","nparallel"),injection_parameters=injection_parameters, outdir=config.get("bilby_setup","outdir"), label=config.get("bilby_setup","label"))
 
-    if config.getbool("bilby_setup","make_corner") == True:
+    if config.getboolean("bilby_setup","make_corner") == True:
         result.plot_corner()
+
+    if config.getboolean("treat_unlensed_settings","create_treat_unlensed") == True:
+        wfgen_unlensed = bilby.gw.WaveformGenerator(duration=duration, sampling_frequency=sampling_frequency, frequency_domain_source_model=bilby.gw.source.lal_binary_black_hole, parameter_conversion=bilby.gw.conversion.convert_to_lal_binary_black_hole_parameters, waveform_arguments=waveform_arguments)
+
+        likelihood_unlensed = bilby.gw.GravitationalWaveTransient(interferometers=ifos, waveform_generator=wfgen_unlensed)
+
+        priors_unlensed = priors
+        for parameter in ["lens_mass","impact_parameter","lens_fractional_distance"]:
+            priors_unlensed[parameter] = injection_parameters[parameter]
+
+        result_unlsned = bilby.run_sampler(likelihood=likelihood_unlensed, priors=priors_unlensed, sampler=config.get("sampler_settings","sampler"), nlive=config.getint("sampler_settings","nlive"), npool=config.getint("sampler_settings","npool"),nact=config.getint("sampler_settings","nact"),nparallel=config.getint("sampler_settings","nparallel"),injection_parameters=injection_parameters, outdir=config.get("treat_unlensed_settings","unlensed_outdir"), label=config.get("treat_unlensed_settings","unlensed_label"))
+
+        if config.getboolean("treat_unlensed_settings","unlensed_make_corner") == True:
+            result_unlensed.plot_corner()
