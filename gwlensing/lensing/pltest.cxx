@@ -6,6 +6,7 @@
 #include <vector> 
 #include <iterator>
 #include <chrono>
+#include <complex>
 
 double xm(double y){
 
@@ -22,7 +23,7 @@ return phi;
 
 }
 
-void ampFac(FILE* outfile, double w, double y){
+void ampFacCalc(acb_t ampFac, double w, double y){
 
 double expReal = (M_PI*w)/4; 
 double expImag = (w/2)*(log(w/2)-(2*phi(y))); 
@@ -61,13 +62,9 @@ acb_set_d_d(hyperArgZ, 0, hyperArgZImag);
 acb_hypgeom_1f1(hyperComp, hyperArgA, hyperArgB, hyperArgZ, 0, 100);
 
 acb_t expGamma;
-acb_t ampFac; 
 acb_init(expGamma);
-acb_init(ampFac); 
 acb_mul(expGamma, expComp, gammaComp, 50); 
 acb_mul(ampFac, expGamma, hyperComp, 50); 
-
-acb_fprintn(outfile, ampFac, 15, ARB_STR_NO_RADIUS); flint_fprintf(outfile, "\t"); 
 }
 
 int main(){
@@ -80,21 +77,31 @@ std::ifstream yfile("y.dat");
 std::istream_iterator<double> ystart(yfile), yend; 
 std::vector<double> yVals(ystart, yend); 
 
-std::cout << wVals.size() << std::endl; 
-std::cout << yVals.size() << std::endl;
-
-FILE * outfile; 
-outfile = fopen("c++_f.dat", "w"); 
+double ampFacReal[yVals.size()][wVals.size()];
+double ampFacImag[yVals.size()][wVals.size()]; 
+ 
+double yCount = 0; 
 
 auto t1 = std::chrono::high_resolution_clock::now(); 
+
 for (auto i:yVals){
-for (auto j:wVals){
-ampFac(outfile,i,j); 
+double wCount = 0;
+for (auto j:wVals){ 
+
+acb_t ampFac;
+acb_init(ampFac); 
+ampFacCalc(ampFac, i, j); 
+
+ampFacReal[yCount][wCount] = arf_get_d(arb_midref(acb_realref(ampFac)), ARF_RND_NEAR); 
+ampFacImag[yCount][wCount] = arf_get_d(arb_midref(acb_imagref(ampFac)), ARF_RND_NEAR); 
+
+wCount++;  
 }
-flint_fprintf(outfile, "\n"); 
+yCount++;
 }
+
 auto t2 = std::chrono::high_resolution_clock::now(); 
 
-std::cout << "This took " << std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count() << " milliseconds" << std::endl;
+std::cout << "This took " << std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count() << " milliseconds" << std::endl; 
 
 }
