@@ -6,6 +6,7 @@
 #include <vector> 
 #include <iterator>
 #include <chrono>
+#include <complex>
 
 double xm(double y){
 
@@ -22,7 +23,7 @@ return phi;
 
 }
 
-void ampFac(FILE* outfile, double w, double y){
+void ampFacCalc(acb_t ampFac, double w, double y){
 
 double expReal = (M_PI*w)/4; 
 double expImag = (w/2)*(log(w/2)-(2*phi(y))); 
@@ -61,40 +62,40 @@ acb_set_d_d(hyperArgZ, 0, hyperArgZImag);
 acb_hypgeom_1f1(hyperComp, hyperArgA, hyperArgB, hyperArgZ, 0, 100);
 
 acb_t expGamma;
-acb_t ampFac; 
 acb_init(expGamma);
-acb_init(ampFac); 
 acb_mul(expGamma, expComp, gammaComp, 50); 
 acb_mul(ampFac, expGamma, hyperComp, 50); 
-
-acb_fprintn(outfile, ampFac, 15, ARB_STR_NO_RADIUS); flint_fprintf(outfile, "\t"); 
 }
 
-int main(){
+std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>> ampFacMatrices(std::vector<double> w, std::vector<double> y){
 
-std::ifstream wfile("w.dat");
-std::istream_iterator<double> wstart(wfile), wend; 
-std::vector<double> wVals(wstart, wend); 
+long ySize = y.size();
+long wSize = w.size();
 
-std::ifstream yfile("y.dat"); 
-std::istream_iterator<double> ystart(yfile), yend; 
-std::vector<double> yVals(ystart, yend); 
-
-std::cout << wVals.size() << std::endl; 
-std::cout << yVals.size() << std::endl;
-
-FILE * outfile; 
-outfile = fopen("c++_f.dat", "w"); 
-
+std::vector<std::vector<double>> ampFacReal(ySize, std::vector<double> (wSize)); 
+std::vector<std::vector<double>> ampFacImag(ySize, std::vector<double> (wSize));
+ 
 auto t1 = std::chrono::high_resolution_clock::now(); 
-for (auto i:yVals){
-for (auto j:wVals){
-ampFac(outfile,i,j); 
+
+for (int i=0; i<ySize; i++){
+for (int j=0; j<wSize; j++){ 
+
+acb_t ampFac;
+acb_init(ampFac); 
+ampFacCalc(ampFac, w[j], y[i]); 
+
+ampFacReal[i][j] = arf_get_d(arb_midref(acb_realref(ampFac)), ARF_RND_NEAR); 
+ampFacImag[i][j] = arf_get_d(arb_midref(acb_imagref(ampFac)), ARF_RND_NEAR); 
+
 }
-flint_fprintf(outfile, "\n"); 
 }
+
+std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>> ampFacMats(ampFacReal, ampFacImag); 
+
 auto t2 = std::chrono::high_resolution_clock::now(); 
 
 std::cout << "This took " << std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count() << " milliseconds" << std::endl;
 
+return ampFacMats;
 }
+
