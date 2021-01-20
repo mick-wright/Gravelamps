@@ -1,12 +1,4 @@
-#include <cmath> 
-#include <acb.h> 
-#include <acb_hypgeom.h> 
-#include <iostream>
-#include <fstream> 
-#include <vector> 
-#include <iterator>
-#include <chrono>
-#include <complex>
+#include "pointlens.h"
 
 double xm(double y){
 
@@ -74,8 +66,6 @@ long wSize = w.size();
 
 std::vector<std::vector<double>> ampFacReal(ySize, std::vector<double> (wSize)); 
 std::vector<std::vector<double>> ampFacImag(ySize, std::vector<double> (wSize));
- 
-auto t1 = std::chrono::high_resolution_clock::now(); 
 
 for (int i=0; i<ySize; i++){
 for (int j=0; j<wSize; j++){ 
@@ -91,10 +81,6 @@ ampFacImag[i][j] = arf_get_d(arb_midref(acb_imagref(ampFac)), ARF_RND_NEAR);
 }
 
 std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>> ampFacMats(ampFacReal, ampFacImag); 
-
-auto t2 = std::chrono::high_resolution_clock::now(); 
-
-std::cout << "This took " << std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count() << " milliseconds" << std::endl;
 
 return ampFacMats;
 }
