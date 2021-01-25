@@ -85,3 +85,34 @@ std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>> am
 return ampFacMats;
 }
 
+int main(int argc, char* argv[]){
+
+std::string wFileName = argv[1];
+std::string yFileName = argv[2];
+
+std::ifstream wFile (wFileName);
+std::istream_iterator<double> wStart(wFile), wEnd; 
+std::vector<double> wVals(wStart, wEnd); 
+
+std::ifstream yFile (yFileName);
+std::istream_iterator<double> yStart(yFile), yEnd; 
+std::vector<double> yVals(yStart, yEnd);
+
+std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>> fVals = ampFacMatrices(wVals,yVals); 
+
+std::ofstream fRealFile ("fReal.dat", std::ofstream::out);
+std::ofstream fImagFile ("fImag.dat", std::ofstream::out); 
+
+int rowLen = fVals.first.size();
+int colLen = fVals.first[0].size(); 
+
+for(int i=0; i<rowLen; i++){
+for(int j=0; j<colLen; j++){
+fRealFile << fVals.first[i][j] << "\t"; 
+fImagFile << fVals.second[i][j] << "\t";
+}
+fRealFile << "\n"; 
+fImagFile << "\n"; 
+} 
+
+}

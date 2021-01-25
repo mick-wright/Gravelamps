@@ -12,6 +12,8 @@
 #include <iostream> 
 #include <fstream> 
 #include <vector>
+#include <iterator>
+#include <algorithm> 
 
 //Function computes the value of xm - the impact parameter divided by a length normalisation constant for the phase constant corresponding to the minimum time delay i.e. that of the image that travels the shortest path to the observer 
 double xm(double y); 
