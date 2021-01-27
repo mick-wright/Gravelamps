@@ -24,22 +24,26 @@ def main():
 	label = config.get("bilby_setup","label")
 	outdir = config.get("bilby_setup","outdir")
 
-	bilby.core.utils.setup_logger(label=label, outdir=outdir) 
+	bilby.core.utils.setup_logger(label=label, outdir=outdir)
+	
+	data_subdir = config.get("data_settings","data_subdir")
+	if not os.path.isdir(outdir+"/"+data_subdir):
+		os.mkdir(outdir+"/"+data_subdir) 
 
 	#Read in User Parameters for Bilby Analysis
 	duration = config.getfloat("bilby_setup","duration")
 	sampling_frequency = config.getfloat("bilby_setup","sampling_frequency") 
 
 	#Read in Waveform Parameters and convert to floats
-	injection_parameters = config._sections["base_waveform_injection_parameters"] 
-	waveform_arguments = config._sections["waveform_arguments"]
+	injection_parameters = config._sections["base_waveform_injection_parameters"].copy()
+	waveform_arguments = config._sections["waveform_arguments"].copy()
 
 	waveform_arguments["reference_frequency"] = float(waveform_arguments["reference_frequency"]) 
 	waveform_arguments["minimum_frequency"] = float(waveform_arguments["minimum_frequency"]) 
 	injection_parameters.update((key, float(value)) for key, value in injection_parameters.items()) 
 
 	#Get the Dimensionless Frequency and Impact Parameter Files 
-	w_array_file, y_array_file = gwlensing.lensing.utils.wyhandler(config,injection_parameters)  
+	w_array_file, y_array_file = gwlensing.lensing.utils.wyhandler(config, injection_parameters)
 
 	#Get the Amplification Factor Files
 	amp_fac_real_file, amp_fac_imag_file = gwlensing.lensing.utils.ampfachandler(config,injection_parameters, w_array_file, y_array_file) 

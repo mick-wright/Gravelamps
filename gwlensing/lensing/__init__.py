@@ -100,4 +100,4 @@ def natural_mass(mass, mode="solar"):
 
 	m_nat = m_kg*(const.G/const.c**3) 
 
-	return(m_nat) 
+	return(m_nat.value) 

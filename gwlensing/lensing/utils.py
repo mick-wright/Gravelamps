@@ -3,6 +3,8 @@ import os
 import gwlensing.lensing
 import warnings
 import scipy.interpolate as scint
+import bilby
+import subprocess
 
 from configparser import ConfigParser
 
@@ -12,13 +14,13 @@ def generate_dimensionless_frequency_file(config, injection_parameters):
 
 	lens_distance = injection_parameters["luminosity_distance"]*injection_parameters["lens_fractional_distance"]
 	lens_redshift = bilby.gw.conversion.luminosity_distance_to_redshift(lens_distance)
-	redshifted_lens_mass = gwlensing.lensing.natural_mass(lens_mass*(1+lens_redshift))
+	redshifted_lens_mass = gwlensing.lensing.natural_mass(injection_parameters["lens_mass"]*(1+lens_redshift))
 
-	minimum_frequency = config.get("waveform_arguments","minimum_frequency")
-	maximal_frequency = config.get("data_settings","maximum_frequency")
-	changeover_frequency = config.get("data_settings","changeover_frequency")
-	below_npoints = config.get("data_settings","below_npoints") 
-	above_npoints = config.get("data_settings","above_npoints") 
+	minimum_frequency = config.getint("waveform_arguments","minimum_frequency") 
+	maximum_frequency = config.getint("data_settings","maximum_frequency")
+	changeover_frequency = config.getint("data_settings","changeover_frequency")
+	below_npoints = config.getint("data_settings","below_npoints") 
+	above_npoints = config.getint("data_settings","above_npoints") 
 
 	lower_frequency_array = np.linspace(minimum_frequency,changeover_frequency,below_npoints)
 	higher_frequency_array = np.linspace(changeover_frequency,maximum_frequency,above_npoints+1) 
@@ -36,7 +38,7 @@ def generate_impact_parameter_file(config,injection_parameters):
 	outdir = config.get("bilby_setup","outdir")
 	data_subdir = outdir+"/"+config.get("data_settings","data_subdir")
 	
-	y_npoints = config.getfloat("data_settings","y_npoints")
+	y_npoints = config.getint("data_settings","y_npoints")
 	min_y = config.getfloat("data_settings","min_y")
 	max_y = config.getfloat("data_settings","max_y") 
 
