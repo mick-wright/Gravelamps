@@ -1,4 +1,4 @@
-CC = g++
+CC = /usr/bin/g++
 TARGET = plCalc
 OBJECTS = pointlens.cxx
 CPPFLAGS = -O3 -larb -lflint
@@ -11,4 +11,7 @@ $(TARGET): $(OBJECTS)
 clean:
 	@rm $(TARGET)
 	@rm /usr/local/bin/$(TARGET) 
+
+copy:
+	@cp $(TARGET) /usr/local/bin/$(TARGET) 
 

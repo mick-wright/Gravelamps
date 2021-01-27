@@ -1,9 +1,11 @@
-from . import point_lens, utils
+from . import utils
 import bilby
 import numpy as np
+import astropy.constants as const
 
 def BBH_lensed_waveform(frequency_array, mass_1, mass_2, a_1, a_2, tilt_1, tilt_2, phi_12, phi_jl, luminosity_distance, theta_jn, phase, ra, dec, geocent_time, psi, lens_mass, impact_parameter, lens_fractional_distance, **kwargs):
-    '''Inputs:
+    '''
+    Inputs:
             frequency_array - frequencies over which to generate waveform
             mass_1 - non-redshifted primary mass in solar masses
             mass_2 - non-redshifted secondary mass in solar masses
@@ -45,7 +47,7 @@ def BBH_lensed_waveform(frequency_array, mass_1, mass_2, a_1, a_2, tilt_1, tilt_
 
     lens_distance = lens_fractional_distance*luminosity_distance
     lens_redshift = bilby.gw.conversion.luminosity_distance_to_redshift(lens_distance)
-    redshifted_lens_mass = utils.natural_mass(lens_mass*(1+lens_redshift))
+    redshifted_lens_mass = natural_mass(lens_mass*(1+lens_redshift))
 
     base_waveform = bilby.gw.source.lal_binary_black_hole(frequency_array, mass_1=mass_1, mass_2=mass_2, a_1=a_1, a_2=a_2, tilt_1=tilt_1, tilt_2=tilt_2, phi_12=phi_12, phi_jl=phi_jl, luminosity_distance=luminosity_distance, theta_jn=theta_jn, phase=phase, waveform_approximant=waveform_approximant, reference_frequency=reference_frequency, ra=ra, dec=dec, geocent_time=geocent_time, psi=psi)
 
@@ -55,7 +57,7 @@ def BBH_lensed_waveform(frequency_array, mass_1, mass_2, a_1, a_2, tilt_1, tilt_
     if base_waveform == None:
         return None
 
-    dimensionless_frequency_array = utils.dimensionless_frequency(frequency_array, redshifted_lens_mass)
+    dimensionless_frequency_array = dimensionless_frequency(frequency_array, redshifted_lens_mass)
 
     lens_array = interpolator(dimensionless_frequency_array, impact_parameter)
 
@@ -65,3 +67,37 @@ def BBH_lensed_waveform(frequency_array, mass_1, mass_2, a_1, a_2, tilt_1, tilt_
         lens_waveform[i] = np.multiply(base_waveform[i], lens_array)
 
     return(lens_waveform)
+
+def dimensionless_frequency(freqs, redshifted_lens_mass):
+	'''
+	Inputs:
+		freqs - frequencies to be converted
+		redshifted_lens_mass - Redshifted lens mass of the lens
+
+	Outputs:
+		w - dimensionless frequency array 
+
+	Function takes a frequency, or an array of frequencies, and converts to the dimensionless frequency array corresponding to a lens with a certain redshifted lens mass'''
+
+	return(8*np.pi*redshifted_lens_mass*freqs) 
+
+def natural_mass(mass, mode="solar"):
+	'''
+	Inputs:
+		mass - the mass to be converted
+		mode - units of the mass given in either "solar" (Solar Masses) or "kg"
+	
+	Outputs:
+		m_nat - the mass in natural units
+
+	Function takes a given value of mass in either solar masses or kg and converts to equivalent natural units'''
+		
+
+	if mode == "solar":
+		m_kg = mass*const.M_sun
+	else:
+		m_kg = mass 
+
+	m_nat = m_kg*(const.G/const.c**3) 
+
+	return(m_nat) 

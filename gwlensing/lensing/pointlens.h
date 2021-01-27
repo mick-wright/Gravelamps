@@ -7,8 +7,8 @@
 #define POINTLENS_H 
 
 #include <cmath> 
-#include <acb.h>
-#include <acb_hypgeom.h>
+#include "acb.h"
+#include "acb_hypgeom.h"
 #include <iostream> 
 #include <fstream> 
 #include <vector>

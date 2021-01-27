@@ -1,82 +1,126 @@
 import numpy as np
-import astropy.constants as const
+import os
+import gwlensing.lensing
+import warnings
 import scipy.interpolate as scint
 
-def dimensionless_frequency(f, Mlz):
-    '''Inputs:
-            f - frequency array to be converted
-            Mlz - redshifted lens mass of lens
+from configparser import ConfigParser
 
-       Outputs:
-            w - dimensionless frequency array
+def generate_dimensionless_frequency_file(config, injection_parameters):
+	outdir = config.get("bilby_setup","outdir") 
+	data_subdir = outdir+"/"+config.get("data_settings","data_subdir")
 
-        Function takes a frequency array and converts to the dimensionless frequency corresponding to the input frequency array and a lens with redshifted lens mass (Mlz = M_lens(1+z))'''
-    return(8*np.pi*Mlz*f)
+	lens_distance = injection_parameters["luminosity_distance"]*injection_parameters["lens_fractional_distance"]
+	lens_redshift = bilby.gw.conversion.luminosity_distance_to_redshift(lens_distance)
+	redshifted_lens_mass = gwlensing.lensing.natural_mass(lens_mass*(1+lens_redshift))
 
-def natural_mass(mass, mode="solar"):
-    '''Inputs:
-            mass - the mass of the object to be converted
-            mode - units of the mass given in mass, this can be either solar or kg, default being solar
+	minimum_frequency = config.get("waveform_arguments","minimum_frequency")
+	maximal_frequency = config.get("data_settings","maximum_frequency")
+	changeover_frequency = config.get("data_settings","changeover_frequency")
+	below_npoints = config.get("data_settings","below_npoints") 
+	above_npoints = config.get("data_settings","above_npoints") 
 
-       Outputs:
-            m_nat - the mass in natural units corresponding to input mass
+	lower_frequency_array = np.linspace(minimum_frequency,changeover_frequency,below_npoints)
+	higher_frequency_array = np.linspace(changeover_frequency,maximum_frequency,above_npoints+1) 
+	higher_frequency_array = np.delete(higher_frequency_array, 0)
 
-    Function takes a given value of mass in either solar masses or kg and converts it to the equivalent natural units. This is done by multiplying the value of the mass in kg by a factor of (G/c**3)'''
+	complete_frequency_array = np.concatenate((lower_frequency_array,higher_frequency_array))
 
-    if mode == "solar":
-        m_kg = mass*const.M_sun
-    else:
-        m_kg = mass
+	dim_freq_array = gwlensing.lensing.dimensionless_frequency(complete_frequency_array, redshifted_lens_mass) 
 
-    m_nat = m_kg*(const.G/const.c**3)
+	np.savetxt(data_subdir+"/w.dat", dim_freq_array) 
 
-    return(m_nat.value)
+	return(data_subdir+"/w.dat")
 
-def generate_dimensionless_frequency_array(highest_freq, Mlz, lowest_freq=0, changeover_frequency=10, below_change_npoints=2000, above_change_npoints=8000):
-    '''Inputs:
-            highest_freq - the upper bound of the frequencies that you are interested in
-            Mlz - the redshifted lens mass of the object doing the lensing
-            lowest_freq - the lower bound of the frequencies that you are interested in, default is 0, though, if it is 0, will instead do the first point after 0
-            changeover_frequency - the point at which the points may be investigated less frequently, defaults to 10
-            below_change_npoints - the number of points between the value of lowest_freq and changeover_frequency to evaluate, defaults to 2000
-            above_change_npoints - the number of points between the value of changeover_frequency and highest_freq to evaluate, defaults to 8000
+def generate_impact_parameter_file(config,injection_parameters):
+	outdir = config.get("bilby_setup","outdir")
+	data_subdir = outdir+"/"+config.get("data_settings","data_subdir")
+	
+	y_npoints = config.getfloat("data_settings","y_npoints")
+	min_y = config.getfloat("data_settings","min_y")
+	max_y = config.getfloat("data_settings","max_y") 
 
-       Outputs:
-            dim_freq_array - dimensionless frequency array from lowest freq to highest freq
+	y_array = np.linspace(min_y, max_y, y_npoints) 
 
-        Function takes at minimum a highest frequency and generates a number of points to evaluate the dimensionless frequency of. It generates two linear spaces to do this, due to the need to investigate the lower band in more detail than the higher. User is able to customise the point that is considered to be the point below which greater resolution is needed, and the amount of points generated for each side.'''
+	np.savetxt(data_subdir+"/y.dat", y_array)
 
-    #Amplification Factor maths cannot process a value of 0 for w, avoiding by shifting to the next data point
-    if lowest_freq == 0:
-        lowest_freq += 1/below_change_npoints
+	return(data_subdir+"/y.dat") 
 
-    lower_frequency_array = np.linspace(lowest_freq, changeover_frequency, below_change_npoints)
-    #Avoiding calculating the same point twice
-    higher_frequency_array = np.linspace(changeover_frequency+1/above_change_npoints, highest_freq, above_change_npoints)
+def wyhandler(config, injection_parameters):
+	outdir = config.get("bilby_setup","outdir") 
+	data_subdir = outdir+"/"+config.get("data_settings","data_subdir") 
 
-    complete_frequency_array = np.concatenate((lower_frequency_array, higher_frequency_array))
+	if config.get("optional_input","w_array_file") != "None":
+		if config.get("optional_input","y_array_file") == "None":
+			warnings.warn("y array not found, interpolator may not be accurate in y!")
+		w_array_file = config.get("optional_input","w_array_file")
+	elif os.path.isfile(data_subdir+"/w.dat"):
+		w_array_file = data_subdir+"/w.dat"
+	else:
+		w_array_file = gwlensing.lensing.utils.generate_dimensionless_frequency_file(config, injection_parameters)
 
-    dim_freq_array = dimensionless_frequency(complete_frequency_array, Mlz)
+	if config.get("optional_input","y_array_file") != "None":
+		if config.get("optional_input","w_array_file") == "None": 
+			warnings.warn("w array not found, interpolator may not be accurate in w!")
+		y_array_file = config.get("optional_input","y_array_file")
+	elif os.path.isfile(data_subdir+"/y.dat"):
+		y_array_file = data_subdir+"/y.dat" 
+	else:
+		y_array_file = gwlensing.lensing.utils.generate_impact_parameter_file(config, injection_parameters)
 
-    return(dim_freq_array)
+	if config.getboolean("data_settings","copy_data_files") == True:
+		if w_array_file != data_subdir+"/w.dat":
+			subprocess.run(["cp", w_array_file, data_subdir+"/w.dat"])
+		elif y_array_file != data_subdir+"/y.dat":
+			subprocess.run(["cp", y_array_file, data_subdir+"/y.dat"]) 
 
-def generate_interpolator(dim_freq_array, impact_array, amp_fac_matrix):
-    '''Inputs:
-            dim_freq_array - Array of the dimensionless frequencies used to generate the rows of the amplification factor matrix
-            impact_array - Array of the impact parameters used to generate the columns of the amplification factor matrix
-            amp_fac_matrix - Matrix of amplification factor values from which to generate an interpolator
+	return(w_array_file, y_array_file) 
 
-       Outputs:
-            interpolator_func - interpolation function based on values given, will be called with syntax interpolator_func(w,y) for given values of dimensionless frequency and impact parameter
+def ampfachandler(config, injection_parameters, w_array_file, y_array_file):
+	outdir = config.get("bilby_setup","outdir")
+	data_subdir = outdir+"/"+config.get("data_settings","data_subdir") 
 
-        Function generates a two dimensional complex interpolator for the value of the amplification factor outside of the generated values.'''
+	if config.get("optional_input","amp_fac_complex_file") != "None":
+		complex_file = config.get("optional_input","amp_fac_complex_file") 
+		complex_array = np.loadtxt(complex_file,dtype=complex) 
+		real_array = np.real(complex_array)
+		imag_array = np.imag(imag_array)
+		
+		amp_fac_real_file = data_subdir+"/fReal.dat"
+		amp_fac_imag_file = data_subdir+"/fImag.dat" 
 
-    amp_fac_real = np.real(amp_fac_matrix)
-    amp_fac_imag = np.imag(amp_fac_matrix)
+		np.savetxt(amp_fac_real_file, real_array)
+		np.savetxt(amp_fac_imag_file, imag_array) 
+	elif config.get("optional_input","amp_fac_real_file") != "None" and config.get("optional_input","amp_fac_imag_file") != "None":
+		amp_fac_real_file = config.get("optional_input","amp_fac_real_file")
+		amp_fac_imag_file = config.get("optional_input","amp_fac_imag_file") 
+	elif os.path.isfile(data_subdir+"/fReal.dat") and os.path.isfile(data_subdir+"/fImag.dat"):
+		amp_fac_real_file = data_subdir+"/fReal.dat"
+		amp_fac_imag_file = data_subdir+"/fImag.dat" 
+	else:
+		subprocess.run(["plCalc", w_array_file, y_array_file])
+		subprocess.run(["mv", "fReal.dat", "fImag.dat", data_subdir+"/."]) 
 
-    amp_interp_real = scint.RectBivariateSpline(dim_freq_array, impact_array, amp_fac_real, kx=1, ky=1, s=0)
-    amp_interp_imag = scint.RectBivariateSpline(dim_freq_array, impact_array, amp_fac_imag, kx=1, ky=1, s=0)
+		amp_fac_real_file = data_subdir+"/fReal.dat" 
+		amp_fac_imag_file = data_subdir+"/fImag.dat" 
 
-    interpolator_func = lambda w, y: (amp_interp_real(w,y) + 1j*amp_interp_imag(w,y)).flatten()
+	if config.getboolean("data_settings","copy_data_files"):
+		if amp_fac_real_file != data_subdir+"/fReal.dat":
+			subprocess.run(["cp", amp_fac_real_file, data_subdir+"/fReal.dat"])
+		if amp_fac_imag_file != data_subdir+"/fImag.dat": 
+			subprocess.run(["cp", amp_fac_imag_file, data_subdir+"/fImag.dat"]) 
 
-    return(interpolator_func)
+	return(amp_fac_real_file, amp_fac_imag_file) 
+
+def generate_interpolator(w_array_file, y_array_file, amp_fac_real_file, amp_fac_imag_file):
+	w_array = np.loadtxt(w_array_file) 
+	y_array = np.loadtxt(y_array_file)
+	amp_fac_real = np.loadtxt(amp_fac_real_file) 
+	amp_fac_imag = np.loadtxt(amp_fac_imag_file) 
+
+	amp_interp_real = scint.RectBivariateSpline(w_array, y_array, amp_fac_real, kx=1, ky=1, s=0)
+	amp_interp_imag = scint.RectBivariateSpline(w_array, y_array, amp_fac_imag, kx=1, ky=1, s=0) 
+
+	interpolator_func = lambda w, y: (amp_interp_real(w,y)+1j*amp_interp_imag(w,y)).flatten()
+
+	return(interpolator_func) 

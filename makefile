@@ -15,7 +15,7 @@ uninstall: clean_plCalc
 
 plCalc:
 	@echo "Building plCalc"
-	$(MAKE) -C $(LENSING_FOLDER)
+	$(MAKE) -C $(LENSING_FOLDER) copy
 	@echo "plCalc built!" 
 
 clean_plCalc:
