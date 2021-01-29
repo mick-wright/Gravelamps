@@ -46,7 +46,7 @@ def main():
 	w_array_file, y_array_file = gwlensing.lensing.utils.wyhandler(config, injection_parameters)
 
 	#Get the Amplification Factor Files
-	amp_fac_real_file, amp_fac_imag_file = gwlensing.lensing.utils.ampfachandler(config,injection_parameters, w_array_file, y_array_file) 
+	amp_fac_real_file, amp_fac_imag_file = gwlensing.lensing.utils.ampfachandler(config,injection_parameters, w_array_file, y_array_file, "pointlens") 
 
 	#Generate the Lens Interpolator Function and add it to the waveform arguments 
 	lens_interpolator = gwlensing.lensing.utils.generate_interpolator(w_array_file, y_array_file, amp_fac_real_file, amp_fac_imag_file)

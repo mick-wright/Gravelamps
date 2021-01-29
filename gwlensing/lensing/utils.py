@@ -19,6 +19,10 @@ def generate_dimensionless_frequency_file(config, injection_parameters):
 	minimum_frequency = config.getint("waveform_arguments","minimum_frequency") 
 	maximum_frequency = config.getint("data_settings","maximum_frequency")
 	changeover_frequency = config.getint("data_settings","changeover_frequency")
+
+	if changeover_frequency < minimum_frequency:
+		raise ValueError("Changeover frequency below minimum frequency!") 
+
 	below_npoints = config.getint("data_settings","below_npoints") 
 	above_npoints = config.getint("data_settings","above_npoints") 
 
@@ -78,9 +82,11 @@ def wyhandler(config, injection_parameters):
 
 	return(w_array_file, y_array_file) 
 
-def ampfachandler(config, injection_parameters, w_array_file, y_array_file):
+def ampfachandler(config, injection_parameters, w_array_file, y_array_file, lens_model):
 	outdir = config.get("bilby_setup","outdir")
 	data_subdir = outdir+"/"+config.get("data_settings","data_subdir") 
+
+	lens_types = dict(pointlens="plCalc") 
 
 	if config.get("optional_input","amp_fac_complex_file") != "None":
 		complex_file = config.get("optional_input","amp_fac_complex_file") 
@@ -100,7 +106,7 @@ def ampfachandler(config, injection_parameters, w_array_file, y_array_file):
 		amp_fac_real_file = data_subdir+"/fReal.dat"
 		amp_fac_imag_file = data_subdir+"/fImag.dat" 
 	else:
-		subprocess.run(["plCalc", w_array_file, y_array_file])
+		subprocess.run([lens_types[lens_model], w_array_file, y_array_file])
 		subprocess.run(["mv", "fReal.dat", "fImag.dat", data_subdir+"/."]) 
 
 		amp_fac_real_file = data_subdir+"/fReal.dat" 
@@ -120,6 +126,9 @@ def generate_interpolator(w_array_file, y_array_file, amp_fac_real_file, amp_fac
 	amp_fac_real = np.loadtxt(amp_fac_real_file) 
 	amp_fac_imag = np.loadtxt(amp_fac_imag_file) 
 
+	amp_fac_real = np.transpose(amp_fac_real)
+	amp_fac_imag = np.transpose(amp_fac_imag) 
+	
 	amp_interp_real = scint.RectBivariateSpline(w_array, y_array, amp_fac_real, kx=1, ky=1, s=0)
 	amp_interp_imag = scint.RectBivariateSpline(w_array, y_array, amp_fac_imag, kx=1, ky=1, s=0) 
 
