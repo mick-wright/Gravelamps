@@ -16,17 +16,13 @@ def generate_dimensionless_frequency_file(config, injection_parameters):
 	lens_redshift = bilby.gw.conversion.luminosity_distance_to_redshift(lens_distance)
 	redshifted_lens_mass = gwlensing.lensing.natural_mass(injection_parameters["lens_mass"]*(1+lens_redshift))
 
-	minimum_frequency = config.getint("waveform_arguments","minimum_frequency") 
 	maximum_frequency = config.getint("data_settings","maximum_frequency")
 	changeover_frequency = config.getint("data_settings","changeover_frequency")
-
-	if changeover_frequency < minimum_frequency:
-		raise ValueError("Changeover frequency below minimum frequency!") 
 
 	below_npoints = config.getint("data_settings","below_npoints") 
 	above_npoints = config.getint("data_settings","above_npoints") 
 
-	lower_frequency_array = np.linspace(minimum_frequency,changeover_frequency,below_npoints)
+	lower_frequency_array = np.linspace(0,changeover_frequency,below_npoints)
 	higher_frequency_array = np.linspace(changeover_frequency,maximum_frequency,above_npoints+1) 
 	higher_frequency_array = np.delete(higher_frequency_array, 0)
 
