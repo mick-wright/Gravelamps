@@ -42,6 +42,8 @@ def main():
 	waveform_arguments["minimum_frequency"] = float(waveform_arguments["minimum_frequency"]) 
 	injection_parameters.update((key, float(value)) for key, value in injection_parameters.items()) 
 
+	injection_parameters["chirp_mass"] = bilby.gw.conversion.component_masses_to_chirp_mass(injection_parameters["mass_1"], injection_parameters["mass_2"]) 
+
 	#Get the Dimensionless Frequency and Impact Parameter Files 
 	w_array_file, y_array_file = gwlensing.lensing.utils.wyhandler(config, injection_parameters)
 
