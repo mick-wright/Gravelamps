@@ -67,6 +67,7 @@ long wSize = w.size();
 std::vector<std::vector<double>> ampFacReal(ySize, std::vector<double> (wSize)); 
 std::vector<std::vector<double>> ampFacImag(ySize, std::vector<double> (wSize));
 
+#pragma omp parallel for collapse(2) schedule(dynamic) 
 for (int i=0; i<ySize; i++){
 for (int j=0; j<wSize; j++){ 
 

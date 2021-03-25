@@ -1,17 +1,49 @@
+#Construct the lensing source codes into the programs to generate the lensing interpolant data 
+#
+#Targets:
+#	all - Makes all lens programs in both current and binary directories
+# 	bin_only - Makes all lens programs in binary directory only 
+# 	user_only - Makes all lens programs in current directory only 
+
+#C++ compiler and flags needed - requires dependencies openMP, arb, and flint 
 CC = /usr/bin/g++
-TARGET = plCalc
-OBJECTS = pointlens.cxx
-CPPFLAGS = -O3 -larb -lflint
+CPPFLAGS = -fopenmp -O3 -larb -lflint
 
-$(TARGET): $(OBJECTS)
-	@echo "Building point lensing code"
-	$(CC) $(OBJECTS) -o $(TARGET) $(CPPFLAGS)
-	@cp $(TARGET) /usr/local/bin/$(TARGET) 
+#Do for all cxx files in this folder
+CXX_FILES = $(wildcard *.cxx)
+OUT_FILES = $(CXX_FILES:%.cxx=%)
+BIN_DIR = /usr/local/bin
+OUT_BIN = $(OUT_FILES:%=$(BIN_DIR)/%)
 
+#Make All Lens Programs in both current directory and binary directory 
+all: bin_only user_only 
+
+#Make All Lens Programs in binary directory only
+bin_only: $(OUT_BIN)
+
+#Make All Lens Program is user directory only:
+user_only: $(OUT_FILES) 
+
+#Rule for Compiling the .cxx source codes
+%: %.cxx
+	$(CC) -o $@ $< $(CPPFLAGS)
+
+$(BIN_DIR)/%: %.cxx 
+	$(CC) -o $@ $< $(CPPFLAGS) 
+
+#Debugging
+variables:
+	@echo CXX_FILES: $(CXX_FILES)
+	@echo OUT_FILES: $(OUT_FILES) 
+	@echo BIN_DIR: $(BIN_DIR)
+	@echo OUT_BIN: $(OUT_BIN) 
+
+#CLEAN TARGET
+.PHONY: clean
 clean:
-	@rm $(TARGET)
-	@rm /usr/local/bin/$(TARGET) 
+	rm -f $(OUT_FILES) $(OUT_BIN) 
 
-copy:
-	@cp $(TARGET) /usr/local/bin/$(TARGET) 
+.PHONY: clean_local
+clean_local:
+	rm -f $(OUT_FILES) 
 

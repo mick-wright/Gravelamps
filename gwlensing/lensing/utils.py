@@ -76,13 +76,24 @@ def wyhandler(config, injection_parameters):
 		elif y_array_file != data_subdir+"/y.dat":
 			subprocess.run(["cp", y_array_file, data_subdir+"/y.dat"]) 
 
-	return(w_array_file, y_array_file) 
+	return(w_array_file, y_array_file)
 
-def ampfachandler(config, injection_parameters, w_array_file, y_array_file, lens_model):
+def get_additional_parameters(config):
+	lens_model = config.get("lens_settings", "lens_model")
+
+	if lens_model == "pointlens":
+		return([])
+	elif lens_model == "sislens":
+		return([])
+	elif lens_model == "nfwlens":
+		ksVal = config.get("lens_settings", "nfw_ks_val")
+		intUpperLimit = config.get("lens_settings", "int_upper_limit") 
+		prec = config.get("lens_settings", "prec")
+		return([ksVal, intUpperLimit, prec])
+
+def ampfachandler(config, injection_parameters, w_array_file, y_array_file, lens_model, additional_lens_parameters=[]):
 	outdir = config.get("bilby_setup","outdir")
 	data_subdir = outdir+"/"+config.get("data_settings","data_subdir") 
-
-	lens_types = dict(pointlens="plCalc") 
 
 	if config.get("optional_input","amp_fac_complex_file") != "None":
 		complex_file = config.get("optional_input","amp_fac_complex_file") 
@@ -102,7 +113,10 @@ def ampfachandler(config, injection_parameters, w_array_file, y_array_file, lens
 		amp_fac_real_file = data_subdir+"/fReal.dat"
 		amp_fac_imag_file = data_subdir+"/fImag.dat" 
 	else:
-		subprocess.run([lens_types[lens_model], w_array_file, y_array_file])
+		print("Generating Lens Data") 
+		proc_to_run = [lens_model, w_array_file, y_array_file] + additional_lens_parameters
+		subprocess.run(proc_to_run)
+		print("Lens Data Generated") 
 		subprocess.run(["mv", "fReal.dat", "fImag.dat", data_subdir+"/."]) 
 
 		amp_fac_real_file = data_subdir+"/fReal.dat" 

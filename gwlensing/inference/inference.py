@@ -47,8 +47,13 @@ def main():
 	#Get the Dimensionless Frequency and Impact Parameter Files 
 	w_array_file, y_array_file = gwlensing.lensing.utils.wyhandler(config, injection_parameters)
 
+	#Get the Lens Model
+	lens_model = config.get("lens_settings", "lens_model") 
+	#Get Additional Lensing Parameters if needed
+	additional_lens_parameters = gwlensing.lensing.utils.get_additional_parameters(config) 
+
 	#Get the Amplification Factor Files
-	amp_fac_real_file, amp_fac_imag_file = gwlensing.lensing.utils.ampfachandler(config,injection_parameters, w_array_file, y_array_file, "pointlens") 
+	amp_fac_real_file, amp_fac_imag_file = gwlensing.lensing.utils.ampfachandler(config,injection_parameters, w_array_file, y_array_file, lens_model, additional_lens_parameters)
 
 	#Generate the Lens Interpolator Function and add it to the waveform arguments 
 	lens_interpolator = gwlensing.lensing.utils.generate_interpolator(w_array_file, y_array_file, amp_fac_real_file, amp_fac_imag_file)
@@ -75,7 +80,7 @@ def main():
 	#Run Sampler, if user has specified generate a corner plot
 	result = bilby.run_sampler(likelihood=likelihood, priors=priors, sampler=config.get("sampler_settings","sampler"), nlive=config.getint("sampler_settings","nlive"), npool=config.getint("sampler_settings","npool"),nact=config.getint("sampler_settings","nact"),nparallel=config.getint("sampler_settings","nparallel"),injection_parameters=injection_parameters, outdir=config.get("bilby_setup","outdir"), label=config.get("bilby_setup","label"))
 	if config.getboolean("bilby_setup","make_corner") == True:
-		result.plot_croner() 
+		result.plot_corner() 
 
 	#Generate a "Treat Unlensed" if user has specified they want one
 	if config.getboolean("treat_unlensed_settings","create_treat_unlensed") == True: 
@@ -88,7 +93,7 @@ def main():
 		for parameter in ["lens_mass","impact_parameter","lens_fractional_distance"]:
 			priors_unlensed[parameter] = injection_parameters[parameter] 
 
-		result_unlsned = bilby.run_sampler(likelihood=likelihood_unlensed, priors=priors_unlensed, sampler=config.get("sampler_settings","sampler"), nlive=config.getint("sampler_settings","nlive"), npool=config.getint("sampler_settings","npool"),nact=config.getint("sampler_settings","nact"),nparallel=config.getint("sampler_settings","nparallel"),injection_parameters=injection_parameters, outdir=config.get("treat_unlensed_settings","unlensed_outdir"), label=config.get("treat_unlensed_settings","unlensed_label"))
+		result_unlensed = bilby.run_sampler(likelihood=likelihood_unlensed, priors=priors_unlensed, sampler=config.get("sampler_settings","sampler"), nlive=config.getint("sampler_settings","nlive"), npool=config.getint("sampler_settings","npool"),nact=config.getint("sampler_settings","nact"),nparallel=config.getint("sampler_settings","nparallel"),injection_parameters=injection_parameters, outdir=config.get("treat_unlensed_settings","unlensed_outdir"), label=config.get("treat_unlensed_settings","unlensed_label"))
 
 		#Generate a "Treat Unlensed" Corner Plot if user desires
 		if config.getboolean("treat_unlensed_settings","unlensed_make_corner") == True:

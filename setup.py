@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="gwlensing",
-    version="0.0.2",
+    version="0.1.0",
     author="Mick Wright",
     author_email="m.wright.3@research.gla.ac.uk",
     description="Suite of tools to simulate lensed gravitational wave signals and perform parameter estimation on them using bilby",
@@ -14,7 +14,7 @@ setuptools.setup(
         "gwlensing.lensing"
     ],
     entry_points = {
-        'console_scripts': ['gwlensing_point_lens=gwlensing.inference.point_lens:main',
+        'console_scripts': ['gwlensing_inference=gwlensing.inference.inference:main',
         ],
     },
     classifiers=[
