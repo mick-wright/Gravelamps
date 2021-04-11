@@ -91,7 +91,7 @@ def get_additional_parameters(config):
 		prec = config.get("lens_settings", "prec")
 		return([ksVal, intUpperLimit, prec])
 
-def ampfachandler(config, injection_parameters, w_array_file, y_array_file, lens_model, additional_lens_parameters=[]):
+def ampfachandler(config, injection_parameters, w_array_file, y_array_file, lens_model, additional_lens_parameters=[], mode="local"):
 	outdir = config.get("bilby_setup","outdir")
 	data_subdir = outdir+"/"+config.get("data_settings","data_subdir") 
 
@@ -113,14 +113,17 @@ def ampfachandler(config, injection_parameters, w_array_file, y_array_file, lens
 		amp_fac_real_file = data_subdir+"/fReal.dat"
 		amp_fac_imag_file = data_subdir+"/fImag.dat" 
 	else:
-		print("Generating Lens Data") 
-		proc_to_run = [lens_model, w_array_file, y_array_file] + additional_lens_parameters
-		subprocess.run(proc_to_run)
-		print("Lens Data Generated") 
-		subprocess.run(["mv", "fReal.dat", "fImag.dat", data_subdir+"/."]) 
+                amp_fac_real_file = data_subdir+"/fReal.dat"
+                amp_fac_imag_file = data_subdir+"/fImag.dat" 
 
-		amp_fac_real_file = data_subdir+"/fReal.dat" 
-		amp_fac_imag_file = data_subdir+"/fImag.dat" 
+                if mode == "local":
+                    print("Generating Lens Data") 
+                    proc_to_run = [lens_model, w_array_file, y_array_file, amp_fac_real_file, amp_fac_imag_file] + additional_lens_parameters
+                    subprocess.run(proc_to_run)
+                    print("Lens Data Generated") 
+                elif mode == "pipe":
+                    print("Generating Lens Data Submit File")
+                    generate_lens_subfile(config, amp_fac_real_file, amp_fac_imag_file, lens_model, w_array_file, y_array_file, additional_lens_parameters, outdir)
 
 	if config.getboolean("data_settings","copy_data_files"):
 		if amp_fac_real_file != data_subdir+"/fReal.dat":
@@ -144,4 +147,37 @@ def generate_interpolator(w_array_file, y_array_file, amp_fac_real_file, amp_fac
 
 	interpolator_func = lambda w, y: (amp_interp_real(w,y)+1j*amp_interp_imag(w,y)).flatten()
 
-	return(interpolator_func) 
+	return(interpolator_func)
+
+def generate_lens_subfile(config, amp_fac_real_file, amp_fac_imag_file, lens_model, w_array_file, y_array_file, additional_lens_parameters, outdir):
+        submit_directory = outdir+"/submit" 
+        if not os.path.isdir(submit_directory):
+            os.mkdir(submit_directory) 
+        subfile = submit_directory+"/generate_lens.sub"
+        condor_settings_dictionary = config._sections["condor_settings"].copy()
+
+        sub = open(subfile, "w")
+        sub.write("universe = vanilla\n")
+        sub.write("transfer_input_files = " + os.path.abspath(w_array_file) + "," + os.path.abspath(y_array_file)+"\n")
+        sub.write("executable = "+config.get("lens_settings","executable_directory")+"/"+lens_model+"\n") 
+        
+        arguments = os.path.abspath(w_array_file) + " " + os.path.abspath(y_array_file) + " " + os.path.abspath(amp_fac_real_file) + " " + os.path.abspath(amp_fac_imag_file) 
+        for i in additional_lens_parameters:
+            arguments = arguments + " " + i
+
+        sub.write("arguments = " + arguments+"\n")
+        sub.write("log = lens_generation.log\n")
+        sub.write("output = lens_generation.out\n")
+        sub.write("error = lens_generation.err\n")
+
+        sub.write("should_transfer_files = " + condor_settings_dictionary["transfer_files"] + "\n")
+        sub.write("when_to_transfer_output = " + condor_settings_dictionary["when_to_transfer_output"] + "\n")
+        
+        checklist = ["request_cpus", "request_memory", "accounting_group", "accounting_group_user"]
+        for item in checklist:
+            if item in condor_settings_dictionary:
+                sub.write(item+" = "+condor_settings_dictionary[item]+"\n")
+
+        sub.write("queue 1\n") 
+
+

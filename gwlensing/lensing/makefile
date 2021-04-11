@@ -6,13 +6,13 @@
 # 	user_only - Makes all lens programs in current directory only 
 
 #C++ compiler and flags needed - requires dependencies openMP, arb, and flint 
-CC = /usr/bin/g++
-CPPFLAGS = -fopenmp -O3 -larb -lflint
+CPP = x86_64-conda-linux-gnu-g++
+CPPFLAGS = -isystem /data/wiay/mick/.conda/envs/gwlensing-pipe-dev/include -fopenmp -O3 -L /data/wiay/mick/.conda/envs/gwlensing-pipe-dev/lib -larb -lflint
 
 #Do for all cxx files in this folder
 CXX_FILES = $(wildcard *.cxx)
 OUT_FILES = $(CXX_FILES:%.cxx=%)
-BIN_DIR = /usr/local/bin
+BIN_DIR = $(HOME)/.local/bin
 OUT_BIN = $(OUT_FILES:%=$(BIN_DIR)/%)
 
 #Make All Lens Programs in both current directory and binary directory 
@@ -26,10 +26,10 @@ user_only: $(OUT_FILES)
 
 #Rule for Compiling the .cxx source codes
 %: %.cxx
-	$(CC) -o $@ $< $(CPPFLAGS)
+	$(CPP) -o $@ $< $(CPPFLAGS)
 
 $(BIN_DIR)/%: %.cxx 
-	$(CC) -o $@ $< $(CPPFLAGS) 
+	$(CPP) -o $@ $< $(CPPFLAGS) 
 
 #Debugging
 variables:

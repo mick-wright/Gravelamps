@@ -15,6 +15,7 @@ setuptools.setup(
     ],
     entry_points = {
         'console_scripts': ['gwlensing_inference=gwlensing.inference.inference:main',
+        'gwlensing_inference_pipe = gwlensing.inference.inference_pipe:main', 
         ],
     },
     classifiers=[

@@ -334,6 +334,9 @@ int main(int argc, char* argv[]){
 std::string wFileName = argv[1];
 std::string yFileName = argv[2];
 
+std::string fRealFileName = argv[3];
+std::string fImagFileName = argv[4];
+
 std::ifstream wFile (wFileName);
 std::istream_iterator<double> wStart(wFile), wEnd;
 std::vector<double> wVals(wStart, wEnd);
@@ -342,14 +345,14 @@ std::ifstream yFile (yFileName);
 std::istream_iterator<double> yStart(yFile), yEnd;
 std::vector<double> yVals(yStart, yEnd);
 
-double ksVal = atof(argv[3]); 
-double upperLimitVal = atof(argv[4]); 
-slong prec = atoi(argv[5]); 
+double ksVal = atof(argv[5]); 
+double upperLimitVal = atof(argv[6]); 
+slong prec = atoi(argv[7]); 
 
 std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>> fVals = ampFacMatrices(wVals,yVals,ksVal,upperLimitVal,prec);
 
-std::ofstream fRealFile ("fReal.dat", std::ofstream::out);
-std::ofstream fImagFile ("fImag.dat", std::ofstream::out);
+std::ofstream fRealFile (fRealFileName, std::ofstream::out);
+std::ofstream fImagFile (fImagFileName, std::ofstream::out);
 
 int rowLen = fVals.first.size();
 int colLen = fVals.first[0].size();
