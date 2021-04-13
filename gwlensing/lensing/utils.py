@@ -180,4 +180,5 @@ def generate_lens_subfile(config, amp_fac_real_file, amp_fac_imag_file, lens_mod
 
         sub.write("queue 1\n") 
 
+def gen_inject_file(config, injection_parameters):
 

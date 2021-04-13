@@ -20,7 +20,14 @@ def main():
     try:
         config.read(sys.argv[1])
     except IOError:
-        print("Ini file unreadable!") 
+        print("Ini file unreadable!")
+
+    #Create the Outdir Directory and the Data and Submit subfolders
+    outdir = config.get("bilby_setup", "outdir")
+
+    os.mkdir(outdir)
+    os.mkdir(outdir+"/data")
+    os.mkdir(outdir+"/submit") 
 
     #Get in Injection Parameters and Convert to Floats 
     injection_parameters = config._sections["base_waveform_injection_parameters"].copy()
@@ -41,4 +48,8 @@ def main():
     additional_lens_parameters = gwlensing.lensing.utils.get_additional_parameters(config) 
 
     #Create the Generate Amplification Factor submit file - if needed
-    amp_fac_real_file, amp_fac_imag_file = gwlensing.lensing.utils.ampfachandler(config, injection_parameters, w_array_file, y_array_file, lens_model, additional_lens_parameters=[], mode="pipe") 
+    amp_fac_real_file, amp_fac_imag_file = gwlensing.lensing.utils.ampfachandler(config, injection_parameters, w_array_file, y_array_file, lens_model, additional_lens_parameters, mode="pipe")
+
+    #Generate Injection File
+    gwlensing.lensing.utils.gen_inject_file(config, waveform_parameters)
+
