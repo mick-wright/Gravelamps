@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="gwlensing",
-    version="0.1.0",
+    version="0.2.0",
     author="Mick Wright",
     author_email="m.wright.3@research.gla.ac.uk",
     description="Suite of tools to simulate lensed gravitational wave signals and perform parameter estimation on them using bilby",

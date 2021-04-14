@@ -3,6 +3,17 @@ import bilby
 import numpy as np
 import astropy.constants as const
 
+class Lensed_Waveform_Generator(bilby.gw.waveform_generator.WaveformGenerator):
+    def __init__(self, duration=None, sampling_frequency=None, start_time=0, frequency_domain_source_model=None, time_domain_source_model=None, parameters=None, parameter_conversion=None, waveform_arguments=None):
+        super().__init__(duration, sampling_frequency, start_time, frequency_domain_source_model, time_domain_source_model, parameters, parameter_conversion, waveform_arguments)
+
+        w_array_file = waveform_arguments["w_array_file"]
+        y_array_file = waveform_arguments["y_array_file"]
+        amp_fac_real_file = waveform_arguments["amp_fac_real_file"]
+        amp_fac_imag_file = waveform_arguments["amp_fac_imag_file"] 
+
+        waveform_arguments["interpolator"] = utils.generate_interpolator(w_array_file, y_array_file, amp_fac_real_file, amp_fac_imag_file) 
+
 def BBH_lensed_waveform(frequency_array, mass_1, mass_2, a_1, a_2, tilt_1, tilt_2, phi_12, phi_jl, luminosity_distance, theta_jn, phase, ra, dec, geocent_time, psi, lens_mass, impact_parameter, lens_fractional_distance, **kwargs):
     '''
     Inputs:
