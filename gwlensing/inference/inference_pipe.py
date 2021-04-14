@@ -72,4 +72,4 @@ def main():
     gwlensing.lensing.utils.gen_overarch_dag(config, outdir)
 
     #Message User with Submission
-    print("To submit, use \n $condor_submit_dag " + outdir+"/submit/dag_"+config.get("bilby_setup","label")+"_overarch.submit")
+    print("To submit, use \n $ condor_submit_dag " + outdir+"/submit/dag_"+config.get("bilby_setup","label")+"_overarch.submit")
