@@ -95,19 +95,19 @@ def wy_handler(config):
     data_subdir = outdir + "/" + config.get("data_settings", "data_subdir")
 
     #Get optionally input user files
-    w_array_file = config.get("optional_input", "w_array_file", "None")
-    y_array_file = config.get("optional_input", "y_array_file", "None")
+    w_array_file = config.get("optional_input", "w_array_file", fallback="None")
+    y_array_file = config.get("optional_input", "y_array_file", fallback="None")
 
     #For both dimensionless frequency and impact parameter
     #if optional input has not been given check if the file already exists in the data subdir
     #otherwise generate a new one
-    if w_array_file is "None":
+    if w_array_file == "None":
         if not os.path.isfile(data_subdir+"/w.dat"):
             gwlensing.lensing.utils.generate_dimensionless_frequency_file(config)
         else:
             w_array_file = data_subdir + "/w.dat"
 
-    if y_array_file is "None":
+    if y_array_file == "None":
         if not os.path.isfile(data_subdir+"/y.dat"):
             gwlensing.lensing.utils.generate_impact_parameter_file(config)
         else:
@@ -182,12 +182,15 @@ def amp_fac_handler(config, w_array_file, y_array_file, mode="local"):
     additional_parameters = get_additional_parameters(config)
 
     #Read in the values of the optional input values
-    amp_fac_complex_file = config.get("optional_input", "amplification_factor_complex_file", "None")
-    amp_fac_real_file = config.get("optional_input", "amplification_factor_real_file", "None")
-    amp_fac_imag_file = config.get("optional_input", "amplification_factor_imag_file", "None")
+    amp_fac_complex_file = config.get("optional_input",
+                                      "amplification_factor_complex_file", fallback="None")
+    amp_fac_real_file = config.get("optional_input",
+                                   "amplification_factor_real_file", fallback="None")
+    amp_fac_imag_file = config.get("optional_input",
+                                   "amplification_factor_imag_file", fallback="None")
 
     #If the complex file exists, read it in and split it into real and imaginary parts
-    if amp_fac_complex_file is not "None":
+    if amp_fac_complex_file != "None":
         complex_array = np.loadtxt(amp_fac_complex_file, dtype=complex)
         real_array = np.real(complex_array)
         imag_array = np.imag(complex_array)
@@ -199,7 +202,7 @@ def amp_fac_handler(config, w_array_file, y_array_file, mode="local"):
         np.savetxt(amp_fac_imag_file, imag_array)
 
         #Else if both the real and imaginary files exists, read them in
-    elif amp_fac_real_file is not "None" and amp_fac_imag_file is not "None":
+    elif amp_fac_real_file != "None" and amp_fac_imag_file != "None":
         pass
 
         #Otherwise generate either the amplification files directly, or the submit file for condor
