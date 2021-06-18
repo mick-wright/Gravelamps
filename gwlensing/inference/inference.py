@@ -100,12 +100,12 @@ def main():
         priors[parameter] = injection_parameters[parameter]
 
     #Sampler Settings
-    sampler = config.get("sampler_settings", "sampler")
-    plot_corner = config.getboolean("sampler_settings", "plot_corners")
-    sampler_kwargs_dict = config.get("sampler_settings", "sampler_kwargs_dict")
+    sampler = config.get("bilby_setup", "sampler")
+    plot_corner = config.getboolean("bilby_setup", "plot_corner")
+    sampler_kwargs_dict = config._sections["sampler_kwargs"].copy()
 
     #If unlensed prep run, do this
-    if config.getboolean("unlensed_run_settings", "create_unlensed_prep_run"):
+    if config.getboolean("data_settings", "create_unlensed_prep_run"):
         #Generate the Unlensed Waveform
         unlensed_waveform_generator = bilby.gw.WaveformGenerator(
                 duration = duration, sampling_frequency = sampling_frequency,
