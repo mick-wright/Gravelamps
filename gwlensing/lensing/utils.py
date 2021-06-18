@@ -103,13 +103,13 @@ def wy_handler(config):
     #otherwise generate a new one
     if w_array_file == "None":
         if not os.path.isfile(data_subdir+"/w.dat"):
-            gwlensing.lensing.utils.generate_dimensionless_frequency_file(config)
+            w_array_file = gwlensing.lensing.utils.generate_dimensionless_frequency_file(config)
         else:
             w_array_file = data_subdir + "/w.dat"
 
     if y_array_file == "None":
         if not os.path.isfile(data_subdir+"/y.dat"):
-            gwlensing.lensing.utils.generate_impact_parameter_file(config)
+            y_array_file = gwlensing.lensing.utils.generate_impact_parameter_file(config)
         else:
             y_array_file = data_subdir + "/y.dat"
 
