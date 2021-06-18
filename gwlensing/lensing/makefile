@@ -6,8 +6,8 @@
 # 	user_only - Makes all lens programs in current directory only 
 
 #C++ compiler and flags needed - requires dependencies openMP, arb, and flint 
-CPP = x86_64-conda-linux-gnu-g++
-CPPFLAGS = -isystem /data/wiay/mick/.conda/envs/gwlensing-pipe-dev/include -fopenmp -O3 -L /data/wiay/mick/.conda/envs/gwlensing-pipe-dev/lib -larb -lflint
+CPP = g++
+CPPFLAGS = -fopenmp -O3 -larb -lflint
 
 #Do for all cxx files in this folder
 CXX_FILES = $(wildcard *.cxx)

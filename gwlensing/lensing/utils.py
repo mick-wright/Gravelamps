@@ -95,19 +95,19 @@ def wy_handler(config):
     data_subdir = outdir + "/" + config.get("data_settings", "data_subdir")
 
     #Get optionally input user files
-    w_array_file = config.get("optional_input", "w_array_file")
-    y_array_file = config.get("optional_input", "y_array_file")
+    w_array_file = config.get("optional_input", "w_array_file", "None")
+    y_array_file = config.get("optional_input", "y_array_file", "None")
 
     #For both dimensionless frequency and impact parameter
     #if optional input has not been given check if the file already exists in the data subdir
     #otherwise generate a new one
-    if w_array_file is None:
+    if w_array_file is "None":
         if not os.path.isfile(data_subdir+"/w.dat"):
             gwlensing.lensing.utils.generate_dimensionless_frequency_file(config)
         else:
             w_array_file = data_subdir + "/w.dat"
 
-    if y_array_file is None:
+    if y_array_file is "None":
         if not os.path.isfile(data_subdir+"/y.dat"):
             gwlensing.lensing.utils.generate_impact_parameter_file(config)
         else:
@@ -182,12 +182,12 @@ def amp_fac_handler(config, w_array_file, y_array_file, mode="local"):
     additional_parameters = get_additional_parameters(config)
 
     #Read in the values of the optional input values
-    amp_fac_complex_file = config.get("optional_input", "amplification_factor_complex_file")
-    amp_fac_real_file = config.get("optional_input", "amplification_factor_real_file")
-    amp_fac_imag_file = config.get("optional_input", "amplification_factor_imag_file")
+    amp_fac_complex_file = config.get("optional_input", "amplification_factor_complex_file", "None")
+    amp_fac_real_file = config.get("optional_input", "amplification_factor_real_file", "None")
+    amp_fac_imag_file = config.get("optional_input", "amplification_factor_imag_file", "None")
 
     #If the complex file exists, read it in and split it into real and imaginary parts
-    if amp_fac_complex_file is not None:
+    if amp_fac_complex_file is not "None":
         complex_array = np.loadtxt(amp_fac_complex_file, dtype=complex)
         real_array = np.real(complex_array)
         imag_array = np.imag(complex_array)
@@ -199,7 +199,7 @@ def amp_fac_handler(config, w_array_file, y_array_file, mode="local"):
         np.savetxt(amp_fac_imag_file, imag_array)
 
         #Else if both the real and imaginary files exists, read them in
-    elif amp_fac_real_file is not None and amp_fac_imag_file is not None:
+    elif amp_fac_real_file is not "None" and amp_fac_imag_file is not "None":
         pass
 
         #Otherwise generate either the amplification files directly, or the submit file for condor
@@ -210,13 +210,13 @@ def amp_fac_handler(config, w_array_file, y_array_file, mode="local"):
         if mode == "local":
             print("Generating Lens Data")
             proc_to_run = [lens_model, w_array_file, y_array_file, amp_fac_real_file,
-                    amp_fac_imag_file] + additional_parameters
+                           amp_fac_imag_file] + additional_parameters
             subprocess.run(proc_to_run, check=True)
             print("Lens Data Generated")
         elif mode == "pipe":
             print("Generating Lens Data Submit File")
-            generate_lens_subfile(config, amp_fac_real_file, amp_fac_imag_file,
-                     w_array_file, y_array_file)
+            generate_lens_subfile(config, w_array_file, y_array_file,
+                                  amp_fac_real_file, amp_fac_imag_file)
             print("Lens Data Submit File Generated")
 
     #If external files are used and the user has specified copy the files to the data subdirectory
@@ -303,7 +303,7 @@ def generate_lens_subfile(config, w_array_file, y_array_file, amp_fac_real_file,
     sub = open(subfile, "w")
     sub.write("universe = vanilla\n")
     sub.write("transfer_input_files = " + os.path.abspath(w_array_file) + ","
-            + os.path.abspath(y_array_file) + "\n")
+              + os.path.abspath(y_array_file) + "\n")
     sub.write("executable = " + executable_path + "\n")
 
     #Construct the arguments necessary for the function call
@@ -357,7 +357,7 @@ def gen_inject_file(config, injection_parameters):
     n_injections = config.get("bilby_setup", "n-injections")
 
     subprocess.run(["bilby_pipe_create_injection_file", inject_filename, "--n-injection",
-        n_injections, "-f", inject_dat_filename], check=True)
+                    n_injections, "-f", inject_dat_filename], check=True)
 
     print("Injection File Generated")
 
@@ -489,8 +489,8 @@ def wfgen_fd_source(waveform_generator_class_name, frequency_domain_source_model
     #Now attempt to find the class
     try:
         waveform_generator_class = getattr(
-                importlib.import_module(
-                    waveform_generator_module), waveform_generator_class_name)
+            importlib.import_module(
+                waveform_generator_module), waveform_generator_class_name)
     except ImportError:
         print("Waveform Generator Class could not be found!")
 
@@ -498,7 +498,7 @@ def wfgen_fd_source(waveform_generator_class_name, frequency_domain_source_model
     #bilby list, otherwise follow the same procedure as for the waveform generator
     if frequency_domain_source_model_name in bilby.gw.source.__dict__.keys():
         frequency_domain_source_model = bilby.gw.source.__dict__[
-                frequency_domain_source_model_name]
+            frequency_domain_source_model_name]
     else:
         frequency_domain_source_model_split = frequency_domain_source_model_name.split(".")
         frequency_domain_source_model_module = ".".join(frequency_domain_source_model_split[:-1])
@@ -506,8 +506,8 @@ def wfgen_fd_source(waveform_generator_class_name, frequency_domain_source_model
 
         try:
             frequency_domain_source_model = getattr(
-                    importlib.import_module(
-                        frequency_domain_source_model_module), frequency_domain_source_model_name)
+                importlib.import_module(
+                    frequency_domain_source_model_module), frequency_domain_source_model_name)
         except ImportError:
             print("Frequency Domain Source Model Function could not be loaded!")
 
