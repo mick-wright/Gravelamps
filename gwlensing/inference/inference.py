@@ -78,7 +78,7 @@ def main():
     #Generate Lensed Waveform
     lensed_waveform_generator = gwlensing.lensing.Lensed_Waveform_Generator(
             duration=duration, sampling_frequency=sampling_frequency,
-            frequency_domian_source_model = gwlensing.lensing.BBH_lensed_waveform,
+            frequency_domain_source_model = gwlensing.lensing.BBH_lensed_waveform,
             parameter_conversion = bilby.gw.conversion.convert_to_lal_binary_black_hole_parameters,
             waveform_arguments = waveform_arguments)
 
