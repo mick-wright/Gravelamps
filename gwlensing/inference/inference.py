@@ -9,7 +9,6 @@ Written by Mick Wright 2021
 
 import os
 import sys
-import importlib
 
 from configparser import ConfigParser
 
@@ -64,36 +63,42 @@ def main():
 
     #Add the Chirp Mass and Mass Ratio values to the injection parameters
     injection_parameters["chirp_mass"] = bilby.gw.conversion.component_masses_to_chirp_mass(
-            injection_parameters["mass_1"], injection_parameters["mass_2"])
+        injection_parameters["mass_1"], injection_parameters["mass_2"])
     injection_parameters["mass_ratio"] = bilby.gw.conversion.component_masses_to_mass_ratio(
-            injection_parameters["mass_1"], injection_parameters["mass_2"])
+        injection_parameters["mass_1"], injection_parameters["mass_2"])
 
     #Get the Dimensionless Frequency and Impact Parameter Files
     w_array_file, y_array_file = gwlensing.lensing.utils.wy_handler(config)
 
-    #Generate Lensed Interpolator
+    #Generate Lensed Data
     amp_fac_real_file, amp_fac_imag_file = gwlensing.lensing.utils.amp_fac_handler(
-            config, w_array_file, y_array_file, mode="local")
+        config, w_array_file, y_array_file, mode="local")
+
+    #Add Files to the Waveform Arguments
+    waveform_arguments["w_array_file"] = w_array_file
+    waveform_arguments["y_array_file"] = y_array_file
+    waveform_arguments["amp_fac_real_file"] = amp_fac_real_file
+    waveform_arguments["amp_fac_imag_file"] = amp_fac_imag_file
 
     #Generate Lensed Waveform
     lensed_waveform_generator = gwlensing.lensing.Lensed_Waveform_Generator(
-            duration=duration, sampling_frequency=sampling_frequency,
-            frequency_domain_source_model = gwlensing.lensing.BBH_lensed_waveform,
-            parameter_conversion = bilby.gw.conversion.convert_to_lal_binary_black_hole_parameters,
-            waveform_arguments = waveform_arguments)
+        duration=duration, sampling_frequency=sampling_frequency,
+        frequency_domain_source_model=gwlensing.lensing.BBH_lensed_waveform,
+        parameter_conversion=bilby.gw.conversion.convert_to_lal_binary_black_hole_parameters,
+        waveform_arguments=waveform_arguments)
 
     #Generate Injected Interformeters
-    interferometer_list = config.get("bilby_setup", "detectors").replace(" ","").split(",")
+    interferometer_list = config.get("bilby_setup", "detectors").replace(" ", "").split(",")
     interferometers = bilby.gw.detector.InterferometerList(interferometer_list)
     interferometers.set_strain_data_from_power_spectral_densities(
-            sampling_frequency = sampling_frequency, duration=duration,
-            start_time = injection_parameters["geocent_time"] - 3)
+        sampling_frequency=sampling_frequency, duration=duration,
+        start_time=injection_parameters["geocent_time"] - 3)
     interferometers.inject_signal(waveform_generator=lensed_waveform_generator,
-            parameters = injection_parameters)
+                                  parameters=injection_parameters)
 
     #Loading in the Prior File, Fixing Any Parameters Specified
     prior_file = config.get("prior_settings", "prior_file")
-    prior_fix_list = config.get("prior_settings", "parameters_to_fix").replace(" ","").split(",")
+    prior_fix_list = config.get("prior_settings", "parameters_to_fix").replace(" ", "").split(",")
 
     priors = bilby.core.prior.PriorDict(prior_file)
     for parameter in prior_fix_list:
@@ -108,15 +113,15 @@ def main():
     if config.getboolean("data_settings", "create_unlensed_prep_run"):
         #Generate the Unlensed Waveform
         unlensed_waveform_generator = bilby.gw.WaveformGenerator(
-                duration = duration, sampling_frequency = sampling_frequency,
-                frequency_domain_source_model = bilby.gw.source.lal_binary_black_hole,
-                parameter_conversion = bilby.gw.conversion.convert_to_lal_binary_black_hole_parameters,
-                waveform_arguments = waveform_arguments)
+            duration=duration, sampling_frequency=sampling_frequency,
+            frequency_domain_source_model=bilby.gw.source.lal_binary_black_hole,
+            parameter_conversion=bilby.gw.conversion.convert_to_lal_binary_black_hole_parameters,
+            waveform_arguments=waveform_arguments)
 
         #Get the Unlensed Likelihoods
         unlensed_likelihood = bilby.gw.GravitationalWaveTransient(
-                interferometers = interferometers,
-                waveform_generator = unlensed_waveform_generator)
+            interferometers=interferometers,
+            waveform_generator=unlensed_waveform_generator)
 
         #Fix Lens Priors for Unlensed Case
         unlensed_priors = priors
@@ -126,24 +131,23 @@ def main():
 
         #Perform the Unlensed Run
         result_unlensed = bilby.run_sampler(
-                likelihood = unlensed_likelihood, priors = unlensed_priors,
-                outdir = outdir, label = label+"_unlensed", sampler = sampler,
-                plot = plot_corner, injection_parameters = injection_parameters,
-                **sampler_kwargs_dict)
+            likelihood=unlensed_likelihood, priors=unlensed_priors,
+            outdir=outdir, label=label+"_unlensed", sampler=sampler,
+            plot=plot_corner, injection_parameters=injection_parameters,
+            **sampler_kwargs_dict)
 
-        #TODO: Get either the maximum posterior parameter values, or the full posteriors to use as priors
+        #TODO: Handle resultant posteriors
 
     #Lensed run
     #Get the Likelihood
     lensed_likelihood = bilby.gw.GravitationalWaveTransient(
-            interferometers = interferometers,
-            waveform_generator = lensed_waveform_generator)
+        interferometers=interferometers,
+        waveform_generator=lensed_waveform_generator)
 
     #Run the Sampler
     result_lensed = bilby.run_sampler(
-            likelihood = lensed_likelihood, priors = priors,
-            outdir = outdir, label = label, sampler = sampler,
-            plot = plot_corner, injection_parameters = injection_parameters,
-            **sampler_kwargs_dict)
-
+        likelihood=lensed_likelihood, priors=priors,
+        outdir=outdir, label=label, sampler=sampler,
+        plot=plot_corner, injection_parameters=injection_parameters,
+        **sampler_kwargs_dict)
 
