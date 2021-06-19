@@ -108,6 +108,10 @@ def main():
     sampler = config.get("bilby_setup", "sampler")
     plot_corner = config.getboolean("bilby_setup", "plot_corner")
     sampler_kwargs_dict = config._sections["sampler_kwargs"].copy()
+    
+    #Convert Sampler Settings to Ints
+    for key, value in sampler_kwargs_dict.items():
+        sampler_kwargs_dict[key] = int(value)
 
     #If unlensed prep run, do this
     if config.getboolean("data_settings", "create_unlensed_prep_run"):

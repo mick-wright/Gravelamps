@@ -1,23 +1,37 @@
-import sys
+'''
+Gravelamps Pipe Inference
+
+Condor based lens generation and analysis variant
+for Simulated Data
+
+Written by Mick Wright 2021
+'''
+
 import os
-import numpy as np
-import bilby_pipe
-import bilby
-import gwlensing.lensing
-import gwlensing.inference
+import sys
 import subprocess
 
 from configparser import ConfigParser
 
+import bilby
+
+import gwlensing.lensing
+import gwlensing.inference
+
 def main():
+    '''
+    Main function - takes the user generated ini to compile condor submission and DAG files
+    in order to perform the analysis run
+    '''
+
     #Instantiate the Configuration Parser
-    config = ConfigParser() 
+    config = ConfigParser()
 
     #If user hasn't given a useable ini raise exception
     if not os.path.isfile(sys.argv[1]):
         raise IOError("Input ini file not given!")
 
-    #Check that the Configuration Parser can read hte ini file
+    #Check that the Configuration Parser can read the ini file
     try:
         config.read(sys.argv[1])
     except IOError:
@@ -25,51 +39,55 @@ def main():
 
     #Create the Outdir Directory and the Data and Submit subfolders
     outdir = config.get("bilby_setup", "outdir")
+    data_subfolder = outdir + "/data"
+    submit_subfolder = outdir + "/submit"
 
-    if not os.path.isdir(outdir):
-        os.mkdir(outdir)
-    if not os.path.isdir(outdir+"/data"):
-        os.mkdir(outdir+"/data")
-    if not os.path.isdir(outdir+"/submit"):
-        os.mkdir(outdir+"/submit") 
+    for folder in (outdir, data_subfolder, submit_subfolder):
+        if not os.path.isdir(folder):
+            os.mkdir(folder)
 
-    #Get in Injection Parameters and Convert to Floats 
+    #Get Injection Parameters and Convert to Floats
     injection_parameters = config._sections["base_waveform_injection_parameters"].copy()
     waveform_arguments = config._sections["waveform_arguments"].copy()
 
-    waveform_arguments["reference_frequency"] = float(waveform_arguments["reference_frequency"])
-    waveform_arguments["minimum_frequency"] = float(waveform_arguments["minimum_frequency"]) 
+    for key in ["reference_frequency", "minimum_frequency"]:
+        waveform_arguments[key] = float(waveform_arguments[key])
+
     injection_parameters.update((key, float(value)) for key, value in injection_parameters.items())
 
-    #Get/Generate Dimensionless Frequency and Impact Parameter Files
-    w_array_file, y_array_file = gwlensing.lensing.utils.wyhandler(config, injection_parameters)
+    #Add the Chirp Mass and Mass Ratio values to the injection parameters
+    injection_parameters["chirp_mass"] = bilby.gw.conversion.component_masses_to_chirp_mass(
+            injection_parameters["mass_1"], injection_parameters["mass_2"])
+    injection_parameters["mass_ratio"] = bilby.gw.conversion.component_masses_to_mass_ratio(
+            injection_parameters["mass_1"], injection_parameters["mass_2"])
 
-    waveform_arguments["w_array_file"] = os.path.abspath(w_array_file)
-    waveform_arguments["y_array_file"] = os.path.abspath(y_array_file)
+    #Get the Dimensionless Frequency and Impact Parameters
+    w_array_file, y_array_file = gwlensing.lensing.utils.wy_handler(config)
 
-    #Get Lens Model
-    lens_model = config.get("lens_settings", "lens_model")
-    #Get Additional Lensing Parameters if neeeded
-    additional_lens_parameters = gwlensing.lensing.utils.get_additional_parameters(config) 
+    #Get the Amplification Factor Submit File
+    amp_fac_real_file, amp_fac_imag_file = gwlensing.lensing.utils.amp_fac_handler(
+            config, w_array_file, y_array_file, mode="pipe")
 
-    #Create the Generate Amplification Factor submit file - if needed
-    amp_fac_real_file, amp_fac_imag_file = gwlensing.lensing.utils.ampfachandler(config, injection_parameters, w_array_file, y_array_file, lens_model, additional_lens_parameters, mode="pipe")
+    #Add Files to the Waveform Arguments
+    waveform_arguments["w_array_file"] = w_array_file
+    waveform_arguments["y_array_file"] = y_array_file
+    waveform_arguments["amp_fac_real_file"] = amp_fac_real_file
+    waveform_arguments["amp_fac_imag_file"] = amp_fac_imag_file
 
-    waveform_arguments["amp_fac_real_file"] = os.path.abspath(amp_fac_real_file)
-    waveform_arguments["amp_fac_imag_file"] = os.path.abspath(amp_fac_imag_file)
-
-    #Generate Injection File
-    inject_file = gwlensing.lensing.utils.gen_inject_file(config, outdir, injection_parameters)
+    #Generate the Injection File
+    inject_file = gwlensing.lensing.utils.gen_inject_file(config, injection_parameters)
 
     #Create the bilby-pipe ini file
-    gwlensing.lensing.utils.gen_bilby_pipe_ini(config, outdir, inject_file, waveform_arguments) 
+    gwlensing.lensing.utils.gen_bilby_pipe_ini(config, inject_file, waveform_arguments)
 
-    #Run Initial bilby-pipe run 
-    subprocess.run(["bilby_pipe", config.get("bilby_setup","label")+"_bilby_pipe.ini"])
-    subprocess.run(["rm", config.get("bilby_setup","label")+"_bilby_pipe.ini"]) 
+    #Run Initial bilby-pipe run
+    bilby_pipe_ini_filename = config.get("bilby_setup", "label") + "_bilby_pipe.ini"
+    subprocess.run(["bilby_pipe", bilby_pipe_ini_filename], check=True)
 
-    #Generate final overarching dag
-    gwlensing.lensing.utils.gen_overarch_dag(config, outdir)
+    #Generate Final Overarching DAG
+    gwlensing.lensing.utils.gen_overarch_dag(config)
 
     #Message User with Submission
-    print("To submit, use \n $ condor_submit_dag " + outdir+"/submit/dag_"+config.get("bilby_setup","label")+"_overarch.submit")
+    label = config.get("bilby_setup", "label")
+    dag_file = submit_subfolder + "/dag_" + label + "_overarch.submit"
+    print("To submit, use: \n $ condor_submit_dag " + dag_file)

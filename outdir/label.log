@@ -1,0 +1,112 @@
+14:45 INFO    : Waveform generator initiated with
+  frequency_domain_source_model: gwlensing.lensing.BBH_lensed_waveform
+  time_domain_source_model: None
+  parameter_conversion: bilby.gw.conversion.convert_to_lal_binary_black_hole_parameters
+14:45 INFO    : Injected signal in H1:
+14:45 INFO    :   optimal SNR = 120.39
+14:45 INFO    :   matched filter SNR = 122.66+0.29j
+14:45 INFO    :   mass_1 = 36.0
+14:45 INFO    :   mass_2 = 29.0
+14:45 INFO    :   a_1 = 0.4
+14:45 INFO    :   a_2 = 0.3
+14:45 INFO    :   tilt_1 = 0.5
+14:45 INFO    :   tilt_2 = 1.0
+14:45 INFO    :   phi_12 = 1.7
+14:45 INFO    :   phi_jl = 0.3
+14:45 INFO    :   luminosity_distance = 410.0
+14:45 INFO    :   theta_jn = 0.4
+14:45 INFO    :   psi = 2.659
+14:45 INFO    :   phase = 1.3
+14:45 INFO    :   geocent_time = 1126259642.413
+14:45 INFO    :   ra = 1.375
+14:45 INFO    :   dec = 1.12108
+14:45 INFO    :   impact_parameter = 0.1
+14:45 INFO    :   lens_mass = 50.0
+14:45 INFO    :   lens_fractional_distance = 0.5
+14:45 INFO    :   chirp_mass = 28.09555579546043
+14:45 INFO    :   mass_ratio = 0.8055555555555556
+14:45 INFO    : Injected signal in L1:
+14:45 INFO    :   optimal SNR = 114.55
+14:45 INFO    :   matched filter SNR = 115.54+0.75j
+14:45 INFO    :   mass_1 = 36.0
+14:45 INFO    :   mass_2 = 29.0
+14:45 INFO    :   a_1 = 0.4
+14:45 INFO    :   a_2 = 0.3
+14:45 INFO    :   tilt_1 = 0.5
+14:45 INFO    :   tilt_2 = 1.0
+14:45 INFO    :   phi_12 = 1.7
+14:45 INFO    :   phi_jl = 0.3
+14:45 INFO    :   luminosity_distance = 410.0
+14:45 INFO    :   theta_jn = 0.4
+14:45 INFO    :   psi = 2.659
+14:45 INFO    :   phase = 1.3
+14:45 INFO    :   geocent_time = 1126259642.413
+14:45 INFO    :   ra = 1.375
+14:45 INFO    :   dec = 1.12108
+14:45 INFO    :   impact_parameter = 0.1
+14:45 INFO    :   lens_mass = 50.0
+14:45 INFO    :   lens_fractional_distance = 0.5
+14:45 INFO    :   chirp_mass = 28.09555579546043
+14:45 INFO    :   mass_ratio = 0.8055555555555556
+14:45 INFO    : Injected signal in V1:
+14:45 INFO    :   optimal SNR = 84.67
+14:45 INFO    :   matched filter SNR = 84.79-0.81j
+14:45 INFO    :   mass_1 = 36.0
+14:45 INFO    :   mass_2 = 29.0
+14:45 INFO    :   a_1 = 0.4
+14:45 INFO    :   a_2 = 0.3
+14:45 INFO    :   tilt_1 = 0.5
+14:45 INFO    :   tilt_2 = 1.0
+14:45 INFO    :   phi_12 = 1.7
+14:45 INFO    :   phi_jl = 0.3
+14:45 INFO    :   luminosity_distance = 410.0
+14:45 INFO    :   theta_jn = 0.4
+14:45 INFO    :   psi = 2.659
+14:45 INFO    :   phase = 1.3
+14:45 INFO    :   geocent_time = 1126259642.413
+14:45 INFO    :   ra = 1.375
+14:45 INFO    :   dec = 1.12108
+14:45 INFO    :   impact_parameter = 0.1
+14:45 INFO    :   lens_mass = 50.0
+14:45 INFO    :   lens_fractional_distance = 0.5
+14:45 INFO    :   chirp_mass = 28.09555579546043
+14:45 INFO    :   mass_ratio = 0.8055555555555556
+14:45 INFO    : Running for label 'label', output will be saved to 'outdir'
+14:45 INFO    : Using lal version 7.1.1.1
+14:45 INFO    : Using lal git version Branch: None;Tag: None;Id: 75be38a420004cc50011e268b66a7ab05f83fc2b;;Builder: Unknown User <>;Repository status: UNCLEAN: Modified working tree
+14:45 INFO    : Using lalsimulation version 2.5.0.1
+14:45 INFO    : Using lalsimulation git version Branch: None;Tag: None;Id: 75be38a420004cc50011e268b66a7ab05f83fc2b;;Builder: Unknown User <>;Repository status: UNCLEAN: Modified working tree
+14:45 INFO    : Search parameters:
+14:45 INFO    :   chirp_mass = Uniform(minimum=22, maximum=80, name='chirp_mass', latex_label='$\\mathcal{M}$', unit='$M_{\\odot}$', boundary=None)
+14:45 INFO    :   mass_ratio = Uniform(minimum=0.125, maximum=1, name='mass_ratio', latex_label='$q$', unit=None, boundary=None)
+14:45 INFO    :   a_1 = Uniform(minimum=0, maximum=0.88, name='a_1', latex_label='$a_1$', unit=None, boundary=None)
+14:45 INFO    :   a_2 = Uniform(minimum=0, maximum=0.88, name='a_2', latex_label='$a_2$', unit=None, boundary=None)
+14:45 INFO    :   tilt_1 = Sine(minimum=0, maximum=3.141592653589793, name='tilt_1', latex_label='$\\theta_1$', unit=None, boundary=None)
+14:45 INFO    :   tilt_2 = Sine(minimum=0, maximum=3.141592653589793, name='tilt_2', latex_label='$\\theta_2$', unit=None, boundary=None)
+14:45 INFO    :   phi_12 = Uniform(minimum=0, maximum=6.283185307179586, name='phi_12', latex_label='$\\Delta\\phi$', unit=None, boundary='periodic')
+14:45 INFO    :   phi_jl = Uniform(minimum=0, maximum=6.283185307179586, name='phi_jl', latex_label='$\\phi_{JL}$', unit=None, boundary='periodic')
+14:45 INFO    :   luminosity_distance = PowerLaw(alpha=2, minimum=100.0, maximum=15000, name='luminosity_distance', latex_label='$d_L$', unit='Mpc', boundary=None)
+14:45 INFO    :   dec = Cosine(minimum=-1.5707963267948966, maximum=1.5707963267948966, name='dec', latex_label='$\\mathrm{DEC}$', unit=None, boundary=None)
+14:45 INFO    :   ra = Uniform(minimum=0, maximum=6.283185307179586, name='ra', latex_label='$\\mathrm{RA}$', unit=None, boundary='periodic')
+14:45 INFO    :   theta_jn = Sine(minimum=0, maximum=3.141592653589793, name='theta_jn', latex_label='$\\theta_{JN}$', unit=None, boundary=None)
+14:45 INFO    :   phase = Uniform(minimum=0, maximum=6.283185307179586, name='phase', latex_label='$\\phi$', unit=None, boundary='periodic')
+14:45 INFO    :   lens_mass = Uniform(minimum=30, maximum=150, name='$M_{Lens}$', latex_label='$M_{Lens}$', unit=None, boundary=None)
+14:45 INFO    :   impact_parameter = Uniform(minimum=0, maximum=3.0, name='$y$', latex_label='$y$', unit=None, boundary=None)
+14:45 INFO    :   lens_fractional_distance = Uniform(minimum=0.01, maximum=0.99, name='$D_{L}$', latex_label='$D_{L}$', unit=None, boundary=None)
+14:45 INFO    :   mass_1 = Constraint(minimum=1.001398, maximum=1000, name='mass_1', latex_label='$m_1$', unit=None)
+14:45 INFO    :   mass_2 = Constraint(minimum=1.001398, maximum=1000, name='mass_2', latex_label='$m_2$', unit=None)
+14:45 INFO    :   psi = 2.659
+14:45 INFO    :   geocent_time = 1126259642.413
+14:45 INFO    : Single likelihood evaluation took 8.550e-03 s
+14:45 WARNING : Supplied argument 'nparallel' not an argument of 'Dynesty', removing.
+14:45 INFO    : Using sampler Dynesty with kwargs {'bound': 'multi', 'sample': 'rwalk', 'verbose': True, 'periodic': None, 'reflective': None, 'check_point_delta_t': 600, 'nlive': 1000, 'first_update': None, 'walks': 100, 'npdim': None, 'rstate': None, 'queue_size': 8, 'pool': None, 'use_pool': None, 'live_points': None, 'logl_args': None, 'logl_kwargs': None, 'ptform_args': None, 'ptform_kwargs': None, 'enlarge': 1.5, 'bootstrap': None, 'vol_dec': 0.5, 'vol_check': 8.0, 'facc': 0.2, 'slices': 5, 'update_interval': 600, 'print_func': <bound method Dynesty._print_func of <bilby.core.sampler.dynesty.Dynesty object at 0x7fca24d56730>>, 'dlogz': 0.1, 'maxiter': None, 'maxcall': None, 'logl_max': inf, 'add_live': True, 'print_progress': True, 'save_bounds': False, 'n_effective': None, 'maxmcmc': 5000, 'nact': 50}
+14:45 INFO    : Checkpoint every check_point_delta_t = 600s
+14:45 INFO    : Using dynesty version 1.0.1
+14:45 INFO    : Using the bilby-implemented rwalk sample method with ACT estimated walks
+14:45 INFO    : Setting up multiproccesing pool with 8 processes.
+14:45 INFO    : Resume file outdir/label_resume.pickle does not exist.
+14:45 INFO    : Generating initial points from the prior
+14:45 INFO    : Run interrupted by signal 2: checkpoint and exit on 130
+14:45 INFO    : Written checkpoint file outdir/label_resume.pickle
+14:45 INFO    : Starting to close worker pool.
+14:45 INFO    : Finished closing worker pool.
