@@ -74,15 +74,33 @@ def main():
     waveform_arguments["amp_fac_real_file"] = amp_fac_real_file
     waveform_arguments["amp_fac_imag_file"] = amp_fac_imag_file
 
-    #Generate the Injection File
-    inject_file = gwlensing.lensing.utils.gen_inject_file(config, injection_parameters)
+    #If Injecting, Generate the Injection File
+    if config.getboolean("bilby_pipe_settings", "injection"):
+        inject_file = gwlensing.lensing.utils.gen_inject_file(config, injection_parameters)
+    else:
+        inject_file = None
 
-    #Create the bilby-pipe ini file
-    gwlensing.lensing.utils.gen_bilby_pipe_ini(config, inject_file, waveform_arguments)
+    #If user specifies, perform unlensed preparation run
+    if config.getboolean("data_settings", "create_unlensed_prep_run"):
+        #Generate unlensed run ini
+        unlensed_ini = gwlensing.lensing.utils.gen_bilby_pipe_ini(
+                config=config, inject_file=inject_file,
+                waveform_arguments=waveform_arguments,
+                mode="unlensed")
 
-    #Run Initial bilby-pipe run
-    bilby_pipe_ini_filename = config.get("bilby_setup", "label") + "_bilby_pipe.ini"
-    subprocess.run(["bilby_pipe", bilby_pipe_ini_filename], check=True)
+        #Perform Initial bilby-pipe run
+        subprocess.run(["bilby_pipe", unlensed_ini], check=True)
+
+        #TODO: MODIFY PRIORS BASED ON UNLENSED RUN
+
+    #Generate Lensed Run Ini
+    lensed_ini = gwlensing.lensing.utils.gen_bilby_pipe_ini(
+            config=config, inject_file=inject_file,
+            waveform_arguments=waveform_arguments,
+            mode="lensed")
+
+    #Perform Initial bilby-pipe run
+    subprocess.run(["bilby_pipe", lensed_ini], check=True)
 
     #Generate Final Overarching DAG
     gwlensing.lensing.utils.gen_overarch_dag(config)
@@ -90,4 +108,5 @@ def main():
     #Message User with Submission
     label = config.get("bilby_setup", "label")
     dag_file = submit_subfolder + "/dag_" + label + "_overarch.submit"
-    print("To submit, use: \n $ condor_submit_dag " + dag_file)
+    print("To submit, use \n $ condor_submit_dag " + dag_file) 
+

@@ -95,8 +95,8 @@ def wy_handler(config):
     data_subdir = outdir + "/" + config.get("data_settings", "data_subdir")
 
     #Get optionally input user files
-    w_array_file = config.get("optional_input", "w_array_file", fallback="None")
-    y_array_file = config.get("optional_input", "y_array_file", fallback="None")
+    w_array_file = config.get("optional_input", "dimensionless_frequency_file", fallback="None")
+    y_array_file = config.get("optional_input", "impact_parameter_file", fallback="None")
 
     #For both dimensionless frequency and impact parameter
     #if optional input has not been given check if the file already exists in the data subdir
@@ -357,7 +357,7 @@ def gen_inject_file(config, injection_parameters):
     inject_file.close()
 
     #Run the bilby-pipe create_inject_file function
-    n_injections = config.get("bilby_setup", "n-injections")
+    n_injections = config.get("bilby_pipe_settings", "n-injections")
 
     subprocess.run(["bilby_pipe_create_injection_file", inject_filename, "--n-injection",
                     n_injections, "-f", inject_dat_filename], check=True)
@@ -366,26 +366,34 @@ def gen_inject_file(config, injection_parameters):
 
     return inject_dat_filename
 
-def gen_bilby_pipe_ini(config, inject_file, waveform_arguments):
+def gen_bilby_pipe_ini(config, inject_file, waveform_arguments, mode):
     '''
     Input:
         config - Ini configuration parser
         inject_file - Filename for the injection file
         waveform_arguments - Dictionary containing the waveform arguments
+        mode - string can either be "lensed" or "unlensed" - tells the function which kind of run
+               to generate
+
+    Output:
+        ini_filename - filename of the generated ini file
 
     Function creates a bilby_pipe style ini from the options given by the user in
     the gravelamps ini
     '''
 
     #Get the bilby_pipe ini filename and open it for writing
-    bilby_pipe_ini_filename = config.get("bilby_setup", "label") + "_bilby_pipe.ini"
+    bilby_pipe_ini_filename = config.get("bilby_setup", "label") + mode + "_bilby_pipe.ini"
     bilby_pipe_ini = open(bilby_pipe_ini_filename, "w")
 
     #Create the empty configuration dictionary
     bilby_pipe_config = dict()
 
-    #Insert the label and the output directory
-    bilby_pipe_config["label"] = config.get("bilby_setup", "label")
+    #Insert the accounting tag
+    bilby_pipe_config["accounting"] = config.get("condor_settings", "accounting")
+
+    #Insert the Label and the Output Directory
+    bilby_pipe_config["label"] = config.get("bilby_setup", "label") + mode
     bilby_pipe_config["outdir"] = config.get("bilby_setup", "outdir")
 
     #Create the detector list
@@ -393,39 +401,48 @@ def gen_bilby_pipe_ini(config, inject_file, waveform_arguments):
     detector_list = list(detectors.split(","))
     bilby_pipe_config["detectors"] = detector_list
 
+    #Include the Waveform Generator Class and Frequency Domain Source Model
+    if mode == "lensed":
+        bilby_pipe_config["waveform-generator-class"] = config.get(
+                "bilby_setup", "lensed_waveform_generator_class")
+        bilby_pipe_config["frequency-domain-source-model"] = config.get(
+                "bilby_setup", "lensed_frequency_domain_source_model")
+    elif mode == "unlensed":
+        bilby_pipe_config["waveform-generator-class"] = config.get(
+                "data_settings", "unlensed_waveformn_generator_class")
+        bilby_pipe_config["frequency-domain-source-model"] = config.get(
+                "data_settings", "unlensed_frequency_domain_source_model")
+
     #Include the duration and sampling frequency
     bilby_pipe_config["duration"] = config.get("bilby_setup", "duration")
     bilby_pipe_config["sampling_frequency"] = config.get("bilby_setup", "sampling_frequency")
 
-    #Injection settings
-    bilby_pipe_config["injection"] = config.get("bilby_pipe_settings", "injection")
-    bilby_pipe_config["injection_file"] = inject_file
-
-    #Include anything from bilby_pipe settings
+    #Include settings from bilby_pipe_settings
     for key, value in config._sections["bilby_pipe_settings"].items():
         bilby_pipe_config[key] = value
 
-    #Sampler Settings - creating dictionary from the settings
+    #If given, include injection file
+    if inject_file is not None:
+        bilby_pipe_config["injection_file"] = inject_file
+
+    #Sampler Settings - Creating Dictionary from the settings
     bilby_pipe_config["sampler"] = config.get("bilby_setup", "sampler")
+    bilby_pipe_config["sampler-kwargs"] = config._sections["sampler_settings"].copy()
 
-    sampler_kwargs_dict = dict()
-    for key, value in config._sections["sampler_settings"].items():
-        sampler_kwargs_dict[key] = value
-    bilby_pipe_config["sampler-kwargs"] = sampler_kwargs_dict
-
-    #Include the prior file
+    #Include the Prior File
     bilby_pipe_config["prior-file"] = config.get("prior_settings", "prior_file")
 
     #Include the waveform_arguments dictionary
     bilby_pipe_config["waveform_arguments_dict"] = waveform_arguments
 
-    #Create the ini configuration parser and write that to the ini file
-    bilby_pipe_configparser = ConfigParser()
-    bilby_pipe_configparser["DEFAULT"] = bilby_pipe_config
-    bilby_pipe_configparser.write(bilby_pipe_ini)
+    #Write the dictionary to the file
+    for key, value in bilby_pipe_config.items():
+        bilby_pipe_ini.write(key + " = " + value + "\n")
 
     #Close the ini file
     bilby_pipe_ini.close()
+
+    return bilby_pipe_ini_filename
 
 def gen_overarch_dag(config):
     '''
@@ -486,6 +503,9 @@ def wfgen_fd_source(waveform_generator_class_name, frequency_domain_source_model
         waveform_generator_split = waveform_generator_class_name.split(".")
         waveform_generator_module = ".".join(waveform_generator_split[:-1])
         waveform_generator_class_name = waveform_generator_split[-1]
+    elif waveform_generator_class_name in ("default", ""):
+        waveform_generator_module = "bilby.gw.waveform_generator"
+        waveform_generator_class_name = "WaveformGenerator"
     else:
         waveform_generator_module = "bilby.gw.waveform_generator"
 

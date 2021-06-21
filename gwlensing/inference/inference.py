@@ -80,10 +80,19 @@ def main():
     waveform_arguments["amp_fac_real_file"] = amp_fac_real_file
     waveform_arguments["amp_fac_imag_file"] = amp_fac_imag_file
 
+    #Get the Waveform Generator and Frequency Domain Source Model
+    lensed_waveform_generator_class = config.get("bilby_setup", "lensed_waveform_generator_class")
+    lensed_frequency_domain_source_model = config.get(
+            "bilby_setup", "lensed_frequency_domain_source_model")
+
+    lensed_waveform_generator_class, lensed_frequency_domain_source_model = (
+            gwlensing.lensing.utils.wfgen_fd_source(
+                lensed_waveform_generator_class, lensed_frequency_domain_source_model))
+
     #Generate Lensed Waveform
-    lensed_waveform_generator = gwlensing.lensing.Lensed_Waveform_Generator(
+    lensed_waveform_generator = lensed_waveform_generator_class(
         duration=duration, sampling_frequency=sampling_frequency,
-        frequency_domain_source_model=gwlensing.lensing.BBH_lensed_waveform,
+        frequency_domain_source_model=lensed_frequency_domain_source_model,
         parameter_conversion=bilby.gw.conversion.convert_to_lal_binary_black_hole_parameters,
         waveform_arguments=waveform_arguments)
 
@@ -108,17 +117,27 @@ def main():
     sampler = config.get("bilby_setup", "sampler")
     plot_corner = config.getboolean("bilby_setup", "plot_corner")
     sampler_kwargs_dict = config._sections["sampler_kwargs"].copy()
-    
+
     #Convert Sampler Settings to Ints
     for key, value in sampler_kwargs_dict.items():
         sampler_kwargs_dict[key] = int(value)
 
     #If unlensed prep run, do this
     if config.getboolean("data_settings", "create_unlensed_prep_run"):
+        #Get the Waveform Generator and Frequency Domain Source Model
+        unlensed_waveform_generator_class = config.get(
+                "data_settings", "unlensed_waveform_generator_class")
+        unlensed_frequency_domain_source_model = config.get(
+                "data_settings", "unlensed_frequency_domain_source_model")
+
+        unlensed_waveform_generator_class, unlensed_frequency_domain_source_model = (
+                gwlensing.lensing.utils.wfgen_fd_source(
+                    unlensed_waveform_generator_class, unlensed_frequency_domain_source_model))
+
         #Generate the Unlensed Waveform
-        unlensed_waveform_generator = bilby.gw.WaveformGenerator(
+        unlensed_waveform_generator = unlensed_waveform_generator_class(
             duration=duration, sampling_frequency=sampling_frequency,
-            frequency_domain_source_model=bilby.gw.source.lal_binary_black_hole,
+            frequency_domain_source_model=unlensed_frequency_domain_source_model,
             parameter_conversion=bilby.gw.conversion.convert_to_lal_binary_black_hole_parameters,
             waveform_arguments=waveform_arguments)
 
