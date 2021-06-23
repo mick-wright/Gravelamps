@@ -90,6 +90,7 @@ def main():
 
         #Perform Initial bilby-pipe run
         subprocess.run(["bilby_pipe", unlensed_ini], check=True)
+        subprocess.run(["mv", unlensed_ini, outdir+"/"+unlensed_ini], check=True)
 
         #TODO: MODIFY PRIORS BASED ON UNLENSED RUN
 
@@ -101,6 +102,7 @@ def main():
 
     #Perform Initial bilby-pipe run
     subprocess.run(["bilby_pipe", lensed_ini], check=True)
+    subprocess.run(["mv", lensed_ini, outdir+"/"+lensed_ini], check=True)
 
     #Generate Final Overarching DAG
     dag_file = gwlensing.lensing.utils.gen_overarch_dag(config)
