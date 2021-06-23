@@ -393,7 +393,7 @@ def gen_bilby_pipe_ini(config, inject_file, waveform_arguments, mode):
     bilby_pipe_config["accounting"] = config.get("condor_settings", "accounting")
 
     #Insert the Label and the Output Directory
-    bilby_pipe_config["label"] = config.get("bilby_setup", "label") + mode
+    bilby_pipe_config["label"] = config.get("bilby_setup", "label") + "_" mode
     bilby_pipe_config["outdir"] = config.get("bilby_setup", "outdir")
 
     #Create the detector list
