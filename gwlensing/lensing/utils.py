@@ -449,34 +449,50 @@ def gen_overarch_dag(config):
     Input:
         config - Ini configuration parser
 
+    Output:
+        overarch_filename - Filename for the overarching DAG submission file
+
     Function generates the overarching DAG file to submit all of the condor jobs -
     the lensing generation and the bilby pipe analysis runs
     '''
 
-    #Get the submission directory
+    #Get the Submission Directory
     outdir = config.get("bilby_setup", "outdir")
+    label = config.get("bilby_setupp", "label")
     submit_directory = outdir + "/submit"
+
+    #Get the Overarching Dag File Name and Open it for writing
+    overarch_filename = submit_directory + "/dag_" + label + "_overarch.submit"
+    overarch_dag = open(overarch_filename, "w")
 
     #Get the Lens Generation submit file
     lens_generation_subfile = submit_directory + "/generate_lens.sub"
+    lens_generation_subfile = os.path.abspath(lens_generation_subfile)
 
-    #Get the bilby-pipe dag file
-    for filename in os.listdir(submit_directory):
-        if filename.startswith("dag"):
-            bilby_pipe_dag = submit_directory + "/" + filename
+    overarch_dag.write("JOB lens_generation " + lens_generation_subfile + "\n")
 
-    #Get the filename for the overarching dag file
-    label = config.get("bilby_setup", "label")
-    overarch_filename = submit_directory + "/dag_" + label + "_overarch.submit"
+    #If there is an Unlensed Prep Run, get the unlensed dag
+    if config.getboolean("data_settings", "create_unlensed_prep_run"):
+        unlensed_dag_file = submit_directory + "dag_" + label + "_unlensed.submit"
+        unlensed_dag_file = os.path.abspath(unlensed_dag_file)
+        overarch_dag.write("SUBDAG EXTERNAL bilby_pipe_unlensed " + unlensed_dag_file + "\n")
 
-    #Open the DAG file and write it
-    overarch_dag = open(overarch_filename, "w")
+    #Write the Lensed Run
+    lensed_dag_file = submit_directory + "dag_" + label + "_lensed.submit"
+    lensed_dag_file = os.path.abspath(lensed_dag_file)
+    overarch_dag.write("SUBDAG EXTERNAL bilby_pipe_lensed " + lensed_dag_file + "\n")
 
-    overarch_dag.write("JOB lens_generation " + os.path.abspath(lens_generation_subfile) + "\n")
-    overarch_dag.write("SUBDAG EXTERNAL bilby_pipe " + os.path.abspath(bilby_pipe_dag) + "\n")
-    overarch_dag.write("PARENT lens_generation CHILD bilby_pipe")
+    #Parent-Child Linking
+    if config.getboolean("data_settings", "create_unlensed_prep_run"):
+        overarch_dag.write("PARENT lens_generation CHILD bilby_pipe_unlensed \n")
+        overarch_dag.write("PARENT bilby_pipe_unlensed CHILD bilby_pipe_lensed \n")
+    else:
+        overarch_dag.write("PARENT lens_generation CHILD bilby_pipe_lensed \n")
 
+    #Close the Overarching Dag File
     overarch_dag.close()
+
+    return overarch_filename
 
 def wfgen_fd_source(waveform_generator_class_name, frequency_domain_source_model_name):
     '''

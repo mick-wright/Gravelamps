@@ -103,10 +103,7 @@ def main():
     subprocess.run(["bilby_pipe", lensed_ini], check=True)
 
     #Generate Final Overarching DAG
-    gwlensing.lensing.utils.gen_overarch_dag(config)
+    dag_file = gwlensing.lensing.utils.gen_overarch_dag(config)
 
     #Message User with Submission
-    label = config.get("bilby_setup", "label")
-    dag_file = submit_subfolder + "/dag_" + label + "_overarch.submit"
-    print("To submit, use \n $ condor_submit_dag " + dag_file) 
-
+    print("To submit, use \n $ condor_submit_dag " + dag_file)
