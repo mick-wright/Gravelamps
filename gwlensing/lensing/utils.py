@@ -390,7 +390,7 @@ def gen_bilby_pipe_ini(config, inject_file, waveform_arguments, mode):
     bilby_pipe_config = dict()
 
     #Insert the accounting tag
-    bilby_pipe_config["accounting_group"] = config.get("condor_settings", "accounting")
+    bilby_pipe_config["accounting"] = config.get("condor_settings", "accounting_group")
 
     #Include request memory and request cpus
     bilby_pipe_config["request_cpus"] = config.get("condor_settings", "request_cpus")
