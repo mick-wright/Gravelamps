@@ -383,7 +383,7 @@ def gen_bilby_pipe_ini(config, inject_file, waveform_arguments, mode):
     '''
 
     #Get the bilby_pipe ini filename and open it for writing
-    bilby_pipe_ini_filename = config.get("bilby_setup", "label") + mode + "_bilby_pipe.ini"
+    bilby_pipe_ini_filename = config.get("bilby_setup", "label") + "_" + mode + "_bilby_pipe.ini"
     bilby_pipe_ini = open(bilby_pipe_ini_filename, "w")
 
     #Create the empty configuration dictionary
@@ -427,7 +427,7 @@ def gen_bilby_pipe_ini(config, inject_file, waveform_arguments, mode):
 
     #Sampler Settings - Creating Dictionary from the settings
     bilby_pipe_config["sampler"] = config.get("bilby_setup", "sampler")
-    bilby_pipe_config["sampler-kwargs"] = config._sections["sampler_settings"].copy()
+    bilby_pipe_config["sampler-kwargs"] = config._sections["sampler_kwargs"].copy()
 
     #Include the Prior File
     bilby_pipe_config["prior-file"] = config.get("prior_settings", "prior_file")
@@ -437,7 +437,7 @@ def gen_bilby_pipe_ini(config, inject_file, waveform_arguments, mode):
 
     #Write the dictionary to the file
     for key, value in bilby_pipe_config.items():
-        bilby_pipe_ini.write(key + " = " + value + "\n")
+        bilby_pipe_ini.write(key + " = " + str(value) + "\n")
 
     #Close the ini file
     bilby_pipe_ini.close()
