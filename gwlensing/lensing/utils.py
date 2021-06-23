@@ -409,7 +409,7 @@ def gen_bilby_pipe_ini(config, inject_file, waveform_arguments, mode):
                 "bilby_setup", "lensed_frequency_domain_source_model")
     elif mode == "unlensed":
         bilby_pipe_config["waveform-generator-class"] = config.get(
-                "data_settings", "unlensed_waveformn_generator_class")
+                "data_settings", "unlensed_waveform_generator_class")
         bilby_pipe_config["frequency-domain-source-model"] = config.get(
                 "data_settings", "unlensed_frequency_domain_source_model")
 

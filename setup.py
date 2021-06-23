@@ -15,7 +15,7 @@ setuptools.setup(
     ],
     entry_points={
         'console_scripts': ['gravelamps_local_inference=gwlensing.inference.inference:main',
-            'gravelamps_pipe_inference= wlensing.inference.inference_pipe:main'],
+            'gravelamps_pipe_inference=gwlensing.inference.inference_pipe:main'],
     },
     classifiers=[
         "Programming Language :: Python :: 3.8",
