@@ -458,7 +458,7 @@ def gen_overarch_dag(config):
 
     #Get the Submission Directory
     outdir = config.get("bilby_setup", "outdir")
-    label = config.get("bilby_setupp", "label")
+    label = config.get("bilby_setup", "label")
     submit_directory = outdir + "/submit"
 
     #Get the Overarching Dag File Name and Open it for writing
