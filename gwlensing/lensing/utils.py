@@ -282,6 +282,7 @@ def generate_lens_subfile(config, w_array_file, y_array_file, amp_fac_real_file,
 
     #Get the submission subdirectory
     outdir = config.get("bilby_setup", "outdir")
+    outdir = os.path.abspath(outdir)
     submit_directory = outdir + "/submit"
 
     #Get the lens model
@@ -313,7 +314,7 @@ def generate_lens_subfile(config, w_array_file, y_array_file, amp_fac_real_file,
     arguments = ""
 
     for argument in (w_array_file, y_array_file, amp_fac_real_file, amp_fac_imag_file):
-        to_add = argument + " "
+        to_add = os.path.abspath(argument) + " "
         arguments += to_add
     for argument in additional_lens_parameters:
         to_add = argument + " "
@@ -407,12 +408,12 @@ def gen_bilby_pipe_ini(config, inject_file, waveform_arguments, mode):
 
     #Include the Waveform Generator Class and Frequency Domain Source Model
     if mode == "lensed":
-        bilby_pipe_config["waveform-generator-class"] = config.get(
+        bilby_pipe_config["waveform-generator"] = config.get(
                 "bilby_setup", "lensed_waveform_generator_class")
         bilby_pipe_config["frequency-domain-source-model"] = config.get(
                 "bilby_setup", "lensed_frequency_domain_source_model")
     elif mode == "unlensed":
-        bilby_pipe_config["waveform-generator-class"] = config.get(
+        bilby_pipe_config["waveform-generator"] = config.get(
                 "data_settings", "unlensed_waveform_generator_class")
         bilby_pipe_config["frequency-domain-source-model"] = config.get(
                 "data_settings", "unlensed_frequency_domain_source_model")
@@ -477,12 +478,12 @@ def gen_overarch_dag(config):
 
     #If there is an Unlensed Prep Run, get the unlensed dag
     if config.getboolean("data_settings", "create_unlensed_prep_run"):
-        unlensed_dag_file = submit_directory + "dag_" + label + "_unlensed.submit"
+        unlensed_dag_file = submit_directory + "/dag_" + label + "_unlensed.submit"
         unlensed_dag_file = os.path.abspath(unlensed_dag_file)
         overarch_dag.write("SUBDAG EXTERNAL bilby_pipe_unlensed " + unlensed_dag_file + "\n")
 
     #Write the Lensed Run
-    lensed_dag_file = submit_directory + "dag_" + label + "_lensed.submit"
+    lensed_dag_file = submit_directory + "/dag_" + label + "_lensed.submit"
     lensed_dag_file = os.path.abspath(lensed_dag_file)
     overarch_dag.write("SUBDAG EXTERNAL bilby_pipe_lensed " + lensed_dag_file + "\n")
 
