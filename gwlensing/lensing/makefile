@@ -10,8 +10,8 @@ CPP = x86_64-conda-linux-gnu-g++
 CPPFLAGS = -isystem /home/michael.wright/.conda/envs/gwlensing-pipe-dev/include -fopenmp -O3 -L /home/michael.wright/.conda/envs/gwlensing-pipe-dev/lib -larb -lflint
 
 #Do for all cxx files in this folder
-CXX_FILES = $(wildcard *.cxx)
-OUT_FILES = $(CXX_FILES:%.cxx=%)
+CC_FILES = $(wildcard *.cc)
+OUT_FILES = $(CC_FILES:%.cc=%)
 BIN_DIR = $(HOME)/.local/bin
 OUT_BIN = $(OUT_FILES:%=$(BIN_DIR)/%)
 
@@ -33,7 +33,7 @@ $(BIN_DIR)/%: %.cxx
 
 #Debugging
 variables:
-	@echo CXX_FILES: $(CXX_FILES)
+	@echo CC_FILES: $(CC_FILES)
 	@echo OUT_FILES: $(OUT_FILES) 
 	@echo BIN_DIR: $(BIN_DIR)
 	@echo OUT_BIN: $(OUT_BIN) 

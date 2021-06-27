@@ -1,30 +1,48 @@
-//Header File for pointlens.cpp - a set of functions to calculate amplification factor matrices from a given set of impact parameters and dimensionless frequencies
+// Header File for pointlens.cc - a set of functions to calculate the
+// amplification factor matrices from a given set of impact parameters and
+// dimensionless frequencies
+//
+// Mick Wright 2021
 
-//Mick Wright
-//DoC: 20/01/2021 
+#ifndef GWLENSING_LENSING_POINTLENS_H_
+#define GWLENSING_LENSING_POINTLENS_H_
 
-#ifndef POINTLENS_H
-#define POINTLENS_H 
-
-#include <cmath> 
-#include "acb.h"
-#include "acb_hypgeom.h"
-#include <iostream> 
-#include <fstream> 
+#include <cmath>
+#include <iostream>
+#include <fstream>
 #include <vector>
 #include <iterator>
-#include <algorithm> 
+#include <algorithm>
+#include <utility>
 
-//Function computes the value of xm - the impact parameter divided by a length normalisation constant for the phase constant corresponding to the minimum time delay i.e. that of the image that travels the shortest path to the observer 
-double xm(double y); 
+#include "acb.h"
+#include "acb_hypgeom.h"
 
-//Function computes the value of phi - the phase constant used to obtain the minium time delay induced by the lensing
-double phi(double y); 
+// Function computes the value of xm - the impact parameter divided by a length
+// normalisation constant for the phase constant corresponding to the minimum
+// time delay i.e. that of the image that travels the shortest path to the
+// observer
+double StationaryPointMinimum(double impact_parameter);
 
-//Function computes the amplification factor for an axially symmetric point mass lens for given values of dimensionless frequency and impact parameter 
-void ampFacCalc(acb_t ampFac, double w, double y); 
+// Function computes the value of phi - the phase constant used to obtain the
+// minimum time delay induced by the lensing
+double MinTimeDelayPhaseConstant(double impact_parameter);
 
-//Function constructs two matrices containing the real and imaginary parts of the value of the amplification function based upon two vectors containing values of dimensionless frequency and impact parameter and returns these inside of a pair object
-std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>> ampFacMatrices(std::vector<double> w, std::vector<double> y); 
+// Function computes the amplification factor for an axially symmetric point
+// mass lens for given values of dimensionless frequency and impact parameter
+// with arithmetic precision given by precision
+void AmplificationFactorCalculation(acb_t amplification_factor,
+                                    double dimensionless_frequency,
+                                    double impact_parameter,
+                                    slong precision);
 
-#endif
+// Function constructs two matrices containing the real and imaginary parts of
+// the value of the amplification factor function based upon two vectors
+// containing values of dimensionless frequency and impact parameter and
+// returns these inside of a pair object
+std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
+    AmplificationFactorMatrices(std::vector<double> dimensionless_frequency,
+                                std::vector<double> impact_parameter,
+                                slong precision);
+
+#endif  // GWLENSING_LENSING_POINTLENS_H_

@@ -1,40 +1,89 @@
-#ifndef NFW_H
-#define NFW_H
+// Header File for nfwlens.cc - a set of functions to calculate the
+// amplification factor - split into real and imaginary matrices for a given
+// set of impact parameters and dimensionless frequencies
+//
+// Mick Wright 2021
+
+#ifndef GWLENSING_LENSING_NFW_H_
+#define GWLENSING_LENSING_NFW_H_
 
 #include <cmath>
-#include "acb.h" 
-#include "acb_hypgeom.h" 
-#include "acb_calc.h" 
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <iterator>
-#include <algorithm> 
+#include <algorithm>
+#include <utility>
 #include <complex>
-#include <boost/math/differentiation/finite_difference.hpp> 
 
-//Function to calculate the lensing potential 
-void acb_psi(acb_t psi, const acb_t x, acb_t ks, slong prec); 
+#include "acb.h"
+#include "acb_hypgeom.h"
+#include "acb_calc.h"
 
-//Intermediate function in calculating the amplification factor 
-void acb_k_calc(acb_t k, acb_t w, acb_t y, const acb_t x, acb_t ks, slong prec); 
+// Function computes the value of psi - the value of the lensing potential
+void LensingPotential(acb_t lensing_potential,
+                      const acb_t scaled_surface_density,
+                      acb_t scaling_constant,
+                      slong precision);
 
-//std::complex version of k - used for differentation
-std::complex<double> k_complex(double wVal, double yVal, double xVal, double ksVal); 
+// Function computes the intermediate function k(w,y,x,ks) for the
+// amplification factor calculation. The function k is given by
+// -iw*(exp[iw(y^2/2)]*J0(wy*sqrt(2x))*exp(-iw*psi(sqrt(2x),ks)))
+void IntermediateFunctionCalculation(acb_t intermediate_function_value,
+                                     acb_t dimensionless_frequency,
+                                     acb_t impact_parameter,
+                                     const acb_t integration_parameter,
+                                     acb_t scaling_constant,
+                                     slong precision);
 
-//Calculator for the Integrand in calculating the amplification factor
-int f_nfwIntegrand(acb_ptr res, const acb_t x, void * param, slong order, slong prec); 
+// Function computes the value of the integrand being integrated in the
+// amplification factor calculation. The order parameter is unused but is
+// required by the integration process
+int NfwIntegrand(acb_ptr integrand,
+                 const acb_t integration_parameter,
+                 void * parameter_set,
+                 slong order,
+                 slong precision);
 
-//Calculator for Correction Term One in calculating the amplification factor
-void acb_f2t1(acb_t termOne, acb_t w, acb_t y, acb_t upperLimitX, acb_t ks, slong prec); 
+// Function computes the value of the first correction term for the
+// amplification factor.
+void FirstCorrectionTerm(acb_t first_correction_term,
+                         acb_t dimensionless_frequency,
+                         acb_t impact_parameter,
+                         acb_t integration_upper_limit,
+                         acb_t scaling_constant,
+                         slong precision);
 
-//Calculator for Term Two in calculating the amplification factor
-void acb_f2t2(acb_t termTwo, acb_t w, acb_t y, acb_t upperLimitX, acb_t ks, slong prec); 
+// Function computes the value of the second correction term for the
+// amplification factor
+void SecondCorrectionTerm(acb_t second_correction_term,
+                          acb_t dimensionless_frequency,
+                          acb_t impact_parameter,
+                          acb_t integration_upper_limit,
+                          acb_t scaling_constant,
+                          slong precision);
 
-//Function to Calculate the amplification factor
-void ampFacCalc(acb_t ampFac, double wVal, double yVal, double ksVal, double upperLimitVal, slong prec); 
+// Function computes the amplification factor for an axially symmetric Navarro,
+// Frenk, and White (NFW) lens for given values of dimensionless frequency and
+// impact parameter with arithmetic precision given by precision. The infinite
+// integral is approximated by calculating the finite integral with upper limit
+// given by integration_upper_limit
+void AmplificationFactorCalculation(acb_t amplification_factor,
+                                    double dimensionless_frequency,
+                                    double impact_parameter,
+                                    double scaling_constant,
+                                    double integration_upper_limit,
+                                    slong precision);
 
-//Function to Construct the Amplification Factor Files
-std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>> ampFacMatrices(std::vector<double> w, std::vector<double> y, double ksVal, double upperLimitVal, slong prec);
+// Function constructs two matrices containing the real and imaginary parts of
+// the value of the amplification factor function based upon two vectors
+// containing values of dimensionless frequency and impact parameter and
+// returns these inside of a pair object
+std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
+    AmplificationFactorMatrices(std::vector<double> dimensionless_frequency,
+                                std::vector<double> impact_parameter,
+                                double scaling_constant,
+                                double integration_upper_limit,
+                                slong precision);
 
-#endif 
+#endif  // GWLENSING_LENSING_NFW_H_
