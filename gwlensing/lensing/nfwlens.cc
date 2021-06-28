@@ -573,7 +573,7 @@ std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
     acb_t amplification_factor;
     acb_init(amplification_factor);
 
-    #pragma omp parallel for collapse(2) schedule(dynamnic)
+    #pragma omp parallel for collapse(2) schedule(dynamic)
     for (int i=0; i < impact_parameter_size; i++) {
         for (int j=0; j < dimensionless_frequency_size; j++) {
             AmplificationFactorCalculation(amplification_factor,
