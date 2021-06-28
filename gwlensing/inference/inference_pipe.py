@@ -69,10 +69,10 @@ def main():
             config, w_array_file, y_array_file, mode="pipe")
 
     #Add Files to the Waveform Arguments
-    waveform_arguments["w_array_file"] = w_array_file
-    waveform_arguments["y_array_file"] = y_array_file
-    waveform_arguments["amp_fac_real_file"] = amp_fac_real_file
-    waveform_arguments["amp_fac_imag_file"] = amp_fac_imag_file
+    waveform_arguments["w_array_file"] = os.path.abspath(w_array_file)
+    waveform_arguments["y_array_file"] = os.path.abspath(y_array_file)
+    waveform_arguments["amp_fac_real_file"] = os.path.abspath(amp_fac_real_file)
+    waveform_arguments["amp_fac_imag_file"] = os.path.abspath(amp_fac_imag_file)
 
     #If Injecting, Generate the Injection File
     if config.getboolean("bilby_pipe_settings", "injection"):
