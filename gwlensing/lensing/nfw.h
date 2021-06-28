@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <utility>
 #include <complex>
+#include <string>
 
 #include "acb.h"
 #include "acb_hypgeom.h"

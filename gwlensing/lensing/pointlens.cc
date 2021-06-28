@@ -146,7 +146,7 @@ std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
         std::vector<double> (dimensionless_frequency_size));
     std::vector<std::vector<double>> amplification_factor_imag(
         impact_parameter_size,
-        std::vector<double> (impact_parameter_size));
+        std::vector<double> (dimensionless_frequency_size));
 
     // Create the loop that goes through the structures to generate the
     // amplification factor values for the dimensionless frequency and impact

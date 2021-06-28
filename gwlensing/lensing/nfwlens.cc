@@ -563,7 +563,7 @@ std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
         std::vector<double>(dimensionless_frequency_size));
     std::vector<std::vector<double>> amp_fac_imag(
         impact_parameter_size,
-        std::vector<double>(impact_parameter_size));
+        std::vector<double>(dimensionless_frequency_size));
 
     // Construct the main loop - looping through the dimensionless frequency
     // and impact parameter values to calculate the amplification factor value

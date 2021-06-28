@@ -14,6 +14,7 @@
 #include <iterator>
 #include <algorithm>
 #include <utility>
+#include <string>
 
 #include "acb.h"
 #include "acb_hypgeom.h"
