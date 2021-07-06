@@ -454,6 +454,10 @@ void AmplificationFactorCalculation(acb_t amplification_factor,
     acb_t impact_parameter_acb;
     acb_t scaling_constant_acb;
 
+    acb_init(dimensionless_frequency_acb);
+    acb_init(impact_parameter_acb);
+    acb_init(scaling_constant_acb);
+
     acb_set_d(dimensionless_frequency_acb, dimensionless_frequency);
     acb_set_d(impact_parameter_acb, impact_parameter);
     acb_set_d(scaling_constant_acb, scaling_constant);
@@ -533,6 +537,7 @@ void AmplificationFactorCalculation(acb_t amplification_factor,
             precision);
 
     // Memory Management - clear the acbs declared in the function
+    //
     acb_clear(dimensionless_frequency_acb);
     acb_clear(impact_parameter_acb);
     acb_clear(scaling_constant_acb);
@@ -570,18 +575,19 @@ std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
     // for the given combination and storing the real and imaginary parts
     // inside of the matrices. Scheduler is dynamic because the amount of time
     // necessary to calculate the value is not static over the range of values
-    acb_t amplification_factor;
-    acb_init(amplification_factor);
 
     #pragma omp parallel for collapse(2) schedule(dynamic)
     for (int i=0; i < impact_parameter_size; i++) {
         for (int j=0; j < dimensionless_frequency_size; j++) {
+            acb_t amplification_factor;
+            acb_init(amplification_factor);
             AmplificationFactorCalculation(amplification_factor,
                                            dimensionless_frequency[j],
                                            impact_parameter[i],
                                            scaling_constant,
                                            integration_upper_limit,
                                            precision);
+	    std::cout << j << " completed" << std::endl;
             amp_fac_real[i][j] = arf_get_d(
                 arb_midref(acb_realref(amplification_factor)), ARF_RND_NEAR);
             amp_fac_imag[i][j] = arf_get_d(
