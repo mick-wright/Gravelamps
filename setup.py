@@ -1,8 +1,8 @@
 import setuptools
 
 setuptools.setup(
-    name="gwlensing",
-    version="0.2.0",
+    name="Gravelamps",
+    version="0.3.0",
     author="Mick Wright",
     author_email="m.wright.3@research.gla.ac.uk",
     description="Suite of tools to simulate lensed gravitational wave signals and perform parameter estimation on them using bilby",
@@ -13,10 +13,9 @@ setuptools.setup(
         "gwlensing.inference",
         "gwlensing.lensing"
     ],
-    entry_points = {
-        'console_scripts': ['gwlensing_inference=gwlensing.inference.inference:main',
-        'gwlensing_inference_pipe = gwlensing.inference.inference_pipe:main', 
-        ],
+    entry_points={
+        'console_scripts': ['gravelamps_local_inference=gwlensing.inference.inference:main',
+            'gravelamps_pipe_inference=gwlensing.inference.inference_pipe:main'],
     },
     classifiers=[
         "Programming Language :: Python :: 3.8",

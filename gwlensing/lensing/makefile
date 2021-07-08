@@ -10,8 +10,8 @@ CPP = g++
 CPPFLAGS = -fopenmp -O3 -larb -lflint
 
 #Do for all cxx files in this folder
-CXX_FILES = $(wildcard *.cxx)
-OUT_FILES = $(CXX_FILES:%.cxx=%)
+CC_FILES = $(wildcard *.cc)
+OUT_FILES = $(CC_FILES:%.cc=%)
 BIN_DIR = $(HOME)/.local/bin
 OUT_BIN = $(OUT_FILES:%=$(BIN_DIR)/%)
 
@@ -24,16 +24,16 @@ bin_only: $(OUT_BIN)
 #Make All Lens Program is user directory only:
 user_only: $(OUT_FILES) 
 
-#Rule for Compiling the .cxx source codes
-%: %.cxx
+#Rule for Compiling the .cc source codes
+%: %.cc
 	$(CPP) -o $@ $< $(CPPFLAGS)
 
-$(BIN_DIR)/%: %.cxx 
+$(BIN_DIR)/%: %.cc
 	$(CPP) -o $@ $< $(CPPFLAGS) 
 
 #Debugging
 variables:
-	@echo CXX_FILES: $(CXX_FILES)
+	@echo CC_FILES: $(CC_FILES)
 	@echo OUT_FILES: $(OUT_FILES) 
 	@echo BIN_DIR: $(BIN_DIR)
 	@echo OUT_BIN: $(OUT_BIN) 
