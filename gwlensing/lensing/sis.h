@@ -18,10 +18,39 @@
 
 #include "acb.h"
 #include "acb_hypgeom.h"
+#include "acb_calc.h"
 
-// Function computes the value of phi - the phase constant used to obtain the
-// minimum time delay induced by the lensing
-double MinTimeDelayPhaseConstant(double impact_parameter);
+// Function computes the value of the intermediate function k(w,y,z) for the
+// amplification factor calculation.
+void IntermediateFunctionCalculation(acb_t intermediate_function_value,
+                                     acb_t dimensionless_frequency,
+                                     acb_t impact_parameter,
+                                     const acb_t integration_parameter,
+                                     slong precision);
+
+// Function computes teh value of the integrand being integrated in the
+// amplification factor calculation
+int SisIntegrand(acb_ptr integrand,
+                 const acb_t integration_parameter,
+                 void * parameter_set,
+                 slong order,
+                 slong precision);
+
+// Function computes the value of the first correction term for the
+// amplification factor
+void FirstCorrectionTerm(acb_t first_correction_term,
+                         acb_t dimensionless_frequency,
+                         acb_t impact_parameter,
+                         acb_t integration_upper_limit,
+                         slong precision);
+
+// Function computes the value of the second correction term for the
+// amplification factor calculation
+void SecondCorrectionTerm(acb_t second_correction_term,
+                          acb_t dimensionless_frequency,
+                          acb_t impact_parameter,
+                          acb_t integration_upper_limit,
+                          slong precision);
 
 // Function computesthe amplification factor for an axially symmetric singular
 // isothermal sphere (SIS) lens for given values of dimensionless frequency and
@@ -30,7 +59,7 @@ double MinTimeDelayPhaseConstant(double impact_parameter);
 void AmplificationFactorCalculation(acb_t amplification_factor,
                                     double dimensionless_frequency,
                                     double impact_parameter,
-                                    int sum_threshold,
+                                    double integration_upper_limit,
                                     slong precision);
 
 // Function constructs two matrices containing the real and imaginary parts of
@@ -40,7 +69,7 @@ void AmplificationFactorCalculation(acb_t amplification_factor,
 std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
     AmplificationFactorMatrices(std::vector<double> dimensionless_frequency,
                                 std::vector<double> impact_parameter,
-                                int sum_threshold,
+                                double integration_upper_limit,
                                 slong precision);
 
 #endif  // GWLENSING_LENSING_SIS_H_
