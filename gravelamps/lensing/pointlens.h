@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <utility>
 #include <string>
+#include <complex>
 
 #include "acb.h"
 #include "acb_hypgeom.h"
@@ -30,12 +31,25 @@ double StationaryPointMinimum(double impact_parameter);
 double MinTimeDelayPhaseConstant(double impact_parameter);
 
 // Function computes the amplification factor for an axially symmetric point
-// mass lens for given values of dimensionless frequency and impact parameter
-// with arithmetic precision given by precision
+// mass lens with full wave optics for given values of dimensionless frequency
+// and impact parameter with arithmetic precision given by precision
 void AmplificationFactorCalculation(acb_t amplification_factor,
                                     double dimensionless_frequency,
                                     double impact_parameter,
                                     slong precision);
+
+// Function computes the magnification for the geometric optics approximation
+// with the plus and minus images given by the state of mode
+double Magnification(double impact_parameter, int mode);
+
+// Function computes the time delay for the geometric optics approximation
+double TimeDelay(double impact_parameter);
+
+// Function computes the amplification factor for an axially symmetric point
+// mass lens using the geometric optics approximation for given values of
+// dimensionless frequency and impact parameter
+std::complex<double> AmplificationFactorGeometric(
+    double dimensionless_frequency, double impact_parameter);
 
 // Function constructs two matrices containing the real and imaginary parts of
 // the value of the amplification factor function based upon two vectors
