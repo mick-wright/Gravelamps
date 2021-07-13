@@ -238,7 +238,7 @@ std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
     }
 
     // Create the loop that goes through and calculates the amplification
-    // facotr values over which they will be calculated using the geometric
+    // factor values over which they will be calculated using the geometric
     // optics approximations
     if (approx_switch < dimensionless_frequency_size) {
         #pragma omp parallel for collapse(2) schedule(dynamic)
@@ -265,7 +265,7 @@ std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
     return amplification_factor_matrices;
 }
 
-// Main Function - this takes in five arguments:
+// Main Function - this takes in six arguments:
 //    dimensionless_frequency_file - input file contianing dimensionless
 //                                   frequency values
 //    impact_parameter_file - input file containing impact parameter values

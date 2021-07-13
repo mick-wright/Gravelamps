@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <utility>
 #include <string>
+#include <complex>
 
 #include "acb.h"
 #include "acb_hypgeom.h"
@@ -62,6 +63,12 @@ void AmplificationFactorCalculation(acb_t amplification_factor,
                                     double integration_upper_limit,
                                     slong precision);
 
+// Function computes the amplification factor for an axially symmetric singular
+// isothermal sphere (SIS) style lens using the geometric optics approximation
+// for given values of dimensionless frequency and impact parameter
+std::complex<double> AmplificationFactorGeometric(
+    double dimensionless_frequency, double impact_parameter);
+
 // Function constructs two matrices containing the real and imaginary parts of
 // the value of the amplification factor function based upon two vectors
 // containing values of dimensionless frequency and impact parameter and
@@ -70,6 +77,7 @@ std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
     AmplificationFactorMatrices(std::vector<double> dimensionless_frequency,
                                 std::vector<double> impact_parameter,
                                 double integration_upper_limit,
-                                slong precision);
+                                slong precision,
+                                slong approx_switch);
 
 #endif  // GRAVELAMPS_LENSING_SIS_H_
