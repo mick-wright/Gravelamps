@@ -313,10 +313,10 @@ void SecondCorrectionTerm(acb_t second_correction_term,
 }
 
 // Function computes the amplification factor for an axially symmetric Singular
-// Isothermal Sphere (SIS) lens for given values of dimensionless frequency and
-// impact parameter with arithmetic precision given by precision. The infinite
-// integral is approximated by calculating the finite integral with upper limit
-// given by integration_upper_limit
+// Isothermal Sphere (SIS) lens using full wave optics for given values of
+// dimensionless frequency and impact parameter with arithmetic precision given
+// by precision. The infinite integral is approximated by calculating the
+// finite integral with upper limit given by integration_upper_limit.
 void AmplificationFactorCalculation(acb_t amplification_factor,
                                     double dimensionless_frequency,
                                     double impact_parameter,
@@ -331,7 +331,7 @@ void AmplificationFactorCalculation(acb_t amplification_factor,
     // calculations
     acb_t dimensionless_frequency_acb;
     acb_t impact_parameter_acb;
-    
+
     acb_init(dimensionless_frequency_acb);
     acb_init(impact_parameter_acb);
 
@@ -423,7 +423,7 @@ void AmplificationFactorCalculation(acb_t amplification_factor,
 
 // Function computes the amplification factor for an axially symmetric singular
 // isothermal sphere (SIS) style lens using the geometric optics approximation
-// for given values fo dimensionless frequency and impact parameter
+// for given values of dimensionless frequency and impact parameter
 std::complex<double> AmplificationFactorGeometric(
     double dimensionless_frequency, double impact_parameter) {
     // Using the complex_literals i operator

@@ -54,9 +54,10 @@ void SecondCorrectionTerm(acb_t second_correction_term,
                           slong precision);
 
 // Function computesthe amplification factor for an axially symmetric singular
-// isothermal sphere (SIS) lens for given values of dimensionless frequency and
-// impact parameter with arithmetic precision given by precision. The infinte
-// sum is calculated to an upper value given by sum_threshold
+// isothermal sphere (SIS) lens using full wave optics for given values of
+// dimensionless frequency and impact parameter with arithmetic precision given
+// by precision. The infinte integral is calculated up to a finite limit given
+// by integration_upper_limit.
 void AmplificationFactorCalculation(acb_t amplification_factor,
                                     double dimensionless_frequency,
                                     double impact_parameter,
