@@ -66,6 +66,9 @@ void LensingPotential(acb_t lensing_potential,
         acb_atanh(lensing_potential_trig_term,
                   lensing_potential_trig_term,
                   precision);
+	acb_sqr(lensing_potential_trig_term,
+                lensing_potential_trig_term,
+                precision);
         acb_neg(lensing_potential_trig_term, lensing_potential_trig_term);
     } else {
         // If greater than one the value of the trigonometric term is given by
@@ -428,7 +431,7 @@ void IntermediateFunctionCalculation(acb_t intermediate_function_value,
                                      acb_t impact_parameter,
                                      const acb_t integration_parameter,
                                      acb_t scaling_constant,
-                                     double minimum_phase,
+				     double minimum_phase,
                                      slong precision) {
     // Initialise the components of the function - as can be seen there are
     // four - a prefactor (-iw), a first expontential term (exp(iw*(y^2/2))), a
@@ -446,14 +449,14 @@ void IntermediateFunctionCalculation(acb_t intermediate_function_value,
 
     // In addition, we need to initalise a zero and a two value for use in the
     // calculations
-    acb_t zero;
     acb_t two;
+    acb_t zero;
 
     acb_init(zero);
     acb_init(two);
 
+    acb_set_d(two, 2.);
     acb_zero(zero);
-    acb_set_d(two, 2);
 
     // Finally we need to calculate phimin - the phase required for a minimum
     // time delay of zero;
@@ -479,7 +482,7 @@ void IntermediateFunctionCalculation(acb_t intermediate_function_value,
     acb_mul_onei(first_exponential_term, first_exponential_term);
     acb_exp(first_exponential_term, first_exponential_term, precision);
 
-    // Construct the Bessel Term
+    // Construct the bessel term
     acb_mul(bessel_term, two, integration_parameter, precision);
     acb_sqrt(bessel_term, bessel_term, precision);
     acb_mul(bessel_term, bessel_term, impact_parameter, precision);
@@ -487,7 +490,7 @@ void IntermediateFunctionCalculation(acb_t intermediate_function_value,
     acb_hypgeom_bessel_j(bessel_term, zero, bessel_term, precision);
 
     // Construct the second exponential term
-    acb_mul(second_exponential_term, two, integration_parameter, precision);
+    acb_mul(second_exponential_term, integration_parameter, two, precision);
     acb_sqrt(second_exponential_term, second_exponential_term, precision);
     LensingPotential(second_exponential_term,
                      second_exponential_term,
@@ -519,8 +522,8 @@ void IntermediateFunctionCalculation(acb_t intermediate_function_value,
     // Memory Management - clear up the declared acbs
     acb_clear(prefactor);
     acb_clear(first_exponential_term);
-    acb_clear(bessel_term);
     acb_clear(second_exponential_term);
+    acb_clear(bessel_term);
     acb_clear(zero);
     acb_clear(two);
     acb_clear(minimum_phase_acb);
@@ -770,8 +773,8 @@ void AmplificationFactorCalculation(acb_t amplification_factor,
                                     double integration_upper_limit,
                                     slong precision) {
     // Calculate the minimum time delay phase
-    double minimum_phase = std::real(MinTimeDelayPhase(impact_parameter,
-                                                       scaling_constant));
+    double minimum_phase = real(MinTimeDelayPhase(impact_parameter,
+                                                  scaling_constant));
 
     // The integrand function requires that the lensing parameters be passed to
     // it in the form of a single vector
@@ -798,18 +801,18 @@ void AmplificationFactorCalculation(acb_t amplification_factor,
     // the precision specified
     slong goal = precision;
 
-    mag_t tolerance;
-    mag_set_ui_2exp_si(tolerance, 1, -1*precision);
+    mag_t tol;
+    mag_set_ui_2exp_si(tol, 1, -1.*precision);
 
     // Integration options - these are set such that the precision changes the
     // depth limit as 128 times the precision, and the evaluation limit as the
     // cube of the precision
-    acb_calc_integrate_opt_t integration_options;
-    acb_calc_integrate_opt_init(integration_options);
+    acb_calc_integrate_opt_t options;
+    acb_calc_integrate_opt_init(options);
 
-    integration_options -> use_heap = 1;
-    integration_options -> depth_limit = 128 * precision;
-    integration_options -> eval_limit = precision*precision*precision;
+    options -> use_heap = 1;
+    options -> depth_limit = 128*precision;
+    options -> eval_limit = precision*precision*precision;
 
     // Create acbs for the lower and upper limits of the integration. The
     // lower limit of the integration should be zero, however, the calculation
@@ -833,11 +836,9 @@ void AmplificationFactorCalculation(acb_t amplification_factor,
                        lower_limit,
                        upper_limit,
                        goal,
-                       tolerance,
-                       integration_options,
+                       tol,
+                       options,
                        precision);
-
-    acb_printn(integration_term, 50, 0); flint_printf("\n");
 
     // Calculate the first correction term
     acb_t first_correction_term;
