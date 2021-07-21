@@ -66,7 +66,7 @@ void LensingPotential(acb_t lensing_potential,
         acb_atanh(lensing_potential_trig_term,
                   lensing_potential_trig_term,
                   precision);
-	acb_sqr(lensing_potential_trig_term,
+        acb_sqr(lensing_potential_trig_term,
                 lensing_potential_trig_term,
                 precision);
         acb_neg(lensing_potential_trig_term, lensing_potential_trig_term);
@@ -166,7 +166,8 @@ std::complex<double> TimeDelayPartial(double scaled_surface_density,
 }
 
 // Function computes the minimum time delay phase
-std::complex<double> MinTimeDelayPhase(double impact_parameter, double scaling_constant) {
+std::complex<double> MinTimeDelayPhase(double impact_parameter,
+                                       double scaling_constant) {
     // Starting at zero, look for the first minimum in a step size of 0.0001
     double test_value = 0;
     double step_size = 0.0001;
@@ -431,7 +432,7 @@ void IntermediateFunctionCalculation(acb_t intermediate_function_value,
                                      acb_t impact_parameter,
                                      const acb_t integration_parameter,
                                      acb_t scaling_constant,
-				     double minimum_phase,
+                                     double minimum_phase,
                                      slong precision) {
     // Initialise the components of the function - as can be seen there are
     // four - a prefactor (-iw), a first expontential term (exp(iw*(y^2/2))), a
@@ -905,8 +906,6 @@ std::complex<double> AmplificationFactorGeometric(
     double minimum_phase = std::real(MinTimeDelayPhase(impact_parameter,
                                                        scaling_constant));
 
-    std::cout << minimum_phase << std::endl;
-
     // The amplification factor is constructed as the sum of
     // sqrt(u(xj, ks)) * exp(iw*Tj - I*pi*nj(xj, ks) for each image
     // position
@@ -922,7 +921,7 @@ std::complex<double> AmplificationFactorGeometric(
         // Compute the Magnification
         std::complex<double> magnification = Magnification(image_positions[i],
                                                            scaling_constant);
-	magnification = abs(magnification);
+        magnification = abs(magnification);
 
         // Calculate the morse phase for the image position. This is based on
         // the surface density for the position.
