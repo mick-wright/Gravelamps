@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="Gravelamps",
-    version="0.4.0",
+    version="0.5.0",
     author="Mick Wright",
     author_email="m.wright.3@research.gla.ac.uk",
     description="Suite of tools to simulate lensed gravitational wave signals and perform parameter estimation on them using bilby",

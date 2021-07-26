@@ -12,6 +12,7 @@ import sys
 
 from configparser import ConfigParser
 
+import numpy as np
 import bilby
 
 import gravelamps.lensing
