@@ -27,8 +27,8 @@ double MinTimeDelayPhaseConstant(double impact_parameter) {
 }
 
 // Function computes the amplification factor for an axially symmetric point
-// mass lens for given values of dimensionless frequency and impact parameter
-// with arithemtic precision given by precision
+// mass lens using full wave optics for given values of dimensionless frequency
+// and impact parameter with arithmetic precision given by precision
 void AmplificationFactorCalculation(acb_t amplification_factor,
                                     double dimensionless_frequency,
                                     double impact_parameter,
@@ -128,6 +128,71 @@ void AmplificationFactorCalculation(acb_t amplification_factor,
     acb_clear(exponential_gamma);
 }
 
+// Function computes the mangification for the geometric optics approximation
+// with the plus and minus images given by the state of mode. This is given by
+// 1/2 +- (y^2 + 2)/(2y * sqrt(y^2 + 4)). Mode determines plus or minus
+double Magnification(double impact_parameter, int mode) {
+    double magnification = 1./2.;
+    double second_term_numerator = impact_parameter*impact_parameter + 2;
+    double second_term_denominator = 2 * impact_parameter * sqrt(
+        impact_parameter * impact_parameter + 4);
+    double second_term = second_term_numerator/second_term_denominator;
+
+    if (mode == 1) {
+        magnification += second_term;
+    } else {
+        magnification -= second_term;
+    }
+
+    return magnification;
+}
+
+// Function computes the time delay for the geometric optics approximation.
+// This is given by:
+// y * (sqrt(y^2 + 4)/2) + ln((sqrt(y^2+4)+y)/(sqrt(y^2+4)-y))
+double TimeDelay(double impact_parameter) {
+    double first_term = impact_parameter;
+    double first_term_numerator = sqrt(impact_parameter*impact_parameter + 4);
+    first_term *= first_term_numerator/2.;
+
+    double second_term_numerator = first_term_numerator + impact_parameter;
+    double second_term_denominator = first_term_numerator - impact_parameter;
+    double second_term = log(second_term_numerator/second_term_denominator);
+
+    double time_delay = first_term + second_term;
+
+    return time_delay;
+}
+
+// Function computes the amplification factor for an axially symmetric point
+// mass lens using the geometric optics approximation for given values of
+// dimensionless frequency and impact parameter
+std::complex<double> AmplificationFactorGeometric(
+    double dimensionless_frequency, double impact_parameter) {
+    // Using the complex_literals i operator
+    using std::literals::complex_literals::operator""i;
+
+    // First compute the magnifications
+    double magnification_plus = Magnification(impact_parameter, 1);
+    double magnification_minus = Magnification(impact_parameter, 0);
+
+    // Compute the Time Delay
+    double time_delay = TimeDelay(impact_parameter);
+
+    // Calculate the exponential term
+    double exponent_imag  = dimensionless_frequency * time_delay;
+    std::complex<double> exp_term = 1i * exponent_imag;
+    exp_term = exp(exp_term);
+
+    // Construct the final amplification factor
+    double first_term = sqrt(abs(magnification_plus));
+    std::complex<double> second_term =
+        sqrt(abs(magnification_minus)) * exp_term;
+    std::complex<double> geometric_factor = first_term - 1i * second_term;
+
+    return geometric_factor;
+}
+
 // Function constructs two matrices containing the real and imaginary parts of
 // the value of the amplification factor function based upon two vectors
 // containing values of dimensionless frequency and impact parameters. It
@@ -135,7 +200,8 @@ void AmplificationFactorCalculation(acb_t amplification_factor,
 std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
     AmplificationFactorMatrices(std::vector<double> dimensionless_frequency,
                                 std::vector<double> impact_parameter,
-                                slong precision) {
+                                slong precision,
+                                int approx_switch) {
     // Get the size of the vectors
     int impact_parameter_size = impact_parameter.size();
     int dimensionless_frequency_size = dimensionless_frequency.size();
@@ -148,15 +214,15 @@ std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
         impact_parameter_size,
         std::vector<double> (dimensionless_frequency_size));
 
-    // Create the loop that goes through the structures to generate the
-    // amplification factor values for the dimensionless frequency and impact
-    // parameter combinations. This loop is performed in parallel and using
-    // the dynamic method - this is because the amount of time that will be
-    // spent on each calculation is not equal
+    // Create the loop that goes through and calculates the amplification
+    // factor values over which the amplification factor values will be
+    // calculated through the full wave optics calculations. The schedule
+    // here is dynamic due to the fact that the calculation takes differing
+    // amounts of time at differing points
     #pragma omp parallel for collapse(2) schedule(dynamic)
 
     for (int i=0; i < impact_parameter_size; i++) {
-        for (int j=0; j < dimensionless_frequency_size; j++) {
+        for (int j=0; j < approx_switch; j++) {
             acb_t amplification_factor;
             acb_init(amplification_factor);
             AmplificationFactorCalculation(amplification_factor,
@@ -171,6 +237,24 @@ std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
         }
     }
 
+    // Create the loop that goes through and calculates the amplification
+    // factor values over which they will be calculated using the geometric
+    // optics approximations
+    if (approx_switch < dimensionless_frequency_size) {
+        #pragma omp parallel for collapse(2) schedule(dynamic)
+        for (int i=0; i < impact_parameter_size; i++) {
+            for (int j=approx_switch; j < dimensionless_frequency_size; j++) {
+                std::complex<double> geometric_factor;
+                geometric_factor =
+                    AmplificationFactorGeometric(dimensionless_frequency[j],
+                                                 impact_parameter[i]);
+
+                amplification_factor_real[i][j] = std::real(geometric_factor);
+                amplification_factor_imag[i][j] = std::imag(geometric_factor);
+            }
+        }
+    }
+
     // Wrap the amplification factor real and imaginary parts into a single
     // pair object and return it
     std::pair<std::vector<std::vector<double>>,
@@ -181,7 +265,7 @@ std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
     return amplification_factor_matrices;
 }
 
-// Main Function - this takes in five arguments:
+// Main Function - this takes in six arguments:
 //    dimensionless_frequency_file - input file contianing dimensionless
 //                                   frequency values
 //    impact_parameter_file - input file containing impact parameter values
@@ -191,6 +275,9 @@ std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
 //                                     parts of the amplification factor values
 //    precision - integer value to be used as the arithmetic precision in the
 //                amplification factor calculations
+//    approx_switch - integer value which is the location in the dimensionless
+//                    frequency array where the geometric optics location
+//                    should take over
 //
 // Function takes in a dimensionless frequency and impact parmaeter file each
 // containing a vector of numbers which it will then generate a matrix of
@@ -205,6 +292,10 @@ int main(int argc, char* argv[]) {
 
     // Read in the precision value
     slong precision = atoi(argv[5]);
+
+    // Read in the position where the geometric optics approximation
+    // will take over
+    slong approx_switch = atoi(argv[6]);
 
     // For each of the dimensionless frequency and impact parmaeter files
     // open the file for reading, generate an iterator object which will get
@@ -223,7 +314,7 @@ int main(int argc, char* argv[]) {
     std::pair<std::vector<std::vector<double>>,
               std::vector<std::vector<double>>> amp_fac_matrices;
     amp_fac_matrices = AmplificationFactorMatrices(
-        dimensionless_frequency, impact_parameter, precision);
+        dimensionless_frequency, impact_parameter, precision, approx_switch);
 
     // Open the amplification factor files for writing
     std::ofstream amp_fac_real_fstream(amplification_factor_real_file);

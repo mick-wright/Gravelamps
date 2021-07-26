@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <utility>
 #include <string>
+#include <complex>
 
 #include "acb.h"
 #include "acb_hypgeom.h"
@@ -53,14 +54,21 @@ void SecondCorrectionTerm(acb_t second_correction_term,
                           slong precision);
 
 // Function computesthe amplification factor for an axially symmetric singular
-// isothermal sphere (SIS) lens for given values of dimensionless frequency and
-// impact parameter with arithmetic precision given by precision. The infinte
-// sum is calculated to an upper value given by sum_threshold
+// isothermal sphere (SIS) lens using full wave optics for given values of
+// dimensionless frequency and impact parameter with arithmetic precision given
+// by precision. The infinte integral is calculated up to a finite limit given
+// by integration_upper_limit.
 void AmplificationFactorCalculation(acb_t amplification_factor,
                                     double dimensionless_frequency,
                                     double impact_parameter,
                                     double integration_upper_limit,
                                     slong precision);
+
+// Function computes the amplification factor for an axially symmetric singular
+// isothermal sphere (SIS) style lens using the geometric optics approximation
+// for given values of dimensionless frequency and impact parameter
+std::complex<double> AmplificationFactorGeometric(
+    double dimensionless_frequency, double impact_parameter);
 
 // Function constructs two matrices containing the real and imaginary parts of
 // the value of the amplification factor function based upon two vectors
@@ -70,6 +78,7 @@ std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
     AmplificationFactorMatrices(std::vector<double> dimensionless_frequency,
                                 std::vector<double> impact_parameter,
                                 double integration_upper_limit,
-                                slong precision);
+                                slong precision,
+                                slong approx_switch);
 
 #endif  // GRAVELAMPS_LENSING_SIS_H_

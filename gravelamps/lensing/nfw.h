@@ -16,6 +16,9 @@
 #include <utility>
 #include <complex>
 #include <string>
+#include <functional>
+
+#include <boost/math/tools/roots.hpp>
 
 #include "acb.h"
 #include "acb_hypgeom.h"
@@ -27,6 +30,57 @@ void LensingPotential(acb_t lensing_potential,
                       acb_t scaling_constant,
                       slong precision);
 
+std::complex<double> LensingPotential(double scaled_surface_density,
+                                      double scaling_constant);
+
+// Function computes the first two terms of the time delay function for
+// finding the minimum which yields the phase guage needed
+std::complex<double> TimeDelayPartial(double scaled_surface_density,
+                                      double impact_parameter,
+                                      double scaling_constant);
+
+// Function computes the phase needed for a minimum time delay of zero
+std::complex<double> MinTimeDelayPhase(double impact_parameter,
+                                       double scaling_constant);
+
+// Function computes the lens equation value
+double LensEquation(double scaled_surface_density,
+                    double impact_parameter,
+                    double scaling_constant);
+
+// Function computes the image position for a given impact parameter by means
+// of root finding the lens equation, looking for the negative root,
+// the positive root, and a root near zero
+std::vector<double> ImagePositions(double impact_parameter,
+                                   double scaling_constant);
+
+// Function computes the time delay for a given image position and impact
+// parameter and minimum phase delay. This is the complete version of the
+// above partial function
+std::complex<double> TimeDelay(double image_position,
+                               double impact_parameter,
+                               double scaling_constant,
+                               double phase_minimum);
+
+// Function computes the NFW mass for a given image position and scaling
+// constant
+std::complex<double> ImagePositionMass(double image_position,
+                                       double scaling_constant);
+
+// Function computes the surface density for a given image position and
+// scaling constant
+std::complex<double> SurfaceDensity(double image_position,
+                                    double scaling_constant);
+
+// Function computes the determinant of the matrix used to calculate the
+// magnification
+std::complex<double> MatrixDeterminant(double image_position,
+                         double scaling_constant);
+
+// Function computes the magnification for a given image position and scaling
+// constant
+std::complex<double> Magnification(double image_position, double scaling_constant);
+
 // Function computes the intermediate function k(w,y,x,ks) for the
 // amplification factor calculation. The function k is given by
 // -iw*(exp[iw(y^2/2)]*J0(wy*sqrt(2x))*exp(-iw*psi(sqrt(2x),ks)))
@@ -35,6 +89,7 @@ void IntermediateFunctionCalculation(acb_t intermediate_function_value,
                                      acb_t impact_parameter,
                                      const acb_t integration_parameter,
                                      acb_t scaling_constant,
+                                     double minimum_phase,
                                      slong precision);
 
 // Function computes the value of the integrand being integrated in the
@@ -53,6 +108,7 @@ void FirstCorrectionTerm(acb_t first_correction_term,
                          acb_t impact_parameter,
                          acb_t integration_upper_limit,
                          acb_t scaling_constant,
+                         double minimum_phase,
                          slong precision);
 
 // Function computes the value of the second correction term for the
@@ -62,19 +118,28 @@ void SecondCorrectionTerm(acb_t second_correction_term,
                           acb_t impact_parameter,
                           acb_t integration_upper_limit,
                           acb_t scaling_constant,
+                          double minimum_phase,
                           slong precision);
 
 // Function computes the amplification factor for an axially symmetric Navarro,
-// Frenk, and White (NFW) lens for given values of dimensionless frequency and
-// impact parameter with arithmetic precision given by precision. The infinite
-// integral is approximated by calculating the finite integral with upper limit
-// given by integration_upper_limit
+// Frenk, and White (NFW) lens using full wave optics for given values of
+// dimensionless frequency and impact parameter with arithmetic precision given
+// by precision. The infinite integral is approximated by calculating the
+// finite integral with upper limit given by integration_upper_limit
 void AmplificationFactorCalculation(acb_t amplification_factor,
                                     double dimensionless_frequency,
                                     double impact_parameter,
                                     double scaling_constant,
                                     double integration_upper_limit,
                                     slong precision);
+
+// Function computes the amplification factor for an axially symmetric Navarro,
+// Frenk, White (NFW) lens using the geometric optics approximation for given
+// values of dimensionless frequency and impact parameter
+std::complex<double> AmplificationFactorGeometric(
+    double dimensionless_frequency,
+    double impact_parameter,
+    double scaling_constant);
 
 // Function constructs two matrices containing the real and imaginary parts of
 // the value of the amplification factor function based upon two vectors
@@ -85,6 +150,7 @@ std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
                                 std::vector<double> impact_parameter,
                                 double scaling_constant,
                                 double integration_upper_limit,
-                                slong precision);
+                                slong precision,
+                                slong approx_switch);
 
 #endif  // GRAVELAMPS_LENSING_NFW_H_

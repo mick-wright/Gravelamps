@@ -141,9 +141,9 @@ def get_additional_parameters(config):
         additional_parameter_list = [precision]
     elif lens_model == "sislens":
         precision = config.get("lens_settings", "arithmetic_precision")
-        summation_threshold = config.get("lens_settings", "sis_summation_threshold")
+        integration_upper_limit = config.get("lens_settings", "sis_integration_upper_limit")
 
-        additional_parameter_list = [summation_threshold, precision]
+        additional_parameter_list = [integration_upper_limit, precision]
     elif lens_model == "nfwlens":
         ks_val = config.get("lens_settings", "nfw_ks_val")
         integration_upper_limit = config.get("lens_settings", "nfw_integration_upper_limit")
