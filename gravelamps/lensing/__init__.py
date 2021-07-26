@@ -107,7 +107,7 @@ def BBH_lensed_waveform(frequency_array, mass_1, mass_2, a_1, a_2, tilt_1, tilt_
     #Calculate the redshifted lens mass
     lens_distance = lens_fractional_distance * luminosity_distance
     lens_redshift = bilby.gw.conversion.luminosity_distance_to_redshift(lens_distance)
-    redshifted_lens_mass = natural_mass(lens_mass(1 + lens_redshift))
+    redshifted_lens_mass = natural_mass(lens_mass * (1 + lens_redshift))
 
     #Construct the base waveform using lal_binary_black_hole
     base_waveform = bilby.gw.source.lal_binary_black_hole(frequency_array, mass_1=mass_1,

@@ -120,10 +120,12 @@ def wy_handler(config):
 
     return w_array_file, y_array_file
 
-def get_additional_parameters(config):
+def get_additional_parameters(config, geometric_optics_switch=0):
     '''
     Input:
         config - Ini configuration parser
+        geometric_optics_switch - optional value determining where in the array to switch to
+        geometric optics
 
     Output:
         additional_parameter_list - list containing the additional parameters needed for the model
@@ -138,18 +140,19 @@ def get_additional_parameters(config):
     if lens_model == "pointlens":
         precision = config.get("lens_settings", "arithmetic_precision")
 
-        additional_parameter_list = [precision]
+        additional_parameter_list = [precision, geometric_optics_switch]
     elif lens_model == "sislens":
         precision = config.get("lens_settings", "arithmetic_precision")
         integration_upper_limit = config.get("lens_settings", "sis_integration_upper_limit")
 
-        additional_parameter_list = [integration_upper_limit, precision]
+        additional_parameter_list = [integration_upper_limit, precision, geometric_optics_switch]
     elif lens_model == "nfwlens":
         ks_val = config.get("lens_settings", "nfw_ks_val")
         integration_upper_limit = config.get("lens_settings", "nfw_integration_upper_limit")
         precision = config.get("lens_settings", "arithemtic_precision")
 
-        additional_parameter_list = [ks_val, integration_upper_limit, precision]
+        additional_parameter_list = [ks_val, integration_upper_limit,
+                                     precision, geometric_optics_switch]
 
     #If user wishes to add additional models here, simply include what additional parameters are
     #necessary here, naming the lens_model the same as the name of the function that does the
@@ -184,7 +187,19 @@ def amp_fac_handler(config, w_array_file, y_array_file, mode="local"):
 
     #Get the Lensing Model and the necessary additional parameters
     lens_model = config.get("lens_settings", "lens_model")
-    additional_parameters = get_additional_parameters(config)
+
+    #Create the switch value by loading in the w_array file and finding the place where the array
+    #is first greater than the specified dimensionless frequency. In the case where the switch is
+    #higher than the higher value in the array, set it to the size of the array
+    geometric_optics_min_dim_freq = config.getfloat(
+        "lens_settings", "geometric_optics_min_dim_freq")
+    w_array = np.loadtxt(w_array_file)
+    switch_value = np.argmax(w_array >= geometric_optics_min_dim_freq)
+    if w_array[switch_value] < geometric_optics_min_dim_freq:
+        switch_value = len(w_array)
+    switch_value = str(switch_value)
+
+    additional_parameters = get_additional_parameters(config, switch_value)
 
     #Read in the values of the optional input values
     amp_fac_complex_file = config.get("optional_input",
