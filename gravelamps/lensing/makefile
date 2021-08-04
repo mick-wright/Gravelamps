@@ -1,49 +1,69 @@
-#Construct the lensing source codes into the programs to generate the lensing interpolant data 
+# Construct the lensing source codes into programs to generate lensing data for the interpolant
 #
-#Targets:
-#	all - Makes all lens programs in both current and binary directories
-# 	bin_only - Makes all lens programs in binary directory only 
-# 	user_only - Makes all lens programs in current directory only 
+# Targets:
+# 	all - Makes lens programs in both current and binary directories
+# 	bin_only (default) - Makes lens programs in an editable directory on path
+# 	current_only - Makes lens programs in current directory only
+# 
+# Makefile Written by Mick Wright 2021
 
-#C++ compiler and flags needed - requires dependencies openMP, arb, and flint 
-CPP = g++
-CPPFLAGS = -fopenmp -O3 -larb -lflint
+# Looking for a compiler being set in the GXX environment variable. If this is not set, use g++
+ifeq ($(strip $(GXX)),)
+	GXX = g++
+endif
 
-#Do for all cxx files in this folder
+# Setting the flags properly. On a local install to default python, flags as set should function.
+# In a conda environment additional steps need to be taken to make sure the locations are properly
+# done
+ifeq ($(strip $(CONDA_DEFAULT_ENV)),)
+	GXX_FLAGS = -larb -lflint -O3 -fopenmp
+else
+	GXX_FLAGS = -isystem $(CONDA_PREFIX)/include -L $(CONDA_PREFIX)/lib -larb -lflint -O3 -fopenmp
+endif
+
+# File will attempt to find all .cc files in the folder and create corresponding programs with the same name
 CC_FILES = $(wildcard *.cc)
 OUT_FILES = $(CC_FILES:%.cc=%)
-BIN_DIR = $(HOME)/.local/bin
+
+# For the binary directory, the makefile will default to using $HOME/bin. It will alert the user if this is not on PATH
+BIN_DIR = $(HOME)/bin
 OUT_BIN = $(OUT_FILES:%=$(BIN_DIR)/%)
+PATH_CHECK = $(findstring $(BIN_DIR),$(PATH))
 
-#Make All Lens Programs in both current directory and binary directory 
-all: bin_only user_only 
-
-#Make All Lens Programs in binary directory only
+# Make lens programs in binary directory
 bin_only: $(OUT_BIN)
 
-#Make All Lens Program is user directory only:
-user_only: $(OUT_FILES) 
+ifeq ($(BIN_DIR),$(PATH_CHECK))
+	@echo $(BIN_DIR) on PATH
+else
+	@echo $(BIN_DIR) not on PATH, will cause issues!
+endif
 
-#Rule for Compiling the .cc source codes
+# Make lens programs in current directory only
+current_only: $(OUT_FILES)
+
+# Make lens programs in both current and binary directories
+all: bin_only current_only
+
+# Rule for compiling the .cc source files
 %: %.cc
-	$(CPP) -o $@ $< $(CPPFLAGS)
+	$(GXX) -o $@ $< $(GXX_FLAGS)
 
 $(BIN_DIR)/%: %.cc
-	$(CPP) -o $@ $< $(CPPFLAGS) 
+	$(GXX) -o $@ $< $(GXX_FLAGS)
 
-#Debugging
+# Debugging, allows the printing of the variables
 variables:
 	@echo CC_FILES: $(CC_FILES)
-	@echo OUT_FILES: $(OUT_FILES) 
+	@echo OUT_FILES: $(OUT_FILES)
 	@echo BIN_DIR: $(BIN_DIR)
-	@echo OUT_BIN: $(OUT_BIN) 
+	@echo OUT_BIN: $(OUT_BIN)
 
 #CLEAN TARGET
 .PHONY: clean
 clean:
-	rm -f $(OUT_FILES) $(OUT_BIN) 
+	rm -f $(OUT_FILES) $(OUT_BIN)
 
 .PHONY: clean_local
 clean_local:
-	rm -f $(OUT_FILES) 
-
+	rm -f $(OUT_FILES)
