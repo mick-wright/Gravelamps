@@ -8,12 +8,13 @@ Written by Mick Wright 2021
 '''
 
 import subprocess
-
-from configparser import ConfigParser
+import importlib
 
 import numpy as np
+import bilby
 
 import gravelamps.lensing
+import gravelamps.inference
 
 def wy_handler(config):
     '''
@@ -46,11 +47,12 @@ def wy_handler(config):
 
     #If external files are given, and the user has specfied, copy the files to the data subdirectory
     if config.getboolean("lens_generation_settings", "copy_files_to_data_subdirectory") is True:
-        subprocess.run(["cp", dim_freq_file, data_subdirectory+"/w.dat"], check=True)
-        subprocess.run(["cp", sour_pos_file, data_subdirectory+"/y.dat"], check=True)
-
-        dim_freq_file = data_subdirectory+"/w.dat"
-        sour_pos_file = data_subdirectory+"/y.dat"
+        if dim_freq_file != data_subdirectory + "/w.dat":
+            subprocess.run(["cp", dim_freq_file, data_subdirectory+"/w.dat"], check=True)
+            dim_freq_file = data_subdirectory+"/w.dat"
+        if sour_pos_file != data_subdirectory + "/y.dat":
+            subprocess.run(["cp", sour_pos_file, data_subdirectory+"/y.dat"], check=True)
+            sour_pos_file = data_subdirectory + "/y.dat"
 
     return dim_freq_file, sour_pos_file
 
@@ -95,10 +97,10 @@ def get_additional_parameters(config, geometric_optics_switch=0):
     # additional elif statements in this function
     else:
         additional_parameters = config.get(
-            "lens_generation_settings", "additional_parameter_list").split(",")
+            "lens_generation_settings", "additional_parameter_list").replace(" ","").split(",")
         additional_parameter_list = []
 
-        for parameter in additional_parameter_list:
+        for parameter in additional_parameters:
             additional_parameter_list.append(config.get(
                 "lens_generation_settings", parameter))
 
@@ -174,3 +176,87 @@ def amp_fac_handler(config, dim_freq_file, sour_pos_file, mode="local"):
 
         #Get the additional parameters necessary for the process call
         additional_parameters = get_additional_parameters(config, switch_value)
+
+        #Either directly call the lensing function if the mode is local or generate the submit file
+        #if the mode is pipe
+        if mode == "local":
+            bilby.core.utils.logger.info("Generating Lens Data")
+            proc_to_run = [lens_model, dim_freq_file, sour_pos_file, amp_fac_real_file,
+                           amp_fac_imag_file] + additional_parameters
+            subprocess.run(proc_to_run, check=True)
+            bilby.core.utils.logger.info("Lens Data Generated")
+        elif mode == "pipe":
+            bilby.core.utils.logger.info("Generating Lens Data Submit File")
+            gravelamps.inference.file_generators.lens_subfile(
+                config, dim_freq_file, sour_pos_file, amp_fac_real_file,
+                amp_fac_imag_file, additional_parameters)
+            bilby.core.utils.logger.info("Lens Data Submit File Generated")
+
+    # If the user has specified that the files be copied to the data subdirectory, do this
+    if config.getboolean("lens_generation_settings", "copy_files_to_data_subdirectory"):
+        if amp_fac_real_file != data_subdirectory + "/fReal.dat":
+            subprocess.run(["cp", amp_fac_real_file, data_subdirectory+"/fReal.dat"], check=True)
+            amp_fac_real_file = data_subdirectory + "/fReal.dat"
+        if amp_fac_imag_file != data_subdirectory + "/fImag.dat":
+            subprocess.run(["cp", amp_fac_imag_file, data_subdirectory+"/fImag.dat"], check=True)
+            amp_fac_imag_file = data_subdirectory + "/fImag.dat"
+
+    return amp_fac_real_file, amp_fac_imag_file
+
+def wfgen_fd_source(waveform_generator_class_name, frequency_domain_source_model_name):
+    '''
+    Input:
+        waveform_generator_class_name - string containing either the name of a bilby waveform
+                                        generator class, or the full python path of an arbitrary
+                                        waveform generator class
+        frequency_domain_source_model_name - string containing either the name of a bilby frequency
+                                             domain source model or the full pythoin path of an
+                                             arbitrary frequency domain source model function
+
+    Output:
+        waveform_generator_class - the class specified by the input class name
+        frequency_domain_source_model - the function specified by the input model name
+
+    Function takes in strings containing the names of the waveform generator class and the
+    frequency domain source model functions, checks if they're usable and returns the class and
+    function to the user. Based upon the implementation in bilby_pipe
+    '''
+
+    #Waveform Generator - if it's a single name, assume part of the standard bilby class
+    #Otherwise split the name to get the module and class names
+    if "." in waveform_generator_class_name:
+        waveform_generator_split = waveform_generator_class_name.split(".")
+        waveform_generator_module = ".".join(waveform_generator_split[:-1])
+        waveform_generator_class_name = waveform_generator_split[-1]
+    elif waveform_generator_class_name in ("default", ""):
+        waveform_generator_module = "bilby.gw.waveform_generator"
+        waveform_generator_class_name = "WaveformGenerator"
+    else:
+        waveform_generator_module = "bilby.gw.waveform_generator"
+
+    #Attempt to find class
+    try:
+        waveform_generator_class = getattr(
+            importlib.import_module(
+                waveform_generator_module), waveform_generator_class_name)
+    except ImportError:
+        print("Waveform Generator Class could not be found!")
+
+    #Frequency Domain Source Model - if it's a single name, check if it's in the standard
+    #bilby list, otherwise follow the same procedure as for the waveform generator
+    if frequency_domain_source_model_name in bilby.gw.source.__dict__.keys():
+        frequency_domain_source_model = bilby.gw.source.__dict__[
+            frequency_domain_source_model_name]
+    else:
+        frequency_domain_source_model_split = frequency_domain_source_model_name.split(".")
+        frequency_domain_source_model_module = ".".join(frequency_domain_source_model_split[:-1])
+        frequency_domain_source_model_name = frequency_domain_source_model_split[-1]
+
+        try:
+            frequency_domain_source_model = getattr(
+                importlib.import_module(
+                    frequency_domain_source_model_module), frequency_domain_source_model_name)
+        except ImportError:
+            print("Frequency Domain Source Model Function could not be loaded!")
+
+    return waveform_generator_class, frequency_domain_source_model
