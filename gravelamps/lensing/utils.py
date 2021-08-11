@@ -116,6 +116,7 @@ def generate_interpolator(dim_freq_file, sour_pos_file, amp_fac_real_file, amp_f
     def interpolator_func(dim_freq, sour_pos):
         real_value = real_interpolator(dim_freq, sour_pos)
         imag_value = imag_interpolator(dim_freq, sour_pos)
-        return (real_value + 1j*imag_value).flatten()
+        complex_value = real_value + 1j*imag_value
+        return complex_value.flatten()
 
     return interpolator_func
