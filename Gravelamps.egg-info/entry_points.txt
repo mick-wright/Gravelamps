@@ -1,4 +1,0 @@
-[console_scripts]
-gravelamps_local_inference = gravelamps.inference.inference:main
-gravelamps_pipe_inference = gravelamps.inference.inference_pipe:main
-
