@@ -21,10 +21,12 @@ This process will yield estimates of the lens and source parameters as well as t
 
 ## How Do I Perform A Run?
 
-Once installed, the process of performing an analysis run is very easy. Simply modify the INI file for the flavour of Gravelamps you wish to use (local for running on a local machine, pipe for running on a clusterised machine using the HTCondor Scheduler), and call the appropriate inference function, these being
+Once installed, the process of performing an analysis run is very easy. Simply modify the INI file for the flavour of Gravelamps you wish to use (local for running on a local machine, pipe for running on a clusterised machine using the HTCondor Scheduler), and call the appropriate inference function giving it the INI as the only argument, these being
 
 + `gravelamps_local_inference` for local machine runs
 + `gravelamps_pipe_inference` for clusterised machine runs using the HTCondor Scheduler
+
+In the case of `gravelamps_local_inference`, this will immediately start the run using the local resources available. In the case of `gravelamps_pipe_inference` this will generate a series of HTCondor submit files and an overarching DAG that can be submitted to the scheduler. In the latter case, the output of the program will detail the submission command.
 
 ## Installation Instructions
 
@@ -34,7 +36,7 @@ The process of installation has designed to be as simple as possible. Assuming a
 2. In a terminal, navigate to the repository directory
 3. `pip install .` 
 
-This can be done either in default python environment or in a conda environment without issue. The C++ subprograms that generate the lens data will be installed into `$HOME/bin` which should be placed on the PATH by the user. The pip installation will handle the python installation. 
+This can be done either in default python environment or in a conda environment without issue. The C++ subprograms will by default be placed into $HOME/bin - which the user should have extant already and on the $PATH environment variable so that the calls can be made without issue. The behaviour of the C++ subprogram installation can be modified via the provided makefile in the lensing subfolder - which will be called when the pip installation is made. 
 
 ## Dependencies
 
@@ -54,7 +56,7 @@ In addition to a working `python 3` environment, the following are required for 
 + `astropy`
 + `bilby`
 
-The `lalsuite` optional dependency of `bilby` is also required. 
+The `lalsuite` optional dependency of `bilby` is also required.
 
 # Citation
 
