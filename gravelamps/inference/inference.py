@@ -175,7 +175,7 @@ def main():
             priors.update(calibration_prior)
 
     #Plot the Interferometer Data
-    interferometers.plot_data(outdir=outdir, label=label)
+    interferometers.plot_data(outdir=data_subdirectory, label=label)
 
     #Handle the Sampler Settings
     sampler = config.get("analysis_settings", "sampler")
