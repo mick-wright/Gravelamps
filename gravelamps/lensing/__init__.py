@@ -19,7 +19,7 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
     Lensed Waveform Generator Class
 
     Based upon the general bilby Waveform Generator class, but with the additional requirements for
-    files containing the dimensionless frequency and impact parameter arrays as well as the
+    files containing the dimensionless frequency and source position arrays as well as the
     amplification factor matrices. Using these, it will then generate the interpolator for use
     by the frequency domain source model
     '''
@@ -34,19 +34,19 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
                          waveform_arguments)
 
         #Extract the files necessary to generate the interpolator
-        dimensionless_frequency_file = waveform_arguments["w_array_file"]
-        impact_parameter_file = waveform_arguments["y_array_file"]
+        dimensionless_frequency_file = waveform_arguments["dim_freq_file"]
+        source_position_file = waveform_arguments["sour_pos_file"]
         amplification_factor_real_file = waveform_arguments["amp_fac_real_file"]
         amplification_factor_imag_file = waveform_arguments["amp_fac_imag_file"]
 
         #Generate the interpolator and add it to the waveform_arguments dictionary
         waveform_arguments["interpolator"] = utils.generate_interpolator(
-            dimensionless_frequency_file, impact_parameter_file, amplification_factor_real_file,
+            dimensionless_frequency_file, source_position_file, amplification_factor_real_file,
             amplification_factor_imag_file)
 
 def BBH_lensed_waveform(frequency_array, mass_1, mass_2, a_1, a_2, tilt_1, tilt_2, phi_12, phi_jl,
                         luminosity_distance, theta_jn, phase, ra, dec, geocent_time, psi,
-                        lens_mass, impact_parameter, lens_fractional_distance, **kwargs):
+                        lens_mass, source_position, lens_fractional_distance, **kwargs):
     '''
     Inputs:
         frequency_array - frequencies over which to generate waveform
@@ -68,8 +68,7 @@ def BBH_lensed_waveform(frequency_array, mass_1, mass_2, a_1, a_2, tilt_1, tilt_
         geocent_time - time of coalescene or peak amplitude in GPS seconds
         psi - gravitational wave polarisation angle in radians
         lens_mass - non-redshifted mass of the lensing object in solar masses
-        impact_parameter - distance between wave and the lensing object at closest approach in
-                           natural units
+        source_position - distance from observer plane of the source
         lens_fractional_distance - fractional position of the lens compared to the luminosity
                                    distance
 
@@ -91,13 +90,14 @@ def BBH_lensed_waveform(frequency_array, mass_1, mass_2, a_1, a_2, tilt_1, tilt_
 
     #Generate the waveform_kwargs dict and then update it using the given kwargs
     waveform_kwargs = dict(waveform_approximant="IMRPhenomPv2", reference_frequency=50,
-                           minimum_frequency=20, interpolator=None)
+                           minimum_frequency=20, maximum_frequency=1024, interpolator=None)
     waveform_kwargs.update(kwargs)
 
     #Extract the approximant, reference and minimum frequencies and the interpolator
     waveform_approximant = waveform_kwargs["waveform_approximant"]
     reference_frequency = waveform_kwargs["reference_frequency"]
     minimum_frequency = waveform_kwargs["minimum_frequency"]
+    maximum_frequency = waveform_kwargs["maximum_frequency"]
     interpolator = waveform_kwargs["interpolator"]
 
     #Interpolator is necessary, check that it is there
@@ -114,7 +114,8 @@ def BBH_lensed_waveform(frequency_array, mass_1, mass_2, a_1, a_2, tilt_1, tilt_
         mass_2=mass_2, a_1=a_1, a_2=a_2, tilt_1=tilt_1, tilt_2=tilt_2, phi_12=phi_12, phi_jl=phi_jl,
         luminosity_distance=luminosity_distance, theta_jn=theta_jn, phase=phase,
         waveform_approximant=waveform_approximant, reference_frequency=reference_frequency,
-        minimum_frequency=minimum_frequency, ra=ra, dec=dec, geocent_time=geocent_time, psi=psi)
+        minimum_frequency=minimum_frequency, ra=ra, dec=dec, geocent_time=geocent_time, psi=psi,
+        maximum_frequency=maximum_frequency)
 
     #If the base_waveform function returns a None, return a None
     if base_waveform is None:
@@ -124,7 +125,7 @@ def BBH_lensed_waveform(frequency_array, mass_1, mass_2, a_1, a_2, tilt_1, tilt_
     dimensionless_frequency_array = dimensionless_frequency(frequency_array, redshifted_lens_mass)
 
     #Now generate the amplification factor array using the interpolator function
-    amplification_factor_array = interpolator(dimensionless_frequency_array, impact_parameter)
+    amplification_factor_array = interpolator(dimensionless_frequency_array, source_position)
 
     #Now create the lens waveform by multiplying the base waveform by thge amplification factor
     #array
