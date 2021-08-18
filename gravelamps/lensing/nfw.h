@@ -1,6 +1,6 @@
 // Header File for nfwlens.cc - a set of functions to calculate the
 // amplification factor - split into real and imaginary matrices for a given
-// set of impact parameters and dimensionless frequencies
+// set of source positions and dimensionless frequencies
 //
 // Mick Wright 2021
 
@@ -36,29 +36,29 @@ std::complex<double> LensingPotential(double scaled_surface_density,
 // Function computes the first two terms of the time delay function for
 // finding the minimum which yields the phase guage needed
 std::complex<double> TimeDelayPartial(double scaled_surface_density,
-                                      double impact_parameter,
+                                      double source_position,
                                       double scaling_constant);
 
 // Function computes the phase needed for a minimum time delay of zero
-std::complex<double> MinTimeDelayPhase(double impact_parameter,
+std::complex<double> MinTimeDelayPhase(double source_position,
                                        double scaling_constant);
 
 // Function computes the lens equation value
 double LensEquation(double scaled_surface_density,
-                    double impact_parameter,
+                    double source_position,
                     double scaling_constant);
 
-// Function computes the image position for a given impact parameter by means
+// Function computes the image position for a given source position by means
 // of root finding the lens equation, looking for the negative root,
 // the positive root, and a root near zero
-std::vector<double> ImagePositions(double impact_parameter,
+std::vector<double> ImagePositions(double source_position,
                                    double scaling_constant);
 
-// Function computes the time delay for a given image position and impact
-// parameter and minimum phase delay. This is the complete version of the
+// Function computes the time delay for a given image position and source
+// position and minimum phase delay. This is the complete version of the
 // above partial function
 std::complex<double> TimeDelay(double image_position,
-                               double impact_parameter,
+                               double source_position,
                                double scaling_constant,
                                double phase_minimum);
 
@@ -86,7 +86,7 @@ std::complex<double> Magnification(double image_position, double scaling_constan
 // -iw*(exp[iw(y^2/2)]*J0(wy*sqrt(2x))*exp(-iw*psi(sqrt(2x),ks)))
 void IntermediateFunctionCalculation(acb_t intermediate_function_value,
                                      acb_t dimensionless_frequency,
-                                     acb_t impact_parameter,
+                                     acb_t source_position,
                                      const acb_t integration_parameter,
                                      acb_t scaling_constant,
                                      double minimum_phase,
@@ -105,7 +105,7 @@ int NfwIntegrand(acb_ptr integrand,
 // amplification factor.
 void FirstCorrectionTerm(acb_t first_correction_term,
                          acb_t dimensionless_frequency,
-                         acb_t impact_parameter,
+                         acb_t source_position,
                          acb_t integration_upper_limit,
                          acb_t scaling_constant,
                          double minimum_phase,
@@ -115,7 +115,7 @@ void FirstCorrectionTerm(acb_t first_correction_term,
 // amplification factor
 void SecondCorrectionTerm(acb_t second_correction_term,
                           acb_t dimensionless_frequency,
-                          acb_t impact_parameter,
+                          acb_t source_position,
                           acb_t integration_upper_limit,
                           acb_t scaling_constant,
                           double minimum_phase,
@@ -123,31 +123,31 @@ void SecondCorrectionTerm(acb_t second_correction_term,
 
 // Function computes the amplification factor for an axially symmetric Navarro,
 // Frenk, and White (NFW) lens using full wave optics for given values of
-// dimensionless frequency and impact parameter with arithmetic precision given
+// dimensionless frequency and source position with arithmetic precision given
 // by precision. The infinite integral is approximated by calculating the
 // finite integral with upper limit given by integration_upper_limit
 void AmplificationFactorCalculation(acb_t amplification_factor,
                                     double dimensionless_frequency,
-                                    double impact_parameter,
+                                    double source_position,
                                     double scaling_constant,
                                     double integration_upper_limit,
                                     slong precision);
 
 // Function computes the amplification factor for an axially symmetric Navarro,
 // Frenk, White (NFW) lens using the geometric optics approximation for given
-// values of dimensionless frequency and impact parameter
+// values of dimensionless frequency and source position
 std::complex<double> AmplificationFactorGeometric(
     double dimensionless_frequency,
-    double impact_parameter,
+    double source_position,
     double scaling_constant);
 
 // Function constructs two matrices containing the real and imaginary parts of
 // the value of the amplification factor function based upon two vectors
-// containing values of dimensionless frequency and impact parameter and
+// containing values of dimensionless frequency and source position and
 // returns these inside of a pair object
 std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
     AmplificationFactorMatrices(std::vector<double> dimensionless_frequency,
-                                std::vector<double> impact_parameter,
+                                std::vector<double> source_position,
                                 double scaling_constant,
                                 double integration_upper_limit,
                                 slong precision,

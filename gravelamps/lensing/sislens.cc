@@ -11,7 +11,7 @@
 // -iw*exp(iw(y^2/2 + phi(y)))*J0(wy*sqrt(z))*exp(-iw*sqrt(2z))
 void IntermediateFunctionCalculation(acb_t intermediate_function_value,
                                      acb_t dimensionless_frequency,
-                                     acb_t impact_parameter,
+                                     acb_t source_position,
                                      const acb_t integration_parameter,
                                      slong precision) {
     // Initialise the components of the function - as can be seen there are
@@ -45,10 +45,10 @@ void IntermediateFunctionCalculation(acb_t intermediate_function_value,
     acb_init(phi);
     acb_one(phi);
     acb_div(phi, phi, two, precision);
-    acb_add(phi, phi, impact_parameter, precision);
+    acb_add(phi, phi, source_position, precision);
 
     // Construct the first exponential term
-    acb_sqr(first_exponential_term, impact_parameter, precision);
+    acb_sqr(first_exponential_term, source_position, precision);
     acb_div(first_exponential_term, first_exponential_term, two, precision);
     acb_add(first_exponential_term, first_exponential_term, phi, precision);
     acb_mul(first_exponential_term,
@@ -61,7 +61,7 @@ void IntermediateFunctionCalculation(acb_t intermediate_function_value,
     // Construct the Bessel Term
     acb_mul(bessel_term, two, integration_parameter, precision);
     acb_sqrt(bessel_term, bessel_term, precision);
-    acb_mul(bessel_term, bessel_term, impact_parameter, precision);
+    acb_mul(bessel_term, bessel_term, source_position, precision);
     acb_mul(bessel_term, bessel_term, dimensionless_frequency, precision);
     acb_hypgeom_bessel_j(bessel_term, zero, bessel_term, precision);
 
@@ -109,21 +109,21 @@ int SisIntegrand(acb_ptr integrand,
                  slong order,
                  slong precision) {
     // The parameter set contains a vector which itself contains the
-    // dimensionless frequency and impact parameter. These need to be extracted
+    // dimensionless frequency and source position. These need to be extracted
     // and then placed into acb types for the rest of the calculation
     std::vector<double> parameter_vector = (
         (std::vector<double> *) parameter_set)[0];
     double dimensionless_frequency_value = parameter_vector[0];
-    double impact_parameter_value = parameter_vector[1];
+    double source_position_value = parameter_vector[1];
 
     acb_t dimensionless_frequency;
-    acb_t impact_parameter;
+    acb_t source_position;
 
     acb_init(dimensionless_frequency);
-    acb_init(impact_parameter);
+    acb_init(source_position);
 
     acb_set_d(dimensionless_frequency, dimensionless_frequency_value);
-    acb_set_d(impact_parameter, impact_parameter_value);
+    acb_set_d(source_position, source_position_value);
 
     // The integrand is a combination of two terms - the first is the
     // intermediate function k(w,y,x) and the second is exp(iwx). We must first
@@ -137,7 +137,7 @@ int SisIntegrand(acb_ptr integrand,
     // Calculation of the k function term
     IntermediateFunctionCalculation(intermediate_function_term,
                                     dimensionless_frequency,
-                                    impact_parameter,
+                                    source_position,
                                     integration_parameter,
                                     precision);
 
@@ -155,7 +155,7 @@ int SisIntegrand(acb_ptr integrand,
 
     // Memory Management - clear up the declared acbs inside the function
     acb_clear(dimensionless_frequency);
-    acb_clear(impact_parameter);
+    acb_clear(source_position);
     acb_clear(intermediate_function_term);
     acb_clear(exponential_term);
 
@@ -168,7 +168,7 @@ int SisIntegrand(acb_ptr integrand,
 // -((k(w,y,x_upper_limit) * exp(iw*x_upper_limit))/iw)
 void FirstCorrectionTerm(acb_t first_correction_term,
                          acb_t dimensionless_frequency,
-                         acb_t impact_parameter,
+                         acb_t source_position,
                          acb_t integration_upper_limit,
                          slong precision) {
     // The function is calculated by splitting the calculation into three parts
@@ -185,7 +185,7 @@ void FirstCorrectionTerm(acb_t first_correction_term,
     // Calculate the intermediate function term
     IntermediateFunctionCalculation(intermediate_function_term,
                                     dimensionless_frequency,
-                                    impact_parameter,
+                                    source_position,
                                     integration_upper_limit,
                                     precision);
 
@@ -222,7 +222,7 @@ void FirstCorrectionTerm(acb_t first_correction_term,
 // d(k(w,y,x)*exp(iwz)/dx/(iw)^2
 void SecondCorrectionTerm(acb_t second_correction_term,
                           acb_t dimensionless_frequency,
-                          acb_t impact_parameter,
+                          acb_t source_position,
                           acb_t integration_upper_limit,
                           slong precision) {
     // The function will be computed by constructing three terms, the
@@ -257,12 +257,12 @@ void SecondCorrectionTerm(acb_t second_correction_term,
     // Calculate the two function values
     IntermediateFunctionCalculation(function_value_plus,
                                     dimensionless_frequency,
-                                    impact_parameter,
+                                    source_position,
                                     upper_limit_plus,
                                     precision);
     IntermediateFunctionCalculation(function_value_minus,
                                     dimensionless_frequency,
-                                    impact_parameter,
+                                    source_position,
                                     upper_limit_minus,
                                     precision);
 
@@ -314,29 +314,29 @@ void SecondCorrectionTerm(acb_t second_correction_term,
 
 // Function computes the amplification factor for an axially symmetric Singular
 // Isothermal Sphere (SIS) lens using full wave optics for given values of
-// dimensionless frequency and impact parameter with arithmetic precision given
+// dimensionless frequency and source position with arithmetic precision given
 // by precision. The infinite integral is approximated by calculating the
 // finite integral with upper limit given by integration_upper_limit.
 void AmplificationFactorCalculation(acb_t amplification_factor,
                                     double dimensionless_frequency,
-                                    double impact_parameter,
+                                    double source_position,
                                     double integration_upper_limit,
                                     slong precision) {
     // The integrand function requires that the lensing parameters be passed to
     // it in the form of a single vector
     std::vector<double> parameter_set {dimensionless_frequency,
-                                       impact_parameter};
+                                       source_position};
 
     // Construct abs for the lensing parameters to be used in the more complex
     // calculations
     acb_t dimensionless_frequency_acb;
-    acb_t impact_parameter_acb;
+    acb_t source_position_acb;
 
     acb_init(dimensionless_frequency_acb);
-    acb_init(impact_parameter_acb);
+    acb_init(source_position_acb);
 
     acb_set_d(dimensionless_frequency_acb, dimensionless_frequency);
-    acb_set_d(impact_parameter_acb, impact_parameter);
+    acb_set_d(source_position_acb, source_position);
 
     // Set the goal and the tolerance for the integration, these are based upon
     // the precision specified
@@ -387,7 +387,7 @@ void AmplificationFactorCalculation(acb_t amplification_factor,
     acb_init(first_correction_term);
     FirstCorrectionTerm(first_correction_term,
                         dimensionless_frequency_acb,
-                        impact_parameter_acb,
+                        source_position_acb,
                         upper_limit,
                         precision);
 
@@ -396,7 +396,7 @@ void AmplificationFactorCalculation(acb_t amplification_factor,
     acb_init(second_correction_term);
     SecondCorrectionTerm(second_correction_term,
                          dimensionless_frequency_acb,
-                         impact_parameter_acb,
+                         source_position_acb,
                          upper_limit,
                          precision);
 
@@ -413,7 +413,7 @@ void AmplificationFactorCalculation(acb_t amplification_factor,
 
     // Memory Management - clear the acbs declared in the function
     acb_clear(dimensionless_frequency_acb);
-    acb_clear(impact_parameter_acb);
+    acb_clear(source_position_acb);
     acb_clear(lower_limit);
     acb_clear(upper_limit);
     acb_clear(integration_term);
@@ -423,27 +423,27 @@ void AmplificationFactorCalculation(acb_t amplification_factor,
 
 // Function computes the amplification factor for an axially symmetric singular
 // isothermal sphere (SIS) style lens using the geometric optics approximation
-// for given values of dimensionless frequency and impact parameter
+// for given values of dimensionless frequency and source position
 std::complex<double> AmplificationFactorGeometric(
-    double dimensionless_frequency, double impact_parameter) {
+    double dimensionless_frequency, double source_position) {
     // Using the complex_literals i operator
     using std::literals::complex_literals::operator""i;
 
     // Compute the positive magnification and square root
-    double mag_plus = sqrt(abs(1. + 1./impact_parameter));
+    double mag_plus = sqrt(abs(1. + 1./source_position));
 
-    // If the impact parameter is greater than 1, return the root of the
+    // If the source position is greater than 1, return the root of the
     // positive magnification
-    if (impact_parameter >= 1) {
+    if (source_position >= 1) {
         std::complex<double> geometric_factor = mag_plus;
         return geometric_factor;
     }
 
     // Compute the negative magnification and square root
-    double mag_minus = sqrt(abs(1. - 1./impact_parameter));
+    double mag_minus = sqrt(abs(1. - 1./source_position));
 
     // Calculate the time delay
-    double time_delay = 2 * impact_parameter;
+    double time_delay = 2 * source_position;
 
     // Calculate the exponential term
     std::complex<double> exponent = 1i * dimensionless_frequency * time_delay;
@@ -458,24 +458,24 @@ std::complex<double> AmplificationFactorGeometric(
 
 // Function constructs two matrices containing the real and imaginary parts of
 // the value of the amplification factor function based upon two vectors
-// containing values of dimensionless frequency and impact parameter and
+// containing values of dimensionless frequency and source position and
 // returns these inside of a pair object
 std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
     AmplificationFactorMatrices(std::vector<double> dimensionless_frequency,
-                                std::vector<double> impact_parameter,
+                                std::vector<double> source_position,
                                 double integration_upper_limit,
                                 slong precision,
                                 slong approx_switch) {
     // Calculate the sizes of the dimensionless frequency and imapct parameter
     // vectors, and then construct two correctly size matrices
-    int impact_parameter_size = impact_parameter.size();
+    int source_position_size = source_position.size();
     int dimensionless_frequency_size = dimensionless_frequency.size();
 
     std::vector<std::vector<double>> amp_fac_real(
-        impact_parameter_size,
+        source_position_size,
         std::vector<double>(dimensionless_frequency_size));
     std::vector<std::vector<double>> amp_fac_imag(
-        impact_parameter_size,
+        source_position_size,
         std::vector<double>(dimensionless_frequency_size));
 
     // Create the loop that goes through and calculates the amplification
@@ -488,11 +488,11 @@ std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
     acb_init(amplification_factor);
 
     #pragma omp parallel for collapse(2) schedule(dynamic)
-    for (int i=0; i < impact_parameter_size; i++) {
+    for (int i=0; i < source_position_size; i++) {
         for (int j=0; j < approx_switch; j++) {
             AmplificationFactorCalculation(amplification_factor,
                                            dimensionless_frequency[j],
-                                           impact_parameter[i],
+                                           source_position[i],
                                            integration_upper_limit,
                                            precision);
             amp_fac_real[i][j] = arf_get_d(
@@ -507,12 +507,12 @@ std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
     // optics approximation
     if (approx_switch < dimensionless_frequency_size) {
         #pragma omp parallel for collapse(2) schedule(dynamic)
-        for (int i=0; i < impact_parameter_size; i++) {
+        for (int i=0; i < source_position_size; i++) {
             for (int j=approx_switch; j < dimensionless_frequency_size; j++) {
                 std::complex<double> geometric_factor;
                 geometric_factor =
                     AmplificationFactorGeometric(dimensionless_frequency[j],
-                                                 impact_parameter[i]);
+                                                 source_position[i]);
 
                 amp_fac_real[i][j] = std::real(geometric_factor);
                 amp_fac_imag[i][j] = std::imag(geometric_factor);
@@ -531,7 +531,7 @@ std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
 // Main Function - this takes in seven arguments:
 //     dimensionless_frequency_file - input file containing dimensionless
 //                                    frequency values
-//     impact_parametter_file - input file containing impact parameter values
+//     source_position_file - input file containing source position values
 //     amplification_factor_real_file - output file containing the real parts of
 //                                      the amplification factor values
 //     amplification_factor_imag_file - output file containing the imaginary
@@ -543,7 +543,7 @@ std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
 //                     frequency array where the geometric optics approximation
 //                     should take over
 //
-// Function takes in a dimensionless frequency and impact parameter file each
+// Function takes in a dimensionless frequency and source position file each
 // containing a vector of numbers which it will then generate a pair of matrices
 // of amplification factor values from these, outputting the real and imaginary
 // components of this to two files. The infinite summation is approximated by
@@ -552,7 +552,7 @@ std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
 int main(int argc, char* argv[]) {
     // Read in all of the filenames
     std::string dimensionless_frequency_file = argv[1];
-    std::string impact_parameter_file = argv[2];
+    std::string source_position_file = argv[2];
     std::string amplification_factor_real_file = argv[3];
     std::string amplification_factor_imag_file = argv[4];
 
@@ -563,7 +563,7 @@ int main(int argc, char* argv[]) {
     // Read in the position for the geometric optics switch
     slong approx_switch = atoi(argv[7]);
 
-    // For each of the dimensionless frequency and impact parameter files
+    // For each of the dimensionless frequency and source position files
     // open the file for reading, generate an iterator object which will get
     // all of the enclosed values and put them inside of a vector
     std::ifstream dim_freq_fstream(dimensionless_frequency_file);
@@ -571,16 +571,16 @@ int main(int argc, char* argv[]) {
                                   dim_freq_end;
     std::vector<double> dimensionless_frequency(dim_freq_start, dim_freq_end);
 
-    std::ifstream imp_par_fstream(impact_parameter_file);
-    std::istream_iterator<double> imp_par_start(imp_par_fstream), imp_par_end;
-    std::vector<double> impact_parameter(imp_par_start, imp_par_end);
+    std::ifstream sour_pos_fstream(source_position_file);
+    std::istream_iterator<double> sour_pos_start(sour_pos_fstream), sour_pos_end;
+    std::vector<double> source_position(sour_pos_start, sour_pos_end);
 
     // With the vectors generated, now perform the main loop of calculating
     // the amplification factor values and return these as a pair of matrices
     std::pair<std::vector<std::vector<double>>,
               std::vector<std::vector<double>>> amp_fac_matrices;
     amp_fac_matrices = AmplificationFactorMatrices(
-        dimensionless_frequency, impact_parameter,
+        dimensionless_frequency, source_position,
         integration_upper_limit, precision, approx_switch);
 
     // Open the amplification factor files for writing

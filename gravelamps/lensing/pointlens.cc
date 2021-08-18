@@ -6,32 +6,32 @@
 
 #include "pointlens.h"
 
-// Function computes the value of xm - the impact parameter divided by a length
+// Function computes the value of xm - the source position divided by a length
 // normalisation constant for the phase constant corresponding to the minimum
 // time delay i.e. that of the image that travels the shortest path to the
 // observer. Function is given by xm = (y + sqrt(y^2+4))/2
-double StationaryPointMinimum(double impact_parameter) {
-    double impact_parameter_sq = impact_parameter * impact_parameter;
-    double xm = (impact_parameter + sqrt(impact_parameter_sq+4))/2;
+double StationaryPointMinimum(double source_position) {
+    double source_position_sq = source_position * source_position;
+    double xm = (source_position + sqrt(source_position_sq+4))/2;
     return xm;
 }
 
 // Function computes the value of phi - the phase constant used to obtain the
 // minimum time delay induced by the lensing. Function is given by
 // phi = (xm(y)-y)^2 / 2 - log(xm(y))
-double MinTimeDelayPhaseConstant(double impact_parameter) {
-    double xm_y = StationaryPointMinimum(impact_parameter);
-    double x_minus_y = xm_y - impact_parameter;
+double MinTimeDelayPhaseConstant(double source_position) {
+    double xm_y = StationaryPointMinimum(source_position);
+    double x_minus_y = xm_y - source_position;
     double phi = (x_minus_y*x_minus_y)/2 - log(xm_y);
     return phi;
 }
 
 // Function computes the amplification factor for an axially symmetric point
 // mass lens using full wave optics for given values of dimensionless frequency
-// and impact parameter with arithmetic precision given by precision
+// and source position with arithmetic precision given by precision
 void AmplificationFactorCalculation(acb_t amplification_factor,
                                     double dimensionless_frequency,
-                                    double impact_parameter,
+                                    double source_position,
                                     slong precision) {
     // Calculate the real part of the exponential component of the
     // amplification factor
@@ -40,7 +40,7 @@ void AmplificationFactorCalculation(acb_t amplification_factor,
     // Calculate the imaginary part of the exponential component of the
     // amplification factor
     double exp_log_part = log(dimensionless_frequency/2);
-    double exp_phi_part = 2 * MinTimeDelayPhaseConstant(impact_parameter);
+    double exp_phi_part = 2 * MinTimeDelayPhaseConstant(source_position);
     double exp_imag = (dimensionless_frequency/2) * (exp_log_part-exp_phi_part);
 
     // From the calculations construct the exponential component
@@ -73,8 +73,8 @@ void AmplificationFactorCalculation(acb_t amplification_factor,
     // of the amplification factor
     double hyper_arg_a_imag = dimensionless_frequency/2;
 
-    double impact_parameter_sq = impact_parameter * impact_parameter;
-    double hyper_arg_z_imag = hyper_arg_a_imag * impact_parameter_sq;
+    double source_position_sq = source_position * source_position;
+    double hyper_arg_z_imag = hyper_arg_a_imag * source_position_sq;
 
     // Construct the arguments to the confluent hypergeometric function
     acb_t hyper_arg_a;
@@ -131,11 +131,11 @@ void AmplificationFactorCalculation(acb_t amplification_factor,
 // Function computes the mangification for the geometric optics approximation
 // with the plus and minus images given by the state of mode. This is given by
 // 1/2 +- (y^2 + 2)/(2y * sqrt(y^2 + 4)). Mode determines plus or minus
-double Magnification(double impact_parameter, int mode) {
+double Magnification(double source_position, int mode) {
     double magnification = 1./2.;
-    double second_term_numerator = impact_parameter*impact_parameter + 2;
-    double second_term_denominator = 2 * impact_parameter * sqrt(
-        impact_parameter * impact_parameter + 4);
+    double second_term_numerator = source_position*source_position + 2;
+    double second_term_denominator = 2 * source_position * sqrt(
+        source_position * source_position + 4);
     double second_term = second_term_numerator/second_term_denominator;
 
     if (mode == 1) {
@@ -150,13 +150,13 @@ double Magnification(double impact_parameter, int mode) {
 // Function computes the time delay for the geometric optics approximation.
 // This is given by:
 // y * (sqrt(y^2 + 4)/2) + ln((sqrt(y^2+4)+y)/(sqrt(y^2+4)-y))
-double TimeDelay(double impact_parameter) {
-    double first_term = impact_parameter;
-    double first_term_numerator = sqrt(impact_parameter*impact_parameter + 4);
+double TimeDelay(double source_position) {
+    double first_term = source_position;
+    double first_term_numerator = sqrt(source_position*source_position + 4);
     first_term *= first_term_numerator/2.;
 
-    double second_term_numerator = first_term_numerator + impact_parameter;
-    double second_term_denominator = first_term_numerator - impact_parameter;
+    double second_term_numerator = first_term_numerator + source_position;
+    double second_term_denominator = first_term_numerator - source_position;
     double second_term = log(second_term_numerator/second_term_denominator);
 
     double time_delay = first_term + second_term;
@@ -166,18 +166,18 @@ double TimeDelay(double impact_parameter) {
 
 // Function computes the amplification factor for an axially symmetric point
 // mass lens using the geometric optics approximation for given values of
-// dimensionless frequency and impact parameter
+// dimensionless frequency and source position
 std::complex<double> AmplificationFactorGeometric(
-    double dimensionless_frequency, double impact_parameter) {
+    double dimensionless_frequency, double source_position) {
     // Using the complex_literals i operator
     using std::literals::complex_literals::operator""i;
 
     // First compute the magnifications
-    double magnification_plus = Magnification(impact_parameter, 1);
-    double magnification_minus = Magnification(impact_parameter, 0);
+    double magnification_plus = Magnification(source_position, 1);
+    double magnification_minus = Magnification(source_position, 0);
 
     // Compute the Time Delay
-    double time_delay = TimeDelay(impact_parameter);
+    double time_delay = TimeDelay(source_position);
 
     // Calculate the exponential term
     double exponent_imag  = dimensionless_frequency * time_delay;
@@ -195,23 +195,23 @@ std::complex<double> AmplificationFactorGeometric(
 
 // Function constructs two matrices containing the real and imaginary parts of
 // the value of the amplification factor function based upon two vectors
-// containing values of dimensionless frequency and impact parameters. It
+// containing values of dimensionless frequency and source position. It
 // returns these inside of a pair object
 std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
     AmplificationFactorMatrices(std::vector<double> dimensionless_frequency,
-                                std::vector<double> impact_parameter,
+                                std::vector<double> source_position,
                                 slong precision,
                                 int approx_switch) {
     // Get the size of the vectors
-    int impact_parameter_size = impact_parameter.size();
+    int source_position_size = source_position.size();
     int dimensionless_frequency_size = dimensionless_frequency.size();
 
     // Set up the vectors for the amplification factor real and imaginary parts
     std::vector<std::vector<double>> amplification_factor_real(
-        impact_parameter_size,
+        source_position_size,
         std::vector<double> (dimensionless_frequency_size));
     std::vector<std::vector<double>> amplification_factor_imag(
-        impact_parameter_size,
+        source_position_size,
         std::vector<double> (dimensionless_frequency_size));
 
     // Create the loop that goes through and calculates the amplification
@@ -221,13 +221,13 @@ std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
     // amounts of time at differing points
     #pragma omp parallel for collapse(2) schedule(dynamic)
 
-    for (int i=0; i < impact_parameter_size; i++) {
+    for (int i=0; i < source_position_size; i++) {
         for (int j=0; j < approx_switch; j++) {
             acb_t amplification_factor;
             acb_init(amplification_factor);
             AmplificationFactorCalculation(amplification_factor,
                                            dimensionless_frequency[j],
-                                           impact_parameter[i],
+                                           source_position[i],
                                            precision);
 
             amplification_factor_real[i][j] = arf_get_d(
@@ -242,12 +242,12 @@ std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
     // optics approximations
     if (approx_switch < dimensionless_frequency_size) {
         #pragma omp parallel for collapse(2) schedule(dynamic)
-        for (int i=0; i < impact_parameter_size; i++) {
+        for (int i=0; i < source_position_size; i++) {
             for (int j=approx_switch; j < dimensionless_frequency_size; j++) {
                 std::complex<double> geometric_factor;
                 geometric_factor =
                     AmplificationFactorGeometric(dimensionless_frequency[j],
-                                                 impact_parameter[i]);
+                                                 source_position[i]);
 
                 amplification_factor_real[i][j] = std::real(geometric_factor);
                 amplification_factor_imag[i][j] = std::imag(geometric_factor);
@@ -268,7 +268,7 @@ std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
 // Main Function - this takes in six arguments:
 //    dimensionless_frequency_file - input file contianing dimensionless
 //                                   frequency values
-//    impact_parameter_file - input file containing impact parameter values
+//    source_position_file - input file containing source position values
 //    amplification_factor_real_file - output file containing the real parts of
 //                                     the amplification factor values
 //    amplification_factor_imag_file - output file containing the imaginary
@@ -286,7 +286,7 @@ std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
 int main(int argc, char* argv[]) {
     // Read in all of the filenames
     std::string dimensionless_frequency_file = argv[1];
-    std::string impact_parameter_file = argv[2];
+    std::string source_position_file = argv[2];
     std::string amplification_factor_real_file = argv[3];
     std::string amplification_factor_imag_file = argv[4];
 
@@ -305,16 +305,16 @@ int main(int argc, char* argv[]) {
                                   dim_freq_end;
     std::vector<double> dimensionless_frequency(dim_freq_start, dim_freq_end);
 
-    std::ifstream imp_par_fstream(impact_parameter_file);
-    std::istream_iterator<double> imp_par_start(imp_par_fstream), imp_par_end;
-    std::vector<double> impact_parameter(imp_par_start, imp_par_end);
+    std::ifstream sour_pos_fstream(source_position_file);
+    std::istream_iterator<double> sour_pos_start(sour_pos_fstream), sour_pos_end;
+    std::vector<double> source_position(sour_pos_start, sour_pos_end);
 
     // With the vectors generated, now perform the main loop of calculating
     // the amplification factor values and return these as a pair of matrices
     std::pair<std::vector<std::vector<double>>,
               std::vector<std::vector<double>>> amp_fac_matrices;
     amp_fac_matrices = AmplificationFactorMatrices(
-        dimensionless_frequency, impact_parameter, precision, approx_switch);
+        dimensionless_frequency, source_position, precision, approx_switch);
 
     // Open the amplification factor files for writing
     std::ofstream amp_fac_real_fstream(amplification_factor_real_file);
