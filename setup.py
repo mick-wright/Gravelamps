@@ -20,7 +20,7 @@ class Build(build_ext):
 
         #Change to the subdirectory, run the makefile, return to present
         os.chdir(lensing_subfolder)
-        testing = subprocess.run(["make"], check=True)
+        subprocess.run(["make"], check=True)
         os.chdir(current_directory)
 
         #Run the remaining build process
@@ -52,7 +52,9 @@ setuptools.setup(
     },
     entry_points = {
         "console_scripts": ["gravelamps_local_inference=gravelamps.inference.inference:main",
-                            "gravelamps_pipe_inference=gravelamps.inference.inference_pipe:main"],
+    "gravelamps_pipe_inference=gravelamps.inference.inference_pipe:main",
+    "gravelamps_generate_lens_local=gravelamps.lensing.generate_lens_local:main",
+    "gravelamps_generate_lens_pipe=gravelamps.lensing.generate_lens_pipe:main"],
     },
     classifiers = [
         "Programming Language :: Python :: 3",
