@@ -487,8 +487,8 @@ std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
     acb_t amplification_factor;
     acb_init(amplification_factor);
 
-    #pragma omp parallel for collapse(2) schedule(dynamic)
     for (int i=0; i < source_position_size; i++) {
+        #pragma omp parallel for schedule(dynamic)
         for (int j=0; j < approx_switch; j++) {
             AmplificationFactorCalculation(amplification_factor,
                                            dimensionless_frequency[j],
@@ -500,14 +500,16 @@ std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
             amp_fac_imag[i][j] = arf_get_d(
                 arb_midref(acb_imagref(amplification_factor)), ARF_RND_NEAR);
         }
+        std::cout << "Completed column " << i+1 << " of "
+                  << source_position_size << std::endl;
     }
 
     // Create the loop that goes through and calculates the amplification
     // factor values over which they will be calculated using the geometric
     // optics approximation
     if (approx_switch < dimensionless_frequency_size) {
-        #pragma omp parallel for collapse(2) schedule(dynamic)
         for (int i=0; i < source_position_size; i++) {
+            #pragma omp parallel for schedule(dynamic)
             for (int j=approx_switch; j < dimensionless_frequency_size; j++) {
                 std::complex<double> geometric_factor;
                 geometric_factor =
@@ -517,6 +519,8 @@ std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
                 amp_fac_real[i][j] = std::real(geometric_factor);
                 amp_fac_imag[i][j] = std::imag(geometric_factor);
             }
+            std::cout << "Completed column " << i+1 << " of "
+                      << source_position_size << std::endl;
         }
     }
 
