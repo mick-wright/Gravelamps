@@ -56,7 +56,7 @@ def lens_subfile(config, dim_freq_file, sour_pos_file, amp_fac_real_file,
     with open(submit_file, "w") as sub:
         sub.write("universe = vanilla\n")
         sub.write("transfer_input_files = " + os.path.abspath(dim_freq_file)
-                  + "/" + os.path.abspath(sour_pos_file) + "\n")
+                  + "," + os.path.abspath(sour_pos_file) + "\n")
         sub.write("executable = " + executable + "\n")
 
         #Construct the arguments necessary for the function call
