@@ -483,13 +483,11 @@ std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
     // optics calculations. The scheudule here is dynanmic due to the fact
     // that the calculation takes differing amounts of time at differring
     // points
-
-    acb_t amplification_factor;
-    acb_init(amplification_factor);
-
     for (int i=0; i < source_position_size; i++) {
         #pragma omp parallel for schedule(dynamic)
         for (int j=0; j < approx_switch; j++) {
+            acb_t amplification_factor;
+            acb_init(amplification_factor);
             AmplificationFactorCalculation(amplification_factor,
                                            dimensionless_frequency[j],
                                            source_position[i],
