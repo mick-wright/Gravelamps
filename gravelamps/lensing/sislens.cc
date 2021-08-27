@@ -6,419 +6,128 @@
 
 #include "sis.h"
 
-// Function computes the value of the intermediate function k(w,y,z) for the
-// amplification factor calculation. The function k is given by
-// -iw*exp(iw(y^2/2 + phi(y)))*J0(wy*sqrt(z))*exp(-iw*sqrt(2z))
-void IntermediateFunctionCalculation(acb_t intermediate_function_value,
-                                     acb_t dimensionless_frequency,
-                                     acb_t source_position,
-                                     const acb_t integration_parameter,
-                                     slong precision) {
-    // Initialise the components of the function - as can be seen there are
-    // four - a prefactor, the first exponential term, the bessel term, and
-    // finally, the second exponential term
-    acb_t prefactor;
-    acb_t first_exponential_term;
-    acb_t bessel_term;
-    acb_t second_exponential_term;
-
-    acb_init(prefactor);
-    acb_init(first_exponential_term);
-    acb_init(bessel_term);
-    acb_init(second_exponential_term);
-
-    // In addition, we need a zero and a two value for use in the calculations
-    acb_t two;
-    acb_init(two);
-    acb_set_d(two, 2);
-
-    acb_t zero;
-    acb_init(zero);
-    acb_zero(zero);
-
-    // Construct the prefactor term
-    acb_mul_onei(prefactor, dimensionless_frequency);
-    acb_neg(prefactor, prefactor);
-
-    // Calculate the value of phi - y + 1/2
-    acb_t phi;
-    acb_init(phi);
-    acb_one(phi);
-    acb_div(phi, phi, two, precision);
-    acb_add(phi, phi, source_position, precision);
-
-    // Construct the first exponential term
-    acb_sqr(first_exponential_term, source_position, precision);
-    acb_div(first_exponential_term, first_exponential_term, two, precision);
-    acb_add(first_exponential_term, first_exponential_term, phi, precision);
-    acb_mul(first_exponential_term,
-            dimensionless_frequency,
-            first_exponential_term,
-            precision);
-    acb_mul_onei(first_exponential_term, first_exponential_term);
-    acb_exp(first_exponential_term, first_exponential_term, precision);
-
-    // Construct the Bessel Term
-    acb_mul(bessel_term, two, integration_parameter, precision);
-    acb_sqrt(bessel_term, bessel_term, precision);
-    acb_mul(bessel_term, bessel_term, source_position, precision);
-    acb_mul(bessel_term, bessel_term, dimensionless_frequency, precision);
-    acb_hypgeom_bessel_j(bessel_term, zero, bessel_term, precision);
-
-    // Construct the second term
-    acb_mul(second_exponential_term, two, integration_parameter, precision);
-    acb_sqrt(second_exponential_term, second_exponential_term, precision);
-    acb_mul(second_exponential_term,
-            second_exponential_term,
-            dimensionless_frequency,
-            precision);
-    acb_mul_onei(second_exponential_term, second_exponential_term);
-    acb_neg(second_exponential_term, second_exponential_term);
-    acb_exp(second_exponential_term, second_exponential_term, precision);
-
-    // Construct the value of the intermediate function by multiplication
-    acb_mul(intermediate_function_value,
-            prefactor,
-            first_exponential_term,
-            precision);
-    acb_mul(intermediate_function_value,
-            intermediate_function_value,
-            bessel_term,
-            precision);
-    acb_mul(intermediate_function_value,
-            intermediate_function_value,
-            second_exponential_term,
-            precision);
-
-    // Memory Management - clear up the declared acbs
-    acb_clear(phi);
-    acb_clear(prefactor);
-    acb_clear(first_exponential_term);
-    acb_clear(bessel_term);
-    acb_clear(second_exponential_term);
-    acb_clear(zero);
-    acb_clear(two);
-}
-
-// Function computes the value of the integrand being integrated in the
-// amplification factor calculation. The order parameter is unused but is
-// required by the integration process.
-int SisIntegrand(acb_ptr integrand,
-                 const acb_t integration_parameter,
-                 void * parameter_set,
-                 slong order,
-                 slong precision) {
-    // The parameter set contains a vector which itself contains the
-    // dimensionless frequency and source position. These need to be extracted
-    // and then placed into acb types for the rest of the calculation
-    std::vector<double> parameter_vector = (
-        (std::vector<double> *) parameter_set)[0];
-    double dimensionless_frequency_value = parameter_vector[0];
-    double source_position_value = parameter_vector[1];
-
-    acb_t dimensionless_frequency;
-    acb_t source_position;
-
-    acb_init(dimensionless_frequency);
-    acb_init(source_position);
-
-    acb_set_d(dimensionless_frequency, dimensionless_frequency_value);
-    acb_set_d(source_position, source_position_value);
-
-    // The integrand is a combination of two terms - the first is the
-    // intermediate function k(w,y,x) and the second is exp(iwx). We must first
-    // then construct each of these terms and then multiply them
-    acb_t intermediate_function_term;
-    acb_t exponential_term;
-
-    acb_init(intermediate_function_term);
-    acb_init(exponential_term);
-
-    // Calculation of the k function term
-    IntermediateFunctionCalculation(intermediate_function_term,
-                                    dimensionless_frequency,
-                                    source_position,
-                                    integration_parameter,
-                                    precision);
-
-    // Calculation of the exponential term
-    acb_mul(exponential_term,
-            dimensionless_frequency,
-            integration_parameter,
-            precision);
-    acb_mul_onei(exponential_term, exponential_term);
-    acb_exp(exponential_term, exponential_term, precision);
-
-    // Multiplication of the terms to the resultant acb at integrand
-    acb_mul(
-        integrand, intermediate_function_term, exponential_term, precision);
-
-    // Memory Management - clear up the declared acbs inside the function
-    acb_clear(dimensionless_frequency);
-    acb_clear(source_position);
-    acb_clear(intermediate_function_term);
-    acb_clear(exponential_term);
-
-    // Now return a zero to indicate function's successful completion
-    return 0;
-}
-
-// Function computes the value of the first correction term for the
-// amplification factor. The first correction term is given by
-// -((k(w,y,x_upper_limit) * exp(iw*x_upper_limit))/iw)
-void FirstCorrectionTerm(acb_t first_correction_term,
-                         acb_t dimensionless_frequency,
-                         acb_t source_position,
-                         acb_t integration_upper_limit,
-                         slong precision) {
-    // The function is calculated by splitting the calculation into three parts
-    // an intermediate function term, an exponential term, and the denominator
-    // term. These must be initialised as acbs
-    acb_t intermediate_function_term;
-    acb_t exponential_term;
-    acb_t denominator_term;
-
-    acb_init(intermediate_function_term);
-    acb_init(exponential_term);
-    acb_init(denominator_term);
-
-    // Calculate the intermediate function term
-    IntermediateFunctionCalculation(intermediate_function_term,
-                                    dimensionless_frequency,
-                                    source_position,
-                                    integration_upper_limit,
-                                    precision);
-
-    // Calculate the exponential term
-    acb_mul(exponential_term,
-            dimensionless_frequency,
-            integration_upper_limit,
-            precision);
-    acb_mul_onei(exponential_term, exponential_term);
-    acb_exp(exponential_term, exponential_term, precision);
-
-    // Calculate the denomiantor term
-    acb_mul_onei(denominator_term, dimensionless_frequency);
-
-    // Construct the correction term value
-    acb_mul(first_correction_term,
-            intermediate_function_term,
-            exponential_term,
-            precision);
-    acb_div(first_correction_term,
-            first_correction_term,
-            denominator_term,
-            precision);
-    acb_neg(first_correction_term, first_correction_term);
-
-    // Memory Management - clear the declared acbs inside the function
-    acb_clear(intermediate_function_term);
-    acb_clear(exponential_term);
-    acb_clear(denominator_term);
-}
-
-// Function computes the value of the second correction term for the
-// amplification factor. This term is given by
-// d(k(w,y,x)*exp(iwz)/dx/(iw)^2
-void SecondCorrectionTerm(acb_t second_correction_term,
-                          acb_t dimensionless_frequency,
-                          acb_t source_position,
-                          acb_t integration_upper_limit,
-                          slong precision) {
-    // The function will be computed by constructing three terms, the
-    // derivative term, the exponential term, and the denominator term.
-    // To first calculate the derivative term, a central finite differences
-    // method will be applied with a set step-size of 0.00001. This means that
-    // df/dx = f(x+h)-f(x-h)/2h.
-    // Firstly we must initialise the necessary values of h, 2h, x+-h, f(x+-h),
-    // and df/dx
-    acb_t stepsize;
-    acb_t upper_limit_plus;
-    acb_t upper_limit_minus;
-    acb_t double_stepsize;
-    acb_t function_value_plus;
-    acb_t function_value_minus;
-    acb_t derivative_term;
-
-    acb_init(stepsize);
-    acb_init(upper_limit_plus);
-    acb_init(upper_limit_minus);
-    acb_init(double_stepsize);
-    acb_init(function_value_plus);
-    acb_init(function_value_minus);
-    acb_init(derivative_term);
-
-    // Calculate the values of the easily constructed values
-    acb_set_d(stepsize, 0.00001);
-    acb_add(double_stepsize, stepsize, stepsize, precision);
-    acb_add(upper_limit_plus, integration_upper_limit, stepsize, precision);
-    acb_sub(upper_limit_minus, integration_upper_limit, stepsize, precision);
-
-    // Calculate the two function values
-    IntermediateFunctionCalculation(function_value_plus,
-                                    dimensionless_frequency,
-                                    source_position,
-                                    upper_limit_plus,
-                                    precision);
-    IntermediateFunctionCalculation(function_value_minus,
-                                    dimensionless_frequency,
-                                    source_position,
-                                    upper_limit_minus,
-                                    precision);
-
-    // Now calculate the derivative term by using the central differences
-    // method
-    acb_sub(
-        derivative_term, function_value_plus, function_value_minus, precision);
-    acb_div(derivative_term, derivative_term, double_stepsize, precision);
-
-    // Calculate the exponential term
-    acb_t exponential_term;
-    acb_init(exponential_term);
-
-    acb_mul(exponential_term,
-            dimensionless_frequency,
-            integration_upper_limit,
-            precision);
-    acb_mul_onei(exponential_term, exponential_term);
-    acb_exp(exponential_term, exponential_term, precision);
-
-    // Calculate the denominator
-    acb_t denominator_term;
-    acb_init(denominator_term);
-
-    acb_mul_onei(denominator_term, dimensionless_frequency);
-    acb_sqr(denominator_term, denominator_term, precision);
-
-    // Construct the full correction term
-    acb_mul(second_correction_term,
-            derivative_term,
-            exponential_term,
-            precision);
-    acb_div(second_correction_term,
-            second_correction_term,
-            denominator_term,
-            precision);
-
-    // Memory Management - clear the declared acbs
-    acb_clear(stepsize);
-    acb_clear(upper_limit_plus);
-    acb_clear(upper_limit_minus);
-    acb_clear(double_stepsize);
-    acb_clear(function_value_plus);
-    acb_clear(function_value_minus);
-    acb_clear(derivative_term);
-    acb_clear(exponential_term);
-    acb_clear(denominator_term);
-}
-
-// Function computes the amplification factor for an axially symmetric Singular
-// Isothermal Sphere (SIS) lens using full wave optics for given values of
-// dimensionless frequency and source position with arithmetic precision given
-// by precision. The infinite integral is approximated by calculating the
-// finite integral with upper limit given by integration_upper_limit.
+// Function computes the amplification factor for an axially symmetric singular
+// isothermal sphere (SIS) style lensing using full wave optics for given
+// values of dimensionless frequency and source position. It does this using a
+// summation method with the infinite sum approximated up to a given threshold
+// and with a given arithmetic precision
 void AmplificationFactorCalculation(acb_t amplification_factor,
                                     double dimensionless_frequency,
                                     double source_position,
-                                    double integration_upper_limit,
+                                    slong summation_upper_limit,
                                     slong precision) {
-    // The integrand function requires that the lensing parameters be passed to
-    // it in the form of a single vector
-    std::vector<double> parameter_set {dimensionless_frequency,
-                                       source_position};
+    // For the given value of impact parameter, calculate the phi, the phase
+    // constant used to obtain a minimum time delay of zero
+    double phi = source_position + 1./2.;
 
-    // Construct abs for the lensing parameters to be used in the more complex
-    // calculations
-    acb_t dimensionless_frequency_acb;
-    acb_t source_position_acb;
+    // Calculate the prefactor term for the summation. This is given by
+    // exp(i(w/2 * (y^2 + 2phi(y))))
+    acb_t prefactor;
+    acb_init(prefactor);
 
-    acb_init(dimensionless_frequency_acb);
-    acb_init(source_position_acb);
+    double prefactor_dim_freq_term = dimensionless_frequency/2.;
+    double prefactor_sour_pos_term = source_position * source_position;
+    double prefactor_phi_term = 2. * phi;
 
-    acb_set_d(dimensionless_frequency_acb, dimensionless_frequency);
-    acb_set_d(source_position_acb, source_position);
+    double prefactor_exponent_imag = prefactor_dim_freq_term
+                                     * (prefactor_sour_pos_term
+                                     + prefactor_phi_term);
 
-    // Set the goal and the tolerance for the integration, these are based upon
-    // the precision specified
-    slong goal = precision;
+    acb_set_d_d(prefactor, 0, prefactor_exponent_imag);
+    acb_exp(prefactor, prefactor, precision);
 
-    mag_t tolerance;
-    mag_set_ui_2exp_si(tolerance, 1, -1*precision);
+    // Initialise the summation term
+    acb_t summation_term;
+    acb_init(summation_term);
+    acb_zero(summation_term);
 
-    // Integration options - these are set such that the precision changes the
-    // depth limit as 128 times the precision, and the evaluation limit as the
-    // cube of the precision
-    acb_calc_integrate_opt_t integration_options;
-    acb_calc_integrate_opt_init(integration_options);
+    // Loop through the summation from 0 up to the upper summation limit
+    for (int n=0; n <= summation_upper_limit; n++) {
+        // Calculate the gamma term, gamma(1+n/2)/n!
+        double gamma_term_val = 1 + n/2.;
 
-    integration_options -> use_heap = 1;
-    integration_options -> depth_limit = 128 * precision;
-    integration_options -> eval_limit = precision*precision*precision;
+        acb_t gamma_term;
+        acb_init(gamma_term);
+        acb_set_d(gamma_term, gamma_term_val);
+        acb_gamma(gamma_term, gamma_term, precision);
 
-    // Create acbs for the lower and upper limits of the integration. The lower
-    // limit of the integration should be zero, however, the calculation is
-    // unable to process this, and so to avoid issues, the lower limit is set
-    // to be 0.000001
-    acb_t lower_limit;
-    acb_t upper_limit;
+        arb_t factorial;
+        arb_init(factorial);
+        arb_fac_ui(factorial, n, precision);
 
-    acb_init(lower_limit);
-    acb_init(upper_limit);
+        acb_div_arb(gamma_term, gamma_term, factorial, precision);
 
-    acb_set_d(lower_limit, 0.000001);
-    acb_set_d(upper_limit, integration_upper_limit);
+        // Calculate the power term (2w e^i3pi/2)^n/2
+        double power_term_prefactor_val = 2 * dimensionless_frequency;
+        double power_term_exponent_val = 3 * M_PI/2.;
+        double power_term_power_val = n/2.;
 
-    // Create and calculate the integration function using the integrand
-    // function
-    acb_t integration_term;
-    acb_init(integration_term);
-    acb_calc_integrate(integration_term,
-                       SisIntegrand,
-                       &parameter_set,
-                       lower_limit,
-                       upper_limit,
-                       goal,
-                       tolerance,
-                       integration_options,
-                       precision);
+        acb_t power_term;
+        acb_t power_term_exponent;
+        arb_t power_term_power;
 
-    // Calculate the first correction term
-    acb_t first_correction_term;
-    acb_init(first_correction_term);
-    FirstCorrectionTerm(first_correction_term,
-                        dimensionless_frequency_acb,
-                        source_position_acb,
-                        upper_limit,
-                        precision);
+        acb_init(power_term);
+        acb_init(power_term_exponent);
+        arb_init(power_term_power);
 
-    // Calculate the second correction term
-    acb_t second_correction_term;
-    acb_init(second_correction_term);
-    SecondCorrectionTerm(second_correction_term,
-                         dimensionless_frequency_acb,
-                         source_position_acb,
-                         upper_limit,
-                         precision);
+        acb_set_d(power_term, power_term_prefactor_val);
+        acb_set_d_d(power_term_exponent, 0, power_term_exponent_val);
+        arb_set_d(power_term_power, power_term_power_val);
 
-    // Fromn the integration term, and the two correciton terms, construct the
-    // final value of the amplification factor
-    acb_add(amplification_factor,
-            integration_term,
-            first_correction_term,
-            precision);
-    acb_add(amplification_factor,
-            amplification_factor,
-            second_correction_term,
-            precision);
+        acb_exp(power_term_exponent, power_term_exponent, precision);
+        acb_mul(power_term, power_term, power_term_exponent, precision);
+        acb_pow_arb(power_term, power_term, power_term_power, precision);
 
-    // Memory Management - clear the acbs declared in the function
-    acb_clear(dimensionless_frequency_acb);
-    acb_clear(source_position_acb);
-    acb_clear(lower_limit);
-    acb_clear(upper_limit);
-    acb_clear(integration_term);
-    acb_clear(first_correction_term);
-    acb_clear(second_correction_term);
+        // Calculate the Hypergeometric function term:
+        // 1f1(1 + n/2; 1; -i/2 wy^2)
+        double hyper_arg_a_real = 1 + n/2.;
+        double hyper_arg_z_imag = (-1./2.) * dimensionless_frequency
+                                  * source_position * source_position;
+	
+        acb_t hyper_arg_a;
+        acb_t hyper_arg_b;
+        acb_t hyper_arg_z;
+
+        acb_init(hyper_arg_a);
+        acb_init(hyper_arg_b);
+        acb_init(hyper_arg_z);
+
+        acb_set_d(hyper_arg_a, hyper_arg_a_real);
+        acb_one(hyper_arg_b);
+        acb_set_d_d(hyper_arg_z, 0, hyper_arg_z_imag);
+
+        acb_t hyper_term;
+        acb_init(hyper_term);
+        acb_hypgeom_1f1(
+           hyper_term, hyper_arg_a, hyper_arg_b, hyper_arg_z, 0, precision);
+
+        // Construct the value to add to the summation
+        acb_t summation_temp;
+        acb_init(summation_temp);
+        acb_mul(summation_temp, gamma_term, power_term, precision);
+        acb_mul(summation_temp, summation_temp, hyper_term, precision);
+
+	acb_add(summation_term, summation_term, summation_temp, precision);
+
+	// Memory Management - clear the declared acbs
+	acb_clear(gamma_term);
+	arb_clear(factorial);
+	acb_clear(power_term);
+	acb_clear(power_term_exponent);
+	arb_clear(power_term_power);
+	acb_clear(hyper_arg_a);
+	acb_clear(hyper_arg_b);
+	acb_clear(hyper_arg_z);
+	acb_clear(hyper_term);
+	acb_clear(summation_temp);
+    }
+
+    // Get the final result by multiplying the prefactor and the summation term
+    acb_mul(amplification_factor, prefactor, summation_term, precision);
+
+    // Memory Management - clear the remaining acbs
+    acb_clear(prefactor);
+    acb_clear(summation_term);
 }
 
 // Function computes the amplification factor for an axially symmetric singular
@@ -463,7 +172,7 @@ std::complex<double> AmplificationFactorGeometric(
 std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
     AmplificationFactorMatrices(std::vector<double> dimensionless_frequency,
                                 std::vector<double> source_position,
-                                double integration_upper_limit,
+                                slong summation_upper_limit,
                                 slong precision,
                                 slong approx_switch) {
     // Calculate the sizes of the dimensionless frequency and imapct parameter
@@ -491,7 +200,7 @@ std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
             AmplificationFactorCalculation(amplification_factor,
                                            dimensionless_frequency[j],
                                            source_position[i],
-                                           integration_upper_limit,
+                                           summation_upper_limit,
                                            precision);
             amp_fac_real[i][j] = arf_get_d(
                 arb_midref(acb_realref(amplification_factor)), ARF_RND_NEAR);
@@ -538,7 +247,7 @@ std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
 //                                      the amplification factor values
 //     amplification_factor_imag_file - output file containing the imaginary
 //                                      parts of the amplification factor values
-//     integration_upper_limit - value to calculate the integral up to
+//     summation_upper_limit - value to calculate the summation up to
 //     precision - integer value used as the arithmetic preciusion in the
 //                 amplification factor calculations
 //     approx_switch - integer value which is the location in the dimensionless
@@ -559,7 +268,7 @@ int main(int argc, char* argv[]) {
     std::string amplification_factor_imag_file = argv[4];
 
     // Read in the summation threshold and arithmetic precision values
-    double integration_upper_limit = atof(argv[5]);
+    slong summation_upper_limit = atoi(argv[5]);
     slong precision = atoi(argv[6]);
 
     // Read in the position for the geometric optics switch
@@ -583,7 +292,7 @@ int main(int argc, char* argv[]) {
               std::vector<std::vector<double>>> amp_fac_matrices;
     amp_fac_matrices = AmplificationFactorMatrices(
         dimensionless_frequency, source_position,
-        integration_upper_limit, precision, approx_switch);
+        summation_upper_limit, precision, approx_switch);
 
     // Open the amplification factor files for writing
     std::ofstream amp_fac_real_fstream(amplification_factor_real_file);

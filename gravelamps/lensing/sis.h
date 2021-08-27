@@ -21,47 +21,15 @@
 #include "acb_hypgeom.h"
 #include "acb_calc.h"
 
-// Function computes the value of the intermediate function k(w,y,z) for the
-// amplification factor calculation.
-void IntermediateFunctionCalculation(acb_t intermediate_function_value,
-                                     acb_t dimensionless_frequency,
-                                     acb_t source_position,
-                                     const acb_t integration_parameter,
-                                     slong precision);
-
-// Function computes teh value of the integrand being integrated in the
-// amplification factor calculation
-int SisIntegrand(acb_ptr integrand,
-                 const acb_t integration_parameter,
-                 void * parameter_set,
-                 slong order,
-                 slong precision);
-
-// Function computes the value of the first correction term for the
-// amplification factor
-void FirstCorrectionTerm(acb_t first_correction_term,
-                         acb_t dimensionless_frequency,
-                         acb_t source_position,
-                         acb_t integration_upper_limit,
-                         slong precision);
-
-// Function computes the value of the second correction term for the
-// amplification factor calculation
-void SecondCorrectionTerm(acb_t second_correction_term,
-                          acb_t dimensionless_frequency,
-                          acb_t source_position,
-                          acb_t integration_upper_limit,
-                          slong precision);
-
 // Function computesthe amplification factor for an axially symmetric singular
 // isothermal sphere (SIS) lens using full wave optics for given values of
-// dimensionless frequency and source position with arithmetic precision given
-// by precision. The infinte integral is calculated up to a finite limit given
-// by integration_upper_limit.
+// dimensionless frequency and source position. It does this using a summation
+// method with the infinite sum approximated up to a given threshold and with
+// a given arithmetic precision
 void AmplificationFactorCalculation(acb_t amplification_factor,
                                     double dimensionless_frequency,
                                     double source_position,
-                                    double integration_upper_limit,
+                                    slong summation_upper_limit,
                                     slong precision);
 
 // Function computes the amplification factor for an axially symmetric singular
@@ -77,7 +45,7 @@ std::complex<double> AmplificationFactorGeometric(
 std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
     AmplificationFactorMatrices(std::vector<double> dimensionless_frequency,
                                 std::vector<double> source_position,
-                                double integration_upper_limit,
+                                slong summation_upper_limit,
                                 slong precision,
                                 slong approx_switch);
 

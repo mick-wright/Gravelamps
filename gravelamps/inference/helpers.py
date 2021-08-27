@@ -81,7 +81,7 @@ def get_additional_parameters(config, geometric_optics_switch=0):
 
     elif lens_model == "sislens":
         integration_upper_limit = config.get(
-            "lens_generation_settings", "sis_integration_upper_limit")
+            "lens_generation_settings", "sis_summation_upper_limit")
         additional_parameter_list = [
             integration_upper_limit, precision, geometric_optics_switch]
 
