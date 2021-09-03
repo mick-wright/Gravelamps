@@ -76,7 +76,7 @@ def main():
             lensed_waveform_generator_class, lensed_frequency_domain_source_model))
 
     #Construct the Waveform Arguments Dictionary
-    waveform_arguments = dict()
+    waveform_arguments = {}
 
     waveform_approximant = config.get("analysis_settings", "waveform_approximant")
     minimum_frequency = config.getfloat("analysis_settings", "minimum_frequency")
@@ -87,10 +87,38 @@ def main():
     waveform_arguments["minimum_frequency"] = minimum_frequency
     waveform_arguments["maximum_frequency"] = maximum_frequency
     waveform_arguments["reference_frequency"] = reference_frequency
-    waveform_arguments["dim_freq_file"] = dim_freq_file
-    waveform_arguments["sour_pos_file"] = sour_pos_file
-    waveform_arguments["amp_fac_real_file"] = amp_fac_real_file
-    waveform_arguments["amp_fac_imag_file"] = amp_fac_imag_file
+
+    #If using differing profile for injection than analysis, read in data here
+    dim_freq_other = config.get("injection_settings", "dimensionless_frequency_file")
+    sour_pos_other = config.get("injection_settings", "source_position_file")
+    amp_fac_real_other = config.get("injection_settings", "amplification_factor_real_file")
+    amp_fac_imag_other = config.get("injection_settings", "amplification_factor_imag_file")
+
+    analysis_waveform_arguments = waveform_arguments.copy()
+    analysis_waveform_arguments["dim_freq_file"] = dim_freq_file
+    analysis_waveform_arguments["sour_pos_file"] = sour_pos_file
+    analysis_waveform_arguments["amp_fac_real_file"] = amp_fac_real_file
+    analysis_waveform_arguments["amp_fac_imag_file"] = amp_fac_imag_file
+
+    if dim_freq_other == "None":
+        waveform_arguments["dim_freq_file"] = dim_freq_file
+    else:
+        waveform_arguments["dim_freq_file"] = dim_freq_other
+
+    if sour_pos_other == "None":
+        waveform_arguments["sour_pos_file"] = sour_pos_file
+    else:
+        waveform_arguments["sour_pos_file"] = sour_pos_other
+
+    if amp_fac_real_other == "None":
+        waveform_arguments["amp_fac_real_file"] = amp_fac_real_file
+    else:
+        waveform_arguments["amp_fac_real_file"] = amp_fac_real_other
+
+    if amp_fac_imag_other == "None":
+        waveform_arguments["amp_fac_imag_file"] = amp_fac_imag_file
+    else:
+        waveform_arguments["amp_fac_imag_file"] = amp_fac_imag_other
 
     #Read in Sampling Frequency
     sampling_frequency = config.getfloat("analysis_settings", "sampling_frequency")
@@ -111,6 +139,13 @@ def main():
         frequency_domain_source_model=lensed_frequency_domain_source_model,
         parameter_conversion=bilby.gw.conversion.convert_to_lal_binary_black_hole_parameters,
         waveform_arguments=waveform_arguments)
+
+    #Generate Analysis Waveform
+    analysis_waveform_generator = lensed_waveform_generator_class(
+        duration=duration, sampling_frequency=sampling_frequency,
+        frequency_domain_source_model=lensed_frequency_domain_source_model,
+        parameter_conversion=bilby.gw.conversion.convert_to_lal_binary_black_hole_parameters,
+        waveform_argumetns=analysis_waveform_arguments)
 
     #Set up the Interferometers
     interferometer_list = config.get(
@@ -231,7 +266,7 @@ def main():
 
     #Generate Lensed Likelihood
     lensed_likelihood = bilby.gw.GravitationalWaveTransient(
-        interferometers=interferometers, waveform_generator=lensed_waveform_generator)
+        interferometers=interferometers, waveform_generator=analysis_waveform_generator)
 
     #Perform the Lensed Run
     if config.getboolean("injection_settings", "injection"):
