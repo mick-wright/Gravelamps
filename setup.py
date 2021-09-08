@@ -54,7 +54,8 @@ setuptools.setup(
         "console_scripts": ["gravelamps_local_inference=gravelamps.inference.inference:main",
     "gravelamps_pipe_inference=gravelamps.inference.inference_pipe:main",
     "gravelamps_generate_lens_local=gravelamps.lensing.generate_lens_local:main",
-    "gravelamps_generate_lens_pipe=gravelamps.lensing.generate_lens_pipe:main"],
+    "gravelamps_generate_lens_pipe=gravelamps.lensing.generate_lens_pipe:main",
+    "gravelamps_generate_interferometer_data=gravelamps.lensing.generate_interferometer_data:main"],
     },
     classifiers = [
         "Programming Language :: Python :: 3",
