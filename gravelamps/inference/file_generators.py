@@ -192,6 +192,9 @@ def bilby_pipe_ini(config, inject_file, waveform_arguments, mode):
     #Include the waveform arguments dictionary
     bilby_pipe_config["waveform_arguments_dict"] = waveform_arguments
 
+    #Include the approximant specifically
+    bilby_pipe_config["waveform_approximant"] = waveform_arguments["waveform_approximant"]
+
     #Include the trigger time
     bilby_pipe_config["trigger-time"] = config.get("analysis_settings", "trigger_time")
 
