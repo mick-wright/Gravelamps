@@ -234,6 +234,8 @@ def overarching_dag(config):
                 config.get("lens_generation_settings", "amplification_factor_imag_file")):
                 dag.write("JOB lens_generation " + lens_generation_subfile + "\n")
                 lens_generation = True
+        else:
+            lens_generation = False
 
         #Add unlensed analysis run, if doing so
         if config.getboolean("unlensed_analysis_settings", "unlensed_analysis_run"):
