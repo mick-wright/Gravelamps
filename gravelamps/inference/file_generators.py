@@ -175,6 +175,7 @@ def bilby_pipe_ini(config, inject_file, waveform_arguments, mode):
 
     #If injecting, include the injection file
     if inject_file is not None:
+        bilby_pipe_config["injection"] = True
         bilby_pipe_config["injection_file"] = inject_file
 
     #Include the sampler settings
