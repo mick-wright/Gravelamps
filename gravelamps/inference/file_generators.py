@@ -229,7 +229,11 @@ def overarching_dag(config):
     #Open the DAG file for writing
     with open(dag_file, "w") as dag:
         #Add the lens generation job
-        dag.write("JOB lens_generation " + lens_generation_subfile + "\n")
+        if os.path.isfile(config.get("lens_generation_settings", "amplification_factor_real_file")):
+            if os.path.isfile(
+                config.get("lens_generation_settings", "amplification_factor_imag_file")):
+                dag.write("JOB lens_generation " + lens_generation_subfile + "\n")
+                lens_generation = True
 
         #Add unlensed analysis run, if doing so
         if config.getboolean("unlensed_analysis_settings", "unlensed_analysis_run"):
@@ -245,9 +249,11 @@ def overarching_dag(config):
         #Parent-Child Link the jobs so that the lens generation goes first, then the unlensed,
         #then the lensed analysis runs
         if config.getboolean("unlensed_analysis_settings", "unlensed_analysis_run"):
-            dag.write("PARENT lens_generation CHILD bilby_pipe_unlensed \n")
+            if lens_generation is True:
+                dag.write("PARENT lens_generation CHILD bilby_pipe_unlensed \n")
             dag.write("PARENT bilby_pipe_unlensed CHILD bilby_pipe_lensed \n")
         else:
-            dag.write("PARENT lens_generation CHILD bilby_pipe_lensed \n")
+            if lens_generation is True:
+                dag.write("PARENT lens_generation CHILD bilby_pipe_lensed \n")
 
     return dag_file
