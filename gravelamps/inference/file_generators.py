@@ -220,7 +220,7 @@ def overarching_dag(config):
     data_subdirectory = outdir + "/data"
 
     #Get the Overarching DAG file name
-    dag_file = data_subdirectory + "/dag_" + label + "_overarch.submit"
+    dag_file = submit_subdirectory + "/dag_" + label + "_overarch.submit"
 
     #Get the lens generation submit file
     lens_generation_subfile = submit_subdirectory + "/generate_lens.sub"
@@ -229,10 +229,11 @@ def overarching_dag(config):
     #Open the DAG file for writing
     with open(dag_file, "w") as dag:
         #Add the lens generation job
-        if os.path.isfile(config.get("lens_generation_settings", "amplification_factor_real_file")):
-            if os.path.isfile(
+        if not os.path.isfile(
+            config.get("lens_generation_settings", "amplification_factor_real_file")):
+            if not os.path.isfile(
                 config.get("lens_generation_settings", "amplification_factor_imag_file")):
-                dag.write("JOB lens_generation " + lens_generation_subfile + "\n")
+                 dag.write("JOB lens_generation " + lens_generation_subfile + "\n")
                 lens_generation = True
 
         #Add unlensed analysis run, if doing so
