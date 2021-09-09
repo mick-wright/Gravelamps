@@ -131,7 +131,7 @@ def bilby_pipe_ini(config, inject_file, waveform_arguments, mode):
     '''
 
     #Get the bilby_pipe INI filename
-    ini_file = config.get("bilby_setup", "label") + "_" + mode + "_bilby_pipe.ini"
+    ini_file = config.get("output_settings", "label") + "_" + mode + "_bilby_pipe.ini"
 
     #Create the empty configuration dictionary
     bilby_pipe_config = dict()
