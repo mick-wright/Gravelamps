@@ -7,6 +7,7 @@ These are computational not physical in the nature of the work they do
 Written by Mick Wright 2021
 '''
 
+import os
 import subprocess
 import importlib
 
