@@ -105,7 +105,7 @@ def injection_file(config, injection_parameters):
             prior.write(str(key) + "=" + str(value) + "\n")
 
     #Run the bilby_pipe_create_injection_file function
-    n_injections = config.get("injection_settings", "n-injections")
+    n_injections = config.get("injection_settings", "n-injection")
 
     subprocess.run(["bilby_pipe_create_injection_file", inject_prior,
                     "--n-injection", n_injections,
