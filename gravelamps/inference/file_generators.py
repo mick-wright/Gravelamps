@@ -244,7 +244,7 @@ def overarching_dag(config):
 
         #Parent-Child Link the jobs so that the lens generation goes first, then the unlensed,
         #then the lensed analysis runs
-        if config.getboolean("unlensed_analysis_settings", "unlensed_anaalysis_run"):
+        if config.getboolean("unlensed_analysis_settings", "unlensed_analysis_run"):
             dag.write("PARENT lens_generation CHILD bilby_pipe_unlensed \n")
             dag.write("PARENT bilby_pipe_unlensed CHILD bilby_pipe_lensed \n")
         else:
