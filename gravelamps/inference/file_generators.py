@@ -108,7 +108,7 @@ def injection_file(config, injection_parameters):
     n_injections = config.get("injection_settings", "n-injections")
 
     subprocess.run(["bilby_pipe_create_injection_file", inject_prior,
-                    "--n-injections", n_injections,
+                    "--n-injection", n_injections,
                     "-f", inject_file], check=True)
 
     bilby.core.utils.logger.info("Injection File Generated")
