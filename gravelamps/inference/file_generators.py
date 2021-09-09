@@ -175,8 +175,12 @@ def bilby_pipe_ini(config, inject_file, waveform_arguments, mode):
 
     #If injecting, include the injection file
     if inject_file is not None:
-        bilby_pipe_config["injection"] = True
+        for key, value in config._sections["injection_settings"].items():
+            bilby_pipe_config[key] = value
         bilby_pipe_config["injection_file"] = inject_file
+    else:
+        for key, value in config._sections["event_settings"].items():
+            bilby_pipe_config[key] = value
 
     #Include the sampler settings
     bilby_pipe_config["sampler"] = config.get("analysis_settings", "sampler")
