@@ -54,6 +54,9 @@ def wy_handler(config):
             subprocess.run(["cp", sour_pos_file, data_subdirectory+"/y.dat"], check=True)
             sour_pos_file = data_subdirectory + "/y.dat"
 
+    dim_freq_file = os.path.abspath(dim_freq_file)
+    sour_pos_file = os.path.abspath(sour_pos_file)
+
     return dim_freq_file, sour_pos_file
 
 def get_additional_parameters(config, geometric_optics_switch=0):
@@ -200,6 +203,9 @@ def amp_fac_handler(config, dim_freq_file, sour_pos_file, mode="local"):
         if amp_fac_imag_file != data_subdirectory + "/fImag.dat":
             subprocess.run(["cp", amp_fac_imag_file, data_subdirectory+"/fImag.dat"], check=True)
             amp_fac_imag_file = data_subdirectory + "/fImag.dat"
+
+    amp_fac_real_file = os.path.abspath(amp_fac_real_file)
+    amp_fac_imag_file = os.path.abspath(amp_fac_imag_file)
 
     return amp_fac_real_file, amp_fac_imag_file
 
