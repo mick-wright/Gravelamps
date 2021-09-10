@@ -53,7 +53,7 @@ def main():
 
     #Get the Waveform Generator and Frequency Domain Source Model
     lensed_waveform_generator_class = config.get(
-        "analysis_setttings", "lensed_waveform_generator_class")
+        "analysis_settings", "lensed_waveform_generator_class")
     lensed_frequency_domain_source_model = config.get(
         "analysis_settings", "frequency_domain_source_model")
 
@@ -67,10 +67,14 @@ def main():
     gps_start_time = trigger_time + 2 - duration
 
     #Construct the Waveform Arguments Dictionary
-    dim_freq_file = config.get("injection_settings", "dimensionless_frequency_file")
-    sour_pos_file = config.get("injection_settings", "source_position_file")
-    amp_fac_real_file = config.get("injection_settings", "amplification_factor_real_file")
-    amp_fac_imag_file = config.get("injection_settings", "amplification_factor_imag_file")
+    dim_freq_file = os.path.abspath(
+        config.get("injection_settings", "dimensionless_frequency_file"))
+    sour_pos_file = os.path.abspath(
+        config.get("injection_settings", "source_position_file"))
+    amp_fac_real_file = os.path.abspath(
+        config.get("injection_settings", "amplification_factor_real_file"))
+    amp_fac_imag_file = os.path.abspath(
+        config.get("injection_settings", "amplification_factor_imag_file"))
 
     waveform_approximant = config.get("analysis_settings", "waveform_approximant")
     minimum_frequency = config.get("analysis_settings", "minimum_frequency")
