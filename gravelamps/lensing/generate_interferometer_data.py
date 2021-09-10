@@ -77,9 +77,9 @@ def main():
         config.get("injection_settings", "amplification_factor_imag_file"))
 
     waveform_approximant = config.get("analysis_settings", "waveform_approximant")
-    minimum_frequency = config.get("analysis_settings", "minimum_frequency")
-    maximum_frequency = config.get("analysis_settings", "maximum_frequency")
-    reference_frequency = config.get("analysis_settings", "reference_frequency")
+    minimum_frequency = config.getfloat("analysis_settings", "minimum_frequency")
+    maximum_frequency = config.getfloat("analysis_settings", "maximum_frequency")
+    reference_frequency = config.getfloat("analysis_settings", "reference_frequency")
 
     waveform_arguments = {}
 
