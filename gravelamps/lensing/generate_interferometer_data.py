@@ -55,7 +55,7 @@ def main():
     lensed_waveform_generator_class = config.get(
         "analysis_settings", "lensed_waveform_generator_class")
     lensed_frequency_domain_source_model = config.get(
-        "analysis_settings", "frequency_domain_source_model")
+        "analysis_settings", "lensed_frequency_domain_source_model")
 
     lensed_waveform_generator_class, lensed_frequency_domain_source_model = (
         gravelamps.inference.helpers.wfgen_fd_source(
