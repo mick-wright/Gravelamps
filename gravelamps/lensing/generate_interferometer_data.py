@@ -128,4 +128,4 @@ def main():
 
     #Save Data from Interferometers to data subdirectory
     for ifo in interferometers:
-        ifo.to_hdf5(data_subdirectory, label)
+        ifo.to_hdf5(data_subdirectory, ifo.name)
