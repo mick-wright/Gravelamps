@@ -75,7 +75,10 @@ def lens_subfile(config, dim_freq_file, sour_pos_file, amp_fac_real_file,
         sub.write("error = " + data_subdirectory + "/lens_generation.err\n")
 
         for key, value in condor_settings_dictionary.items():
-            sub.write(key + " = " + value + "\n")
+            if key == "request_memory":
+                sub.write(key + " = " + value + " GB \n")
+            else:
+                sub.write(key + " = " + value + "\n")
 
         sub.write("queue 1\n")
 
