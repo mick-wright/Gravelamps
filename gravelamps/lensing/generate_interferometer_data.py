@@ -128,6 +128,6 @@ def main():
 
     #Save Data from Interferometers to data subdirectory
     for ifo in interferometers:
-	interferometer.save_data(data_subdirectory)
+        interferometer.save_data(data_subdirectory)
         time_series = ifo.strain_data.to_gwpy_timeseries()
         time_series.write(data_subdirectory + "/" + ifo.name + ".txt")
