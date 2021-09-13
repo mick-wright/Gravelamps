@@ -145,7 +145,7 @@ def main():
         duration=duration, sampling_frequency=sampling_frequency,
         frequency_domain_source_model=lensed_frequency_domain_source_model,
         parameter_conversion=bilby.gw.conversion.convert_to_lal_binary_black_hole_parameters,
-        waveform_argumetns=analysis_waveform_arguments)
+        waveform_arguments=analysis_waveform_arguments)
 
     #Set up the Interferometers
     interferometer_list = config.get(
