@@ -118,11 +118,13 @@ def injection_file(config, injection_parameters):
 
     return inject_file
 
-def bilby_pipe_ini(config, inject_file, waveform_arguments, mode):
+def bilby_pipe_ini(config, inject_file, injection_waveform_arguments, waveform_arguments, mode):
     '''
     Input:
         config - INI configuration parser
         injection_file - location of file containing injection data
+        injection_waveform_arguments - dictionary containing arguments to be passed to waveform
+                                       during data generatioon only
         waveform_arguments - dictionary containing arguments to be passed to waveform
         mode - string determinining whether to generate an unlensed or a lensed analysis run
 
@@ -164,7 +166,7 @@ def bilby_pipe_ini(config, inject_file, waveform_arguments, mode):
             "analysis_settings", "lensed_frequency_domain_source_model")
     elif mode == "unlensed":
         bilby_pipe_config["waveform-generator"] = config.get(
-            "unlensed_analysis_settings", "unlenesed_waveform_generator_class")
+            "unlensed_analysis_settings", "unlensed_waveform_generator_class")
         bilby_pipe_config["frequency-domain-source-model"] = config.get(
             "unlensed_analysis_settings", "unlensed_frequency_domain_source_model")
 
@@ -176,11 +178,12 @@ def bilby_pipe_ini(config, inject_file, waveform_arguments, mode):
     for key, value in config._sections["bilby_pipe_settings"].items():
         bilby_pipe_config[key] = value
 
-    #If injecting, include the injection file
+    #If injecting include all the necessary injection settings, otherwise include event settings
     if inject_file is not None:
         for key, value in config._sections["injection_settings"].items():
             bilby_pipe_config[key] = value
         bilby_pipe_config["injection_file"] = inject_file
+        bilby_pipe_config["injection_waveform_arguments"] = injection_waveform_arguments 
     else:
         for key, value in config._sections["event_settings"].items():
             bilby_pipe_config[key] = value

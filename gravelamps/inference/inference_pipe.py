@@ -68,7 +68,7 @@ def main():
     waveform_arguments["amp_fac_real_file"] = amp_fac_real_file
     waveform_arguments["amp_fac_imag_file"] = amp_fac_imag_file
 
-    #If Injecting, Generate the Injection File
+    #If Injecting, Generate the Injection File and the Injection Waveform Arguments
     if config.getboolean("injection_settings", "injection"):
         #Read in the Injection Parameters, converting to floats
         injection_parameters = config._sections["injection_parameters"]
@@ -77,14 +77,33 @@ def main():
 
         inject_file = gravelamps.inference.file_generators.injection_file(
             config, injection_parameters)
+
+        #Construct the Injection Waveform Arguments dictionary
+        injection_waveform_arguments = waveform_arguments.copy()
+
+        dim_freq_other = config.get("injection_settings", "dimensionless_frequency_file")
+        sour_pos_other = config.get("injection_settings", "source_position_file")
+        amp_fac_real_other = config.get("injection_settings", "amp_fac_real_file")
+        amp_fac_imag_other = config.get("injection_settings", "amp_fac_imag_file")
+
+        if dim_freq_other != None:
+            injection_waveform_arguments["dim_freq_file"] = os.path.abspath(dim_freq_other)
+        if sour_pos_other != None:
+            injection_waveform_arguments["sour_pos_file"] = os.path.abspath(sour_pos_other)
+        if amp_fac_real_other != None:
+            injection_waveform_arguments["amp_fac_real_file"] = os.path.abspath(amp_fac_real_other)
+        if amp_fac_imag_other != None:
+            injection_waveform_arguments["amp_fac_imag_file"] = os.path.abspath(amp_fac_imag_other)
     else:
         inject_file = None
+        injection_waveform_arguments = None
 
     #If user specifies, perform unlensed analysis run
     if config.getboolean("unlensed_analysis_settings", "unlensed_analysis_run"):
         #Generate the unlensed run INI
         unlensed_ini = gravelamps.inference.file_generators.bilby_pipe_ini(
             config=config, inject_file=inject_file,
+            injection_waveform_arguments=injection_waveform_arguments,
             waveform_arguments=waveform_arguments, mode="unlensed")
 
         #Run the bilby_pipe initial run
@@ -95,6 +114,7 @@ def main():
     #Generate Lensed Run INI
     lensed_ini = gravelamps.inference.file_generators.bilby_pipe_ini(
         config=config, inject_file=inject_file,
+        injection_waveform_arguments=injection_waveform_arguments,
         waveform_arguments=waveform_arguments, mode="lensed")
 
     #Run the bilby_pipe intial run
