@@ -193,7 +193,10 @@ def bilby_pipe_ini(config, inject_file, injection_waveform_arguments, waveform_a
     bilby_pipe_config["sampler-kwargs"] = config._sections["sampler_kwargs"].copy()
 
     #Include the prior file
-    bilby_pipe_config["prior-file"] = config.get("analysis_settings", "prior_file")
+    if mode == "lensed":
+        bilby_pipe_config["prior-file"] = config.get("analysis_settings", "prior_file")
+    elif mode == "unlensed":
+        bilby_pipe_config["prior-file"] = config.get("unlensed_analysis_settings", "prior_file")
 
     #Include the waveform arguments dictionary
     bilby_pipe_config["waveform_arguments_dict"] = waveform_arguments
