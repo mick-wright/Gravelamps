@@ -17,6 +17,7 @@
 #include <complex>
 #include <string>
 #include <functional>
+#include <sstream>
 
 #include <boost/math/tools/roots.hpp>
 
@@ -140,17 +141,5 @@ std::complex<double> AmplificationFactorGeometric(
     double dimensionless_frequency,
     double source_position,
     double scaling_constant);
-
-// Function constructs two matrices containing the real and imaginary parts of
-// the value of the amplification factor function based upon two vectors
-// containing values of dimensionless frequency and source position and
-// returns these inside of a pair object
-std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
-    AmplificationFactorMatrices(std::vector<double> dimensionless_frequency,
-                                std::vector<double> source_position,
-                                double scaling_constant,
-                                double integration_upper_limit,
-                                slong precision,
-                                slong approx_switch);
 
 #endif  // GRAVELAMPS_LENSING_NFW_H_

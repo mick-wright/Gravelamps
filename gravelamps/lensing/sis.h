@@ -16,6 +16,7 @@
 #include <utility>
 #include <string>
 #include <complex>
+#include <sstream>
 
 #include "acb.h"
 #include "acb_hypgeom.h"
@@ -37,16 +38,5 @@ void AmplificationFactorCalculation(acb_t amplification_factor,
 // for given values of dimensionless frequency and source position
 std::complex<double> AmplificationFactorGeometric(
     double dimensionless_frequency, double source_position);
-
-// Function constructs two matrices containing the real and imaginary parts of
-// the value of the amplification factor function based upon two vectors
-// containing values of dimensionless frequency and source position and
-// returns these inside of a pair object
-std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
-    AmplificationFactorMatrices(std::vector<double> dimensionless_frequency,
-                                std::vector<double> source_position,
-                                slong summation_upper_limit,
-                                slong precision,
-                                slong approx_switch);
 
 #endif  // GRAVELAMPS_LENSING_SIS_H_
