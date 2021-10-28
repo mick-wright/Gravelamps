@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <utility>
 #include <string>
+#include <sstream>
 #include <complex>
 
 #include "acb.h"
@@ -50,14 +51,5 @@ double TimeDelay(double source_position);
 // dimensionless frequency and source position
 std::complex<double> AmplificationFactorGeometric(
     double dimensionless_frequency, double source_position);
-
-// Function constructs two matrices containing the real and imaginary parts of
-// the value of the amplification factor function based upon two vectors
-// containing values of dimensionless frequency and source position and
-// returns these inside of a pair object
-std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
-    AmplificationFactorMatrices(std::vector<double> dimensionless_frequency,
-                                std::vector<double> source_position,
-                                slong precision);
 
 #endif  // GRAVELAMPS_LENSING_POINTLENS_H_
