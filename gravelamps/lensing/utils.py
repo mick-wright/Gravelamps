@@ -100,11 +100,12 @@ def generate_interpolator(dim_freq_file, sour_pos_file, amp_fac_real_file, amp_f
     amp_fac_real = np.loadtxt(amp_fac_real_file)
     amp_fac_imag = np.loadtxt(amp_fac_imag_file)
 
-    #Make sure that the arrays are the correct orientation
-    if amp_fac_real.shape == (len(sour_pos_array), len(dim_freq_array)):
-        amp_fac_real = np.transpose(amp_fac_real)
-    if amp_fac_imag.shape == (len(sour_pos_array), len(dim_freq_array)):
-        amp_fac_imag = np.transpose(amp_fac_imag)
+    #Make sure that the arrays are the correct orientation - assuming non square matrix
+    if len(sour_pos_array) != len(dim_freq_array):
+        if amp_fac_real.shape == (len(sour_pos_array), len(dim_freq_array)):
+            amp_fac_real = np.transpose(amp_fac_real)
+        if amp_fac_imag.shape == (len(sour_pos_array), len(dim_freq_array)):
+            amp_fac_imag = np.transpose(amp_fac_imag)
 
     #Construct the real and imaginary interpolators
     real_interpolator = scint.RectBivariateSpline(
