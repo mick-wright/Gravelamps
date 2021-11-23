@@ -8,6 +8,7 @@ Written by Mick Wright 2021
 '''
 
 import os
+import shutil
 from configparser import ConfigParser
 
 import gravelamps.inference.helpers
@@ -22,6 +23,9 @@ config_files_no_copy.read("files_no_copy.ini")
 config_files_w_copy.read("files_w_copy.ini")
 config_no_files.read("no_files.ini")
 config_non_standard.read("non_standard_model.ini")
+
+if os.path.isdir(config_no_files.get("output_settings", "outdir")):
+    shutil.rmtree(config_no_files.get("output_settings", "outdir"))
 
 for config in [config_files_no_copy, config_files_w_copy, config_no_files, config_non_standard]:
     if not os.path.isdir(config.get("output_settings", "outdir")):
