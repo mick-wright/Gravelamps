@@ -330,11 +330,13 @@ int main(int argc, char* argv[]) {
                 }
             }
             #pragma omp ordered
-            amp_fac_realout << amplification_factor_real[i][j] << " ";
-            amp_fac_imagout << amplification_factor_imag[i][j] << " ";
+            {
+                amp_fac_realout << amplification_factor_real[i][j] << "\t";
+                amp_fac_imagout << amplification_factor_imag[i][j] << "\t";
+            }
         }
-        amp_fac_realout << "\n";
-        amp_fac_imagout << "\n";
+        amp_fac_realout << std::endl;
+        amp_fac_imagout << std::endl;
 
         std::cout << "Completed source position value " << i+1 << " of " <<
            source_position_size << std::endl;

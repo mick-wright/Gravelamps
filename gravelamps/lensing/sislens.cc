@@ -305,8 +305,10 @@ int main(int argc, char* argv[]) {
                 }
             }
             #pragma omp ordered
-            amp_fac_realout << amplification_factor_real[i][j] << " ";
-            amp_fac_imagout << amplification_factor_imag[i][j] << " ";
+            {
+                amp_fac_realout << amplification_factor_real[i][j] << " ";
+                amp_fac_imagout << amplification_factor_imag[i][j] << " ";
+            }
         }
         amp_fac_realout << "\n";
         amp_fac_imagout << "\n";

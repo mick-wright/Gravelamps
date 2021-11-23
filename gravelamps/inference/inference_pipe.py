@@ -86,13 +86,13 @@ def main():
         amp_fac_real_other = config.get("injection_settings", "amp_fac_real_file")
         amp_fac_imag_other = config.get("injection_settings", "amp_fac_imag_file")
 
-        if dim_freq_other != None:
+        if dim_freq_other != "None":
             injection_waveform_arguments["dim_freq_file"] = os.path.abspath(dim_freq_other)
-        if sour_pos_other != None:
+        if sour_pos_other != "None":
             injection_waveform_arguments["sour_pos_file"] = os.path.abspath(sour_pos_other)
-        if amp_fac_real_other != None:
+        if amp_fac_real_other != "None":
             injection_waveform_arguments["amp_fac_real_file"] = os.path.abspath(amp_fac_real_other)
-        if amp_fac_imag_other != None:
+        if amp_fac_imag_other != "None":
             injection_waveform_arguments["amp_fac_imag_file"] = os.path.abspath(amp_fac_imag_other)
     else:
         inject_file = None

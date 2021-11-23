@@ -1,0 +1,34 @@
+000 (27856379.000.000) 2021-11-22 20:23:59 Job submitted from host: <172.2.1.88:9618?PrivAddr=%3c172.2.1.88:9618%3fsock%3dschedd_41738_5ff6%3e&PrivNet=HAWKNET&addrs=172.2.1.88-9618&alias=cl8.hawk.supercomputingwales.ac.uk&noUDP&sock=schedd_41738_5ff6>
+...
+040 (27856379.000.000) 2021-11-22 20:24:20 Started transferring input files
+	Transferring to host: <172.2.4.25:9618?PrivAddr=%3c172.2.4.25:9618%3fsock%3dslot1_2_1057_8084_116623%3e&PrivNet=HAWKNET&addrs=172.2.4.25-9618&alias=ccr0025.hawk.supercomputingwales.ac.uk&noUDP&sock=slot1_2_1057_8084_116623>
+...
+040 (27856379.000.000) 2021-11-22 20:24:20 Finished transferring input files
+...
+001 (27856379.000.000) 2021-11-22 20:24:21 Job executing on host: <172.2.4.25:9618?sock=startd_1017_27e8>
+...
+006 (27856379.000.000) 2021-11-22 20:24:22 Image size of job updated: 40
+	0  -  MemoryUsage of job (MB)
+	0  -  ResidentSetSize of job (KB)
+...
+040 (27856379.000.000) 2021-11-22 20:24:22 Started transferring output files
+...
+040 (27856379.000.000) 2021-11-22 20:24:22 Finished transferring output files
+...
+005 (27856379.000.000) 2021-11-22 20:24:22 Job terminated.
+	(1) Normal termination (return value 0)
+		Usr 0 00:00:15, Sys 0 00:00:02  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 00:00:15, Sys 0 00:00:02  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	156  -  Run Bytes Sent By Job
+	290152  -  Run Bytes Received By Job
+	156  -  Total Bytes Sent By Job
+	290152  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated 
+	   Cpus                 :                16        16 
+	   Disk (KB)            :      299      300    202481 
+	   Memory (MB)          :        0    16384     16384 
+
+	Job terminated of its own accord at 2021-11-22T20:24:22Z.
+...

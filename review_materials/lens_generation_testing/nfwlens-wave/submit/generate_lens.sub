@@ -1,0 +1,13 @@
+universe = vanilla
+transfer_input_files = /nfshome/store01/users/michael.wright/Gravelamps/review_materials/lens_generation_testing/nfwlens-wave/data/w.dat,/nfshome/store01/users/michael.wright/Gravelamps/review_materials/lens_generation_testing/nfwlens-wave/data/y.dat
+executable = /home/michael.wright/bin/nfwlens
+arguments = /nfshome/store01/users/michael.wright/Gravelamps/review_materials/lens_generation_testing/nfwlens-wave/data/w.dat /nfshome/store01/users/michael.wright/Gravelamps/review_materials/lens_generation_testing/nfwlens-wave/data/y.dat /nfshome/store01/users/michael.wright/Gravelamps/review_materials/lens_generation_testing/nfwlens-wave/data/fReal.dat /nfshome/store01/users/michael.wright/Gravelamps/review_materials/lens_generation_testing/nfwlens-wave/data/fImag.dat 2 2000 150 10000 
+log = /nfshome/store01/users/michael.wright/Gravelamps/review_materials/lens_generation_testing/nfwlens-wave/data/lens_generation.log
+output = /nfshome/store01/users/michael.wright/Gravelamps/review_materials/lens_generation_testing/nfwlens-wave/data/lens_generation.out
+error = /nfshome/store01/users/michael.wright/Gravelamps/review_materials/lens_generation_testing/nfwlens-wave/data/lens_generation.err
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT_OR_EVICT
+request_cpus = 16
+request_memory = 16 GB 
+accounting_group = aluk.dev.o4.cbc.gwlensing
+queue 1
