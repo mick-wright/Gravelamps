@@ -7,7 +7,9 @@ functions inside gravelamps.inference.file_generators
 Written by Mick Wright 2021
 '''
 
+import os
 from configparser import ConfigParser
+
 import gravelamps.inference
 
 #Read in the INI files
@@ -22,14 +24,14 @@ for config in [config_lensed, config_unlensed]:
     if not os.path.isdir(config.get("output_settings", "outdir")):
         os.mkdir(config.get("output_settings", "outdir"))
         os.mkdir(config.get("output_settings", "outdir")+"/data")
-	os.mkdir(config.get("output_settings", "outdir")+"/submit")
+        os.mkdir(config.get("output_settings", "outdir")+"/submit")
 
 #Load in the data files and gather the additional parameters
 dim_freq_file = config.get("lens_generation_settings", "dimensionless_frequency_file")
 sour_pos_file = config.get("lens_generation_settings", "source_position_file")
 amp_fac_real_file = config.get("lens_generation_settings", "amplification_factor_real_file")
 amp_fac_imag_file = config.get("lens_generation_settings", "amplification_factor_imag_file")
-additional_lens_parameters = gravelamps.inference.helpers.get_additionall_parameters(config_lensed)
+additional_lens_parameters = gravelamps.inference.helpers.get_additional_parameters(config_lensed)
 
 #Generate lens subfile
 gravelamps.inference.file_generators.lens_subfile(
@@ -48,7 +50,7 @@ inject_file = gravelamps.inference.file_generators.injection_file(
 print(f"Injection file located at: {inject_file}")
 
 #Generate bilby pipe INI file
-waveform_arguments = dict()
+waveform_arguments = {}
 
 waveform_approximant = config.get("analysis_settings", "waveform_approximant")
 minimum_frequency = config.getfloat("analysis_settings", "minimum_frequency")
