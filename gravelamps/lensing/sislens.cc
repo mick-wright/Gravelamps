@@ -275,7 +275,7 @@ int main(int argc, char* argv[]) {
                 && amplification_factor_imag[i][j] != 0.0) {
                 {}
             } else {
-                if (j > approx_switch) {
+                if (j >= approx_switch) {
                     std::complex<double> geometric_factor;
                     geometric_factor =
                         AmplificationFactorGeometric(
