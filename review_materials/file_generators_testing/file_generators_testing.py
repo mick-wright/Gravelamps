@@ -31,7 +31,7 @@ dim_freq_file = config.get("lens_generation_settings", "dimensionless_frequency_
 sour_pos_file = config.get("lens_generation_settings", "source_position_file")
 amp_fac_real_file = config.get("lens_generation_settings", "amplification_factor_real_file")
 amp_fac_imag_file = config.get("lens_generation_settings", "amplification_factor_imag_file")
-additional_lens_parameters = gravelamps.inference.helpers.get_additional_parameters(config_lensed)
+additional_lens_parameters = gravelamps.inference.helpers.get_additional_parameters(config_lensed, "0")
 
 #Generate lens subfile
 gravelamps.inference.file_generators.lens_subfile(

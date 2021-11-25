@@ -1,0 +1,3 @@
+SUBDAG EXTERNAL bilby_pipe_unlensed /nfshome/store01/users/michael.wright/Gravelamps/review_materials/file_generators_testing/file_generators_unlensed_testing/submit/dag_fgut_unlensed.submit
+SUBDAG EXTERNAL bilby_pipe_lensed /nfshome/store01/users/michael.wright/Gravelamps/review_materials/file_generators_testing/file_generators_unlensed_testing/submit/dag_fgut_lensed.submit
+PARENT bilby_pipe_unlensed CHILD bilby_pipe_lensed 
