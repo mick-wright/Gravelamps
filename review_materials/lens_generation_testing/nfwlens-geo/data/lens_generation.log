@@ -1,29 +1,29 @@
-000 (27856381.000.000) 2021-11-22 20:26:50 Job submitted from host: <172.2.1.88:9618?PrivAddr=%3c172.2.1.88:9618%3fsock%3dschedd_41738_5ff6%3e&PrivNet=HAWKNET&addrs=172.2.1.88-9618&alias=cl8.hawk.supercomputingwales.ac.uk&noUDP&sock=schedd_41738_5ff6>
+000 (27857317.000.000) 2021-11-25 00:07:28 Job submitted from host: <172.2.1.88:9618?PrivAddr=%3c172.2.1.88:9618%3fsock%3dschedd_41738_5ff6%3e&PrivNet=HAWKNET&addrs=172.2.1.88-9618&alias=cl8.hawk.supercomputingwales.ac.uk&noUDP&sock=schedd_41738_5ff6>
 ...
-040 (27856381.000.000) 2021-11-22 20:27:06 Started transferring input files
-	Transferring to host: <172.2.4.28:9618?PrivAddr=%3c172.2.4.28:9618%3fsock%3dslot1_2_20734_ba84_107787%3e&PrivNet=HAWKNET&addrs=172.2.4.28-9618&alias=ccr0028.hawk.supercomputingwales.ac.uk&noUDP&sock=slot1_2_20734_ba84_107787>
+040 (27857317.000.000) 2021-11-25 00:07:29 Started transferring input files
+	Transferring to host: <172.2.4.4:9618?PrivAddr=%3c172.2.4.4:9618%3fsock%3dslot1_19_25660_8a8d_121334%3e&PrivNet=HAWKNET&addrs=172.2.4.4-9618&alias=ccr0004.hawk.supercomputingwales.ac.uk&noUDP&sock=slot1_19_25660_8a8d_121334>
 ...
-040 (27856381.000.000) 2021-11-22 20:27:06 Finished transferring input files
+040 (27857317.000.000) 2021-11-25 00:07:29 Finished transferring input files
 ...
-001 (27856381.000.000) 2021-11-22 20:27:07 Job executing on host: <172.2.4.28:9618?sock=startd_20697_ffbc>
+001 (27857317.000.000) 2021-11-25 00:07:30 Job executing on host: <172.2.4.4:9618?sock=startd_25618_654a>
 ...
-006 (27856381.000.000) 2021-11-22 20:27:16 Image size of job updated: 6496
+006 (27857317.000.000) 2021-11-25 00:07:39 Image size of job updated: 31604
 	3  -  MemoryUsage of job (MB)
-	2980  -  ResidentSetSize of job (KB)
+	2080  -  ResidentSetSize of job (KB)
 ...
-006 (27856381.000.000) 2021-11-22 20:27:21 Image size of job updated: 1998204
+006 (27857317.000.000) 2021-11-25 00:07:54 Image size of job updated: 1998204
 	3  -  MemoryUsage of job (MB)
-	2980  -  ResidentSetSize of job (KB)
+	2080  -  ResidentSetSize of job (KB)
 ...
-040 (27856381.000.000) 2021-11-22 20:27:21 Started transferring output files
+040 (27857317.000.000) 2021-11-25 00:07:54 Started transferring output files
 ...
-040 (27856381.000.000) 2021-11-22 20:27:21 Finished transferring output files
+040 (27857317.000.000) 2021-11-25 00:07:54 Finished transferring output files
 ...
-005 (27856381.000.000) 2021-11-22 20:27:21 Job terminated.
+005 (27857317.000.000) 2021-11-25 00:07:54 Job terminated.
 	(1) Normal termination (return value 0)
-		Usr 0 00:03:25, Sys 0 00:00:07  -  Run Remote Usage
+		Usr 0 00:04:14, Sys 0 00:00:16  -  Run Remote Usage
 		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
-		Usr 0 00:03:25, Sys 0 00:00:07  -  Total Remote Usage
+		Usr 0 00:04:14, Sys 0 00:00:16  -  Total Remote Usage
 		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
 	156  -  Run Bytes Sent By Job
 	320648  -  Run Bytes Received By Job
@@ -31,8 +31,8 @@
 	320648  -  Total Bytes Received By Job
 	Partitionable Resources :    Usage  Request Allocated 
 	   Cpus                 :                16        16 
-	   Disk (KB)            :      329      325    203246 
+	   Disk (KB)            :      329      325    212974 
 	   Memory (MB)          :        3    16384     16384 
 
-	Job terminated of its own accord at 2021-11-22T20:27:21Z.
+	Job terminated of its own accord at 2021-11-25T00:07:54Z.
 ...
