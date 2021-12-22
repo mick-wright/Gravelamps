@@ -35,8 +35,8 @@ print(f"Source Position file located at {y_file}")
 #Test the generation of the interpolator
 
 #Generate data covering dimensionless frequency and source position
-dim_freq_array = np.linspace(0, 2*np.pi, 1200)
-sour_pos_array = np.linspace(0, 2*np.pi, 1000)
+dim_freq_array = np.linspace(0, 2*np.pi, 120)
+sour_pos_array = np.linspace(0, 2*np.pi, 100)
 
 #Generating amplification factor data - using dummy sin functions 
 amp_fac_real_array = np.zeros((len(dim_freq_array), len(sour_pos_array)))
