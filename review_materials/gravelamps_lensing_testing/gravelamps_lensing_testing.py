@@ -102,6 +102,7 @@ interferometers.plot_data(label="waveform_testing")
 plt.figure(figsize=(16,10))
 plt.plot(interferometers[0].frequency_array, np.abs(strains["plus"]), label="$|h_{+}|$")
 plt.plot(interferometers[0].frequency_array, np.abs(strains["cross"]), label=r"$|h_{\times}|$")
+plt.title("Waveform Generator Strains for 36/29 Object as Lensed by 50 Solar Mass object")
 plt.legend()
 plt.savefig("waveform-generator-strains.pdf", bbox_inches="tight")
 
