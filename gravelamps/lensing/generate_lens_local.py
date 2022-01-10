@@ -4,7 +4,7 @@ Gravelamps
 Local lens data generation only
 
 Written by Mick Wright 2021
-''' 
+'''
 
 import os
 import sys
