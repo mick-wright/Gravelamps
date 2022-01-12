@@ -44,29 +44,27 @@ def main():
         if not os.path.isdir(folder):
             os.mkdir(folder)
 
-    #Generate hte Lensing Data
-    dim_freq_file, sour_pos_file = gravelamps.inference.helpers.wy_handler(config)
+    #Get which methodology is being used
+    methodology = config.get("analysis_settings", "methodology")
 
-    #Generate the Amplification Factor Submit File
-    amp_fac_real_file, amp_fac_imag_file = gravelamps.inference.helpers.amp_fac_handler(
-        config, dim_freq_file, sour_pos_file, mode="pipe")
+    #Dependent upon methodology selected, construct waveform arguments dictionary
+    if methodology == "interpolate":
+        #Generate the Lensing Data
+        dim_freq_file, sour_pos_file = gravelamps.inference.helpers.wy_handler(config)
 
-    #Construct the Waveform Arguments Dictionary
-    waveform_arguments = dict()
+        #Generate the Amplification Factor Submit File
+        amp_fac_real_file, amp_fac_imag_file = gravelamps.inference.helpers.amp_fac_handler(
+            config, dim_freq_file, sour_pos_file, mode="pipe")
 
-    waveform_approximant = config.get("analysis_settings", "waveform_approximant")
-    minimum_frequency = config.getfloat("analysis_settings", "minimum_frequency")
-    maximum_frequency = config.getfloat("analysis_settings", "maximum_frequency")
-    reference_frequency = config.getfloat("analysis_settings", "reference_frequency")
+        #Actually construct the dictionary
+        waveform_arguments = gravelamps.inference.helpers.construct_waveform_arguments(
+            config, "analysis", dim_freq_file=dim_freq_file, sour_pos_file=sour_pos_file,
+            amp_fac_real_file=amp_fac_real_file, amp_fac_imag_file=amp_fac_imag_file)
 
-    waveform_arguments["waveform_approximant"] = waveform_approximant
-    waveform_arguments["minimum_frequency"] = minimum_frequency
-    waveform_arguments["maximum_frequency"] = maximum_frequency
-    waveform_arguments["reference_frequency"] = reference_frequency
-    waveform_arguments["dim_freq_file"] = dim_freq_file
-    waveform_arguments["sour_pos_file"] = sour_pos_file
-    waveform_arguments["amp_fac_real_file"] = amp_fac_real_file
-    waveform_arguments["amp_fac_imag_file"] = amp_fac_imag_file
+    elif methodology in ("direct-nonnfw", "direct-nfw"):
+        waveform_arguments = gravelamps.inference.helpers.construct_waveform_arguments(
+            config, "analysis", dim_freq_file=dim_freq_file, sour_pos_file=sour_pos_file,
+            amp_fac_real_file=amp_fac_real_file, amp_fac_imag_file=amp_fac_imag_file)
 
     #If Injecting, Generate the Injection File and the Injection Waveform Arguments
     if config.getboolean("injection_settings", "injection"):
@@ -78,22 +76,16 @@ def main():
         inject_file = gravelamps.inference.file_generators.injection_file(
             config, injection_parameters)
 
-        #Construct the Injection Waveform Arguments dictionary
-        injection_waveform_arguments = waveform_arguments.copy()
+        #Load in the injection methodology to see if it isn't None
+        injection_methodology = config.get("injection_settings", "methodology")
 
-        dim_freq_other = config.get("injection_settings", "dimensionless_frequency_file")
-        sour_pos_other = config.get("injection_settings", "source_position_file")
-        amp_fac_real_other = config.get("injection_settings", "amp_fac_real_file")
-        amp_fac_imag_other = config.get("injection_settings", "amp_fac_imag_file")
+        #Construct injection waveform arguments
+        if injection_methodology is None:
+            injection_waveform_arguments = waveform_arguments.copy()
+        else:
+            injection_waveform_arguments = (
+                gravelamps.inference.helpers.construct_waveform_arguments(config, "data"))
 
-        if dim_freq_other != "None":
-            injection_waveform_arguments["dim_freq_file"] = os.path.abspath(dim_freq_other)
-        if sour_pos_other != "None":
-            injection_waveform_arguments["sour_pos_file"] = os.path.abspath(sour_pos_other)
-        if amp_fac_real_other != "None":
-            injection_waveform_arguments["amp_fac_real_file"] = os.path.abspath(amp_fac_real_other)
-        if amp_fac_imag_other != "None":
-            injection_waveform_arguments["amp_fac_imag_file"] = os.path.abspath(amp_fac_imag_other)
     else:
         inject_file = None
         injection_waveform_arguments = None

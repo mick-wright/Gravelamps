@@ -267,3 +267,77 @@ def wfgen_fd_source(waveform_generator_class_name, frequency_domain_source_model
             print("Frequency Domain Source Model Function could not be loaded!")
 
     return waveform_generator_class, frequency_domain_source_model
+
+def construct_waveform_arguments(config, mode, dim_freq_file=None, sour_pos_file=None,
+                                 amp_fac_real_file=None, amp_fac_imag_file=None):
+    '''
+    Input:
+        config - INI configuration parser
+        mode - can be either 'data' or 'analysis' determining whether to use the data generation
+               or data analysis settings
+        dim_freq_file - file containing dimensionless frequency data if needed for interpolate
+                        method
+        sour_pos_file - file containing source position data if needed for interpolate method
+        amp_fac_real_file - file containing the real component of the amplification factor data if
+                            needed for the interpolate method
+        amp_fac_imag_file - file containing the imaginary component of the amplification factor data
+                            if needed for the interpolate method
+
+    Output:
+        waveform_arguments - dictionary containing arguments for the waveform generator
+
+    Function constructs the waveform arguments dictionary based on the settings laid out in the INI
+    file
+    '''
+
+    #Instantiate the waveform arguments dictionary
+    waveform_arguments = {}
+
+    #Get those arguments common to all runs
+    waveform_approximant = config.get("analysis_settings", "waveform_approximant")
+    minimum_frequency = config.getfloat("analysis_settings", "minimum_frequency")
+    maximum_frequency = config.getfloat("analysis_settings", "maximum_frequency")
+    reference_frequency = config.getfloat("analysis_settings", "reference_frequency")
+
+    if mode == "data":
+        methodology = config.get("injection_settings", "methodology")
+    elif mode == "analysis":
+        methodology = config.get("analysis_settings", "methodology")
+
+    #Depending on the methodology choice, get the remainder of the settings needed
+    #In interpolation case, the remainder of the settings are the files needed to generate the
+    #interpolation function.
+    if methodology == "interpolate":
+        if mode == "data":
+            dim_freq_file = config.get("injection_settings", "dimensionless_frequency_file")
+            sour_pos_file = config.get("injection_settings", "source_position_file")
+            amp_fac_real_file = config.get("injection_settings", "amplification_factor_real_file")
+            amp_fac_imag_file = config.get("injection_settings", "amplification_factor_imag_file")
+
+        waveform_arguments["dim_freq_file"] = dim_freq_file
+        waveform_arguments["sour_pos_file"] = sour_pos_file
+        waveform_arguments["amp_fac_real_file"] = amp_fac_real_file
+        waveform_arguments["amp_fac_imag_file"] = amp_fac_imag_file
+
+    #in the direct calculation cases, the remainder of the settings are the lens model and in the
+    #case of the NFW model, the scaling constant for the profile
+    elif methodology in ("direct-nonnfw", "direct-nfw"):
+        if mode == "data":
+            lens_model = config.get("injection_settings", "lens_model")
+        elif mode == "analysis":
+            lens_model = config.get("analysis_settings", "lens_model")
+
+        waveform_arguments["lens_model"] = lens_model
+
+        if methodology == "direct-nfw":
+            scaling_constant = config.getfloat("lens_generation_settings", "nfw_scaling_constant")
+            waveform_arguments["scaling_constant"] = scaling_constant
+
+    #Write in the general settings
+    waveform_arguments["waveform_approximant"] = waveform_approximant
+    waveform_arguments["minimum_frequency"] = minimum_frequency
+    waveform_arguments["maximum_frequency"] = maximum_frequency
+    waveform_arguments["reference_frequency"] = reference_frequency
+    waveform_arguments["methodology"] = methodology
+
+    return waveform_arguments

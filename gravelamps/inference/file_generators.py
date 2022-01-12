@@ -244,13 +244,21 @@ def overarching_dag(config):
 
     #Open the DAG file for writing
     with open(dag_file, "w") as dag:
-        #Add the lens generation job
-        if not os.path.isfile(
-            config.get("lens_generation_settings", "amplification_factor_real_file")):
-            if not os.path.isfile(
-                config.get("lens_generation_settings", "amplification_factor_imag_file")):
+        #Determine methodology
+        methodology = config.get("analysis_settings", "methodology")
+
+        #If methodology is interpolate, and the lens files do not exist add the lens generation job
+        if methodology == "interpolate":
+            amp_fac_real_file = config.get(
+                "lens_generation_settings", "amplification_factor_real_file")
+            amp_fac_imag_file = config.get(
+                "lens_generation_settings", "amplification_factor_imag_file")
+
+            if not os.path.isfile(amp_fac_real_file) and not os.path.isfile(amp_fac_imag_file):
                 dag.write("JOB lens_generation " + lens_generation_subfile + "\n")
                 lens_generation = True
+            else:
+                lens_generation = False
         else:
             lens_generation = False
 

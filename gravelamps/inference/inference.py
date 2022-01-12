@@ -49,12 +49,35 @@ def main():
     if not os.path.isdir(data_subdirectory):
         os.mkdir(data_subdirectory)
 
-    #Get the Dimensionless Frequency and Source Position Files
-    dim_freq_file, sour_pos_file = gravelamps.inference.helpers.wy_handler(config)
+    #Get which methodology is being used
+    methodology = config.get("analysis_settings", "methodology")
 
-    #Generate the Amplification Factor Files
-    amp_fac_real_file, amp_fac_imag_file = gravelamps.inference.helpers.amp_fac_handler(
-        config, dim_freq_file, sour_pos_file, mode="local")
+    #Dependent upon methodology selected, construct waveform arguments dictionary
+    if methodology == "interpolate":
+        #Get the Dimensionless Frequency and Source Position Files
+        dim_freq_file, sour_pos_file = gravelamps.inference.helpers.wy_handler(config)
+
+        #Generate the Amplification Factor Files
+        amp_fac_real_file, amp_fac_imag_file = gravelamps.inference.helpers.amp_fac_handler(
+            config, dim_freq_file, sour_pos_file, mode="local")
+
+        #Actually construct the dictionary
+        analysis_waveform_arguments = gravelamps.inference.helpers.construct_waveform_arguments(
+            config, "analysis", dim_freq_file=dim_freq_file, sour_pos_file=sour_pos_file,
+            amp_fac_real_file=amp_fac_real_file, amp_fac_imag_file=amp_fac_imag_file)
+
+    elif methodology in ("direct-nonnfw", "direct-nfw"):
+        analysis_waveform_arguments = gravelamps.inference.helpers.construct_waveform_arguments(
+            config, "analysis")
+
+    #Load in the injection methodolgy to see if it is different
+    injection_methodology = config.get("injection_settings", "methodology")
+
+    if injection_methodology is None:
+        waveform_arguments = analysis_waveform_arguments.copy()
+    else:
+        waveform_arguments = gravelamps.inference.helpers.construct_waveform_arguments(
+            config, "data")
 
     #Load in the Priors
     trigger_time = config.getfloat("analysis_settings", "trigger_time")
@@ -74,51 +97,6 @@ def main():
     lensed_waveform_generator_class, lensed_frequency_domain_source_model = (
         gravelamps.inference.helpers.wfgen_fd_source(
             lensed_waveform_generator_class, lensed_frequency_domain_source_model))
-
-    #Construct the Waveform Arguments Dictionary
-    waveform_arguments = {}
-
-    waveform_approximant = config.get("analysis_settings", "waveform_approximant")
-    minimum_frequency = config.getfloat("analysis_settings", "minimum_frequency")
-    maximum_frequency = config.getfloat("analysis_settings", "maximum_frequency")
-    reference_frequency = config.getfloat("analysis_settings", "reference_frequency")
-
-    waveform_arguments["waveform_approximant"] = waveform_approximant
-    waveform_arguments["minimum_frequency"] = minimum_frequency
-    waveform_arguments["maximum_frequency"] = maximum_frequency
-    waveform_arguments["reference_frequency"] = reference_frequency
-
-    #If using differing profile for injection than analysis, read in data here
-    dim_freq_other = config.get("injection_settings", "dimensionless_frequency_file")
-    sour_pos_other = config.get("injection_settings", "source_position_file")
-    amp_fac_real_other = config.get("injection_settings", "amplification_factor_real_file")
-    amp_fac_imag_other = config.get("injection_settings", "amplification_factor_imag_file")
-
-    analysis_waveform_arguments = waveform_arguments.copy()
-    analysis_waveform_arguments["dim_freq_file"] = dim_freq_file
-    analysis_waveform_arguments["sour_pos_file"] = sour_pos_file
-    analysis_waveform_arguments["amp_fac_real_file"] = amp_fac_real_file
-    analysis_waveform_arguments["amp_fac_imag_file"] = amp_fac_imag_file
-
-    if dim_freq_other == "None":
-        waveform_arguments["dim_freq_file"] = dim_freq_file
-    else:
-        waveform_arguments["dim_freq_file"] = dim_freq_other
-
-    if sour_pos_other == "None":
-        waveform_arguments["sour_pos_file"] = sour_pos_file
-    else:
-        waveform_arguments["sour_pos_file"] = sour_pos_other
-
-    if amp_fac_real_other == "None":
-        waveform_arguments["amp_fac_real_file"] = amp_fac_real_file
-    else:
-        waveform_arguments["amp_fac_real_file"] = amp_fac_real_other
-
-    if amp_fac_imag_other == "None":
-        waveform_arguments["amp_fac_imag_file"] = amp_fac_imag_file
-    else:
-        waveform_arguments["amp_fac_imag_file"] = amp_fac_imag_other
 
     #Read in Sampling Frequency
     sampling_frequency = config.getfloat("analysis_settings", "sampling_frequency")
@@ -196,17 +174,20 @@ def main():
                 channel_name=channel, start_time=gps_start_time, psd_start_time=psd_start_time,
                 segment_duration=duration, psd_duration=psd_duration,
                 sampling_frequency=sampling_frequency)
-            interferometer.minimum_frequency = minimum_frequency
-            interferometer.maximum_frequency = maximum_frequency
+            interferometer.minimum_frequency = analysis_waveform_arguments["minimum_frequency"]
+            interferometer.maximum_frequency = analysis_waveform_arguments["maximum_frequency"]
             interferometer.power_spectral_density = bilby.gw.detector.PowerSpectralDensity(
                 psd_file=psd_dict[interferometer.name])
             interferometer.calibration_model = bilby.gw.calibration.CubicSpline(
-                prefix="recalib_" + interferometer.name + "_", minimum_frequency=minimum_frequency,
-                maximum_frequency=maximum_frequency, n_points=10)
+                prefix="recalib_" + interferometer.name + "_",
+                minimum_frequency=analysis_waveform_arguments["minimum_frequency"],
+                maximum_frequency=analysis_waveform_arguments["maximum_frequency"], n_points=10)
 
             calibration_prior = bilby.gw.prior.CalibrationPriorDict().from_envelope_file(
-                calibration_dict[interferometer.name], minimum_frequency=minimum_frequency,
-                maximum_frequency=maximum_frequency, n_nodes=10, label=interferometer.name)
+                calibration_dict[interferometer.name],
+                minimum_frequency=analysis_waveform_arguments["minimum_frequency"],
+                maximum_frequency=analysis_waveform_arguments["maximum_frequency"],
+                n_nodes=10, label=interferometer.name)
             priors.update(calibration_prior)
 
     #Plot the Interferometer Data
