@@ -80,7 +80,7 @@ def main():
         injection_methodology = config.get("injection_settings", "methodology")
 
         #Construct injection waveform arguments
-        if injection_methodology is None:
+        if injection_methodology == "None":
             injection_waveform_arguments = waveform_arguments.copy()
         else:
             injection_waveform_arguments = (

@@ -953,3 +953,30 @@ std::complex<double> AmplificationFactorGeometric(
 
     return geometric_factor;
 }
+
+// Wrapper function converting the amplification factor result calculated by
+// AmplificationFactorGeometric to a pair of floats for compatibility with
+// ctypes for python
+double * AFGRealOnly(
+    double dimensionless_frequency,
+    double source_position,
+    double scaling_constant) {
+
+    // Get the amplification factor in the manner expected
+    std::complex<double> afg = AmplificationFactorGeometric(
+        dimensionless_frequency, source_position, scaling_constant);
+
+    // Split into real and imaginary components and place in double array
+    double * afg_arr = new double[2];
+    afg_arr[0] = std::real(afg);
+    afg_arr[1] = std::imag(afg);
+
+    return afg_arr;
+}
+
+// Function destroys the object placed within, used for deallocating the memory
+// used by the above function
+void destroyObj(double * object) {
+    delete object;
+    object = NULL;
+}

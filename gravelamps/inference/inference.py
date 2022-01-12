@@ -73,7 +73,7 @@ def main():
     #Load in the injection methodolgy to see if it is different
     injection_methodology = config.get("injection_settings", "methodology")
 
-    if injection_methodology is None:
+    if injection_methodology == "None":
         waveform_arguments = analysis_waveform_arguments.copy()
     else:
         waveform_arguments = gravelamps.inference.helpers.construct_waveform_arguments(

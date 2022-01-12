@@ -52,4 +52,17 @@ double TimeDelay(double source_position);
 std::complex<double> AmplificationFactorGeometric(
     double dimensionless_frequency, double source_position);
 
+extern "C" {
+
+// Wrapper function converting the amplification factor result calculated by
+// AmplificationFactorGeometric to a pair of floats for compatibility with
+// ctypes for python
+double* AFGRealOnly(
+    double dimensionless_frequency, double source_position);
+
+// Function destroys the object placed within, used for deallocating the memory
+// used by the above function
+void destroyObj(double* object);
+}
+
 #endif  // GRAVELAMPS_LENSING_POINTLENS_H_

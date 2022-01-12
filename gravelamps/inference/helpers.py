@@ -325,7 +325,7 @@ def construct_waveform_arguments(config, mode, dim_freq_file=None, sour_pos_file
         if mode == "data":
             lens_model = config.get("injection_settings", "lens_model")
         elif mode == "analysis":
-            lens_model = config.get("analysis_settings", "lens_model")
+            lens_model = config.get("lens_generation_settings", "lens_model")
 
         waveform_arguments["lens_model"] = lens_model
 

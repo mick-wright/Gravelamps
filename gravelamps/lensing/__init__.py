@@ -17,6 +17,8 @@ import bilby
 
 from . import utils
 
+lens_cdll = None
+
 class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
     '''
     Lensed Waveform Generator Class
@@ -36,7 +38,7 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
                          time_domain_source_model, parameters, parameter_conversion,
                          waveform_arguments)
 
-        if waveform_arguments["amp_fac_methodology"] == "interpolate":
+        if waveform_arguments["methodology"] == "interpolate":
             #Extract the files necessary to generate the interpolator
             dimensionless_frequency_file = waveform_arguments["dim_freq_file"]
             source_position_file = waveform_arguments["sour_pos_file"]
@@ -48,14 +50,16 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
                 dimensionless_frequency_file, source_position_file, amplification_factor_real_file,
                 amplification_factor_imag_file)
 
-        elif waveform_arguments["amp_fac_methodology"] == "direct-nonnfw":
+        elif waveform_arguments["methodology"] == "direct-nonnfw":
             #Exract the lens model from the waveform arguments
             lens_model = waveform_arguments["lens_model"]
 
             #Get the library needed
             lens_libstring = "lib" + lens_model[:len(lens_model)-4] + ".so"
-            lens_library_filepath = os.path.expanduser("~") + "/.local/lib" + lens_libstring
+            lens_library_filepath = os.path.expanduser("~") + "/.local/lib/" + lens_libstring
+           
             #Load the library
+            global lens_cdll
             lens_cdll = ctypes.CDLL(os.path.abspath(lens_library_filepath))
 
             #Set the argument and result types for the c function AFGRealOnly
@@ -64,8 +68,6 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
 
             #Create the amplification_factor function
             def amplification_factor(dimensionless_frequency_value, source_position):
-                global lens_cdll
-
                 #Generate the result from the c function and then convert to python
                 result = lens_cdll.AFGRealOnly(
                     ctypes.c_double(dimensionless_frequency_value),
@@ -80,10 +82,10 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
             #Add the amplification_factor function to the waveform_arguments_dictionary
             waveform_arguments["amplification_factor_func"] = amplification_factor
 
-        elif waveform_arguments["amp_fac_methodology"] == "direct-nfw":
+        elif waveform_arguments["methodology"] == "direct-nfw":
             #Get the NFW library
             lens_libstring = "libsis.so"
-            lens_library_filepath = os.path.expanduser("~") + "/.local/lib" + lens_libstring
+            lens_library_filepath = os.path.expanduser("~") + "/.local/lib/" + lens_libstring
 
             #Load the Library
             lens_cdll = ctypes.CDLL(os.path.abspath(lens_library_filepath))
@@ -94,8 +96,6 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
 
             #Create the amplification factor function
             def amplification_factor(dimensionless_frequency_value, source_position, scaling_constant):
-                global lens_cdll
-
                 #Generate the result from the c function and then convert to python
                 result = lens_cdll.AFGRealOnly(
                         ctypes.c_double(dimensionless_frequency_value),
@@ -150,7 +150,7 @@ def BBH_lensed_waveform(frequency_array, mass_1, mass_2, a_1, a_2, tilt_1, tilt_
                            the base waveform when using the interpolate methodology
             amplification_factor_func - function to generate the amplification factor used to lens
                                         the base waveform when using the direct methodology
-            scaling_cosntant - constant used for the Navarro Frenk White (NFW) model 
+            scaling_cosntant - constant used for the Navarro Frenk White (NFW) lens model
 
     Outputs:
         lens_waveform - dictionary containing the plus and cross polarisation mode strain data for
@@ -175,7 +175,7 @@ def BBH_lensed_waveform(frequency_array, mass_1, mass_2, a_1, a_2, tilt_1, tilt_
     methodology = waveform_kwargs["methodology"]
     interpolator = waveform_kwargs["interpolator"]
     amplification_factor_func = waveform_kwargs["amplification_factor_func"]
-    scaling_constant = waveform_kwargs["scaling_constant"] 
+    scaling_constant = waveform_kwargs["scaling_constant"]
 
     #Calculate the redshifted lens mass
     lens_distance = lens_fractional_distance * luminosity_distance
@@ -207,7 +207,7 @@ def BBH_lensed_waveform(frequency_array, mass_1, mass_2, a_1, a_2, tilt_1, tilt_
     elif methodology in ("direct-nonnfw", "direct-nfw"):
         if amplification_factor_func is None:
             raise ValueError("To use direct method, direct calculation function must be given!")
-        lensing_function = amplification_factor_func
+        lensing_function = np.vectorize(amplification_factor_func)
 
     #Now generate the amplification factor array using the interpolator function
     if methodology == "direct-nfw":

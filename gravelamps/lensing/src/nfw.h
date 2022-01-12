@@ -142,4 +142,19 @@ std::complex<double> AmplificationFactorGeometric(
     double source_position,
     double scaling_constant);
 
+extern "C" {
+
+// Wrapper function converting the amplification factor result calculated by
+// AmplificationFactorGeometric to a pair of floats for compatibility with
+// ctypes for python
+double* AFGRealOnly(double dimensionless_frequency,
+                    double source_position,
+                    double scaling_constant);
+
+// Function destroys the object placed within, used for deallocating the memory
+// used by the above function
+void destroyObj(double* object);
+}
+
+
 #endif  // GRAVELAMPS_LENSING_NFW_H_
