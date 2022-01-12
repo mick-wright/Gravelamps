@@ -63,8 +63,7 @@ def main():
 
     elif methodology in ("direct-nonnfw", "direct-nfw"):
         waveform_arguments = gravelamps.inference.helpers.construct_waveform_arguments(
-            config, "analysis", dim_freq_file=dim_freq_file, sour_pos_file=sour_pos_file,
-            amp_fac_real_file=amp_fac_real_file, amp_fac_imag_file=amp_fac_imag_file)
+            config, "analysis")
 
     #If Injecting, Generate the Injection File and the Injection Waveform Arguments
     if config.getboolean("injection_settings", "injection"):
