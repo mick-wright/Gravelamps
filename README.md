@@ -62,6 +62,6 @@ The `lalsuite` optional dependency of `bilby` is also required.
 
 The source code of Gravelamps is provided under the MIT License. If used for scientific purposes, please cite:
 
-+ [https://arxiv.org/abs/2112.07012](Gravelamps: Gravitational Wave Lensing Mass Profile Model Selection) authored by Mick Wright and Martin Hendry
++ [Gravelamps: Gravitational Wave Lensing Mass Profile Model Selection](https://arxiv.org/abs/2112.07012) authored by Mick Wright and Martin Hendry
 
 In addition, due to the dependency of Gravelamps upon in particular `bilby` and `arb`, but all of the mentioned components, please follow their citation practices. 
