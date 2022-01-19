@@ -31,8 +31,11 @@ with open("README.md", "r") as readme_contents:
 
 setuptools.setup(
     name = "Gravelamps",
+    url = "https://arxiv.org/abs/2112.07012",
+    download_url = "https://git.ligo.org/michael.wright/Gravelamps",
     version = "1.0.0",
-    author = "Mick Wright",
+    author = "Mick Wright, Martin Hendry",
+    maintainer = "Mick Wright", 
     author_email = "michael.wright@ligo.org",
     license = "MIT",
     description = ("Software package designed for running template based analysis of lensed"
@@ -47,6 +50,11 @@ setuptools.setup(
         "gravelamps.lensing"
     ],
     has_ext_modules = lambda: True,
+    install_requires = [
+        "numpy",
+        "scipy",
+        "astropy",
+        "bilby"],
     cmdclass = {
         "build_ext": Build,
     },
@@ -62,6 +70,8 @@ setuptools.setup(
         "Programming Language :: C++",
         "Operating System :: POSIX :: Linux",
         "License :: OSI Approved :: MIT License",
+        "Intended Audience :: GW Lensing Community",
+        "Topic :: GW Lensing - Lens Mass Profile Model Selection"
         ],
     python_requires = ">=3.8",
 )
