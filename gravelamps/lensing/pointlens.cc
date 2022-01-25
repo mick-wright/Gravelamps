@@ -97,6 +97,10 @@ int main(int argc, char* argv[]) {
         source_position_size,
         std::vector<double>(dimensionless_frequency_size));
 
+    //Close the streams
+    amp_fac_real.close();
+    amp_fac_imag.close();
+
     // Get outstreams for the amplification factor matrices
     std::ofstream amp_fac_realout(amplification_factor_real_file);
     std::ofstream amp_fac_imagout(amplification_factor_imag_file);
@@ -153,4 +157,6 @@ int main(int argc, char* argv[]) {
         std::cout << "Completed source position value " << i+1 << " of " <<
            source_position_size << std::endl;
     }
+
+    return 0;
 }

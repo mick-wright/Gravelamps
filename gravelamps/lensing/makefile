@@ -16,7 +16,7 @@ endif
 # In a conda environment additional steps need to be taken to make sure the locations are properly
 # done
 ifeq ($(strip $(CONDA_DEFAULT_ENV)),)
-	GXX_FLAGS = -larb -lflint -O3 -fopenmp
+	GXX_FLAGS = -larb -lflint -O3 -fopenmp -g
 else
 	GXX_FLAGS = -isystem $(CONDA_PREFIX)/include -L $(CONDA_PREFIX)/lib -larb -lflint -O3 -fopenmp
 endif
