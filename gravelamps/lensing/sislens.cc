@@ -147,6 +147,7 @@ int main(int argc, char* argv[]) {
                     amplification_factor_imag[i][j] = arf_get_d(
                         arb_midref(acb_imagref(amplification_factor)),
                         ARF_RND_NEAR);
+                    acb_clear(amplification_factor);
                 }
             }
             #pragma omp ordered
@@ -155,12 +156,12 @@ int main(int argc, char* argv[]) {
                 amp_fac_imagout << amplification_factor_imag[i][j] << " ";
             }
         }
-        amp_fac_realout << "\n";
-        amp_fac_imagout << "\n";
+	#pragma omp critical
+        amp_fac_realout << std::endl;
+        amp_fac_imagout << std::endl;
 
         std::cout << "Completed source position value " << i+1 << " of " <<
            source_position_size << std::endl;
     }
-
     return 0;
 }
