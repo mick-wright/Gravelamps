@@ -65,3 +65,13 @@ The source code of Gravelamps is provided under the MIT License. If used for sci
 + [Gravelamps: Gravitational Wave Lensing Mass Profile Model Selection](https://arxiv.org/abs/2112.07012) authored by Mick Wright and Martin Hendry
 
 In addition, due to the dependency of Gravelamps upon in particular `bilby` and `arb`, but all of the mentioned components, please follow their citation practices. 
+
+# Contribution Guidelines
+
+The developers welcome additional contribution - one of the major design intentions for Gravelamps is to make an easily extensible platform - adding additional lens models and scenarios as and when users need them, and we encourage users to share these models when they are made. To make sure everything goes smoothly, if you wish to contribute to Gravelamps, please follow the following procedures:
+
+1. Open an issue detailing the change that you model that you intend to implement, ideally providing a timescale, this will minimise the amount of work duplication that occurs. 
+2. Fork the repository to allow you to work on your own branch
+3. Create the model as well as any additional work that needs doing to implement. 
+4. Code should be linted, that coming from the authors is linted using pylint for the python sections and using cpplint for the C++ sections
+5. Once complete and ready to be added to Gravelamps fully, issue a merge request citing your issue.
