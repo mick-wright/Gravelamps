@@ -113,7 +113,7 @@ int main(int argc, char* argv[]) {
     row_count = 0;
     for (auto i : amplification_factor_imag_tmp) {
         int column_count = 0;
-	for (auto j : i) {
+        for (auto j : i) {
             amplification_factor_imag[row_count][column_count] = j;
             column_count++;
         }

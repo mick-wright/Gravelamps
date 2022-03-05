@@ -102,19 +102,24 @@ int main(int argc, char* argv[]) {
         source_position_size,
         std::vector<double>(dimensionless_frequency_size));
 
-    // Load read in values into the full matrices
-    for (int i=0; i < amplification_factor_real_tmp.size(); i++) {
-        for (int j=0; j < amplification_factor_real_tmp[0].size(); j++) {
-            amplification_factor_real[i][j] =
-                amplification_factor_real_tmp[i][j];
+    int row_count = 0;
+    for (auto i : amplification_factor_real_tmp) {
+        int column_count = 0;
+        for (auto j : i) {
+            amplification_factor_real[row_count][column_count] = j;
+            column_count++;
         }
+        row_count++;
     }
 
-    for (int i=0; i < amplification_factor_imag_tmp.size(); i++) {
-        for (int j=0; j < amplification_factor_imag_tmp[0].size(); j++) {
-            amplification_factor_imag[i][j] =
-                amplification_factor_imag_tmp[i][j];
+    row_count = 0;
+    for (auto i : amplification_factor_imag_tmp) {
+        int column_count = 0;
+        for (auto j : i) {
+            amplification_factor_imag[row_count][column_count] = j;
+            column_count++;
         }
+        row_count++;
     }
 
     // Close the streams
@@ -172,6 +177,9 @@ int main(int argc, char* argv[]) {
             {
                 amp_fac_realout << amplification_factor_real[i][j] << " ";
                 amp_fac_imagout << amplification_factor_imag[i][j] << " ";
+
+		amp_fac_realout.flush();
+		amp_fac_imagout.flush();
             }
         }
         amp_fac_realout << std::endl;
