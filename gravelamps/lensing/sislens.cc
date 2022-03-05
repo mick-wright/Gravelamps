@@ -171,7 +171,6 @@ int main(int argc, char* argv[]) {
                 amp_fac_imagout << amplification_factor_imag[i][j] << " ";
             }
         }
-        #pragma omp critical
         amp_fac_realout << std::endl;
         amp_fac_imagout << std::endl;
 
