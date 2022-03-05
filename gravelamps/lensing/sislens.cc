@@ -60,8 +60,8 @@ int main(int argc, char* argv[]) {
 
     // Set up the matrices for the amplification factor real and imaginary
     // parts
-    std::vector<std::vector<double>> amplification_factor_real;
-    std::vector<std::vector<double>> amplification_factor_imag;
+    std::vector<std::vector<double>> amplification_factor_real_tmp;
+    std::vector<std::vector<double>> amplification_factor_imag_tmp;
 
     // If the amplification factor files exist already, read them in to avoid
     // repeating calculation
@@ -79,7 +79,7 @@ int main(int argc, char* argv[]) {
             while (iss >> value) {
                tmp.push_back(value);
             }
-            amplification_factor_real.push_back(tmp);
+            amplification_factor_real_tmp.push_back(tmp);
         }
 
         while (std::getline(amp_fac_imag, line)) {
@@ -88,17 +88,32 @@ int main(int argc, char* argv[]) {
             while (iss >> value) {
                tmp.push_back(value);
             }
-            amplification_factor_imag.push_back(tmp);
+            amplification_factor_imag_tmp.push_back(tmp);
         }
     }
 
-    // Now resize the matrix to the correct size
-    amplification_factor_real.resize(
+    // Create full amplification factor matrices
+    std::vector<std::vector<double>> amplification_factor_imag(
         source_position_size,
         std::vector<double>(dimensionless_frequency_size));
-    amplification_factor_imag.resize(
+    std::vector<std::vector<double>> amplification_factor_real(
         source_position_size,
         std::vector<double>(dimensionless_frequency_size));
+
+    // Load read in values into the full matrices
+    for (int i=0; i < amplification_factor_real_tmp.size(); i++) {
+        for (int j=0; j < amplification_factor_real_tmp[0].size(); j++) {
+            amplification_factor_real[i][j] =
+                amplification_factor_real_tmp[i][j];
+        }
+    }
+
+    for (int i=0; i < amplification_factor_imag_tmp.size(); i++) {
+        for (int j=0; j < amplification_factor_imag_tmp[0].size(); j++) {
+            amplification_factor_imag[i][j] =
+                amplification_factor_imag_tmp[i][j];
+        }
+    }
 
     // Close the istreams
     amp_fac_real.close();
@@ -155,9 +170,9 @@ int main(int argc, char* argv[]) {
                 amp_fac_imagout << amplification_factor_imag[i][j] << " ";
             }
         }
-        amp_fac_realout << "\n";
-        amp_fac_imagout << "\n";
-
+        #pragma omp critical
+        amp_fac_realout << std::endl;
+        amp_fac_imagout << std::endl;
         std::cout << "Completed source position value " << i+1 << " of " <<
            source_position_size << std::endl;
     }
