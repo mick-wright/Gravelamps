@@ -28,11 +28,13 @@ def lens_subfile(config, dim_freq_file, sour_pos_file, amp_fac_real_file,
     data necessary for the analysis run
     '''
 
+    #Logging
+    bilby.core.utils.logger.info("Generating Lens Generation Submission File") 
+
     #Get the submission and data subdirectories
-    outdir = config.get("output_settings", "outdir")
-    outdir = os.path.abspath(outdir)
-    submit_directory = outdir + "/submit"
-    data_subdirectory = outdir + "/data"
+    outdir = os.path.abspath(config.get("output_settings", "outdir"))
+    submit_directory = f"{outdir}/submit"
+    data_subdirectory = f"{outdir}/data"
 
     #Get the lens model
     lens_model = config.get("lens_generation_settings", "lens_model")
@@ -41,46 +43,38 @@ def lens_subfile(config, dim_freq_file, sour_pos_file, amp_fac_real_file,
     executable_directory = config.get(
         "lens_generation_settings", "executable_directory", fallback="default")
     if executable_directory == "default":
-        executable_directory = os.path.expanduser("~") + "/bin"
-    executable = executable_directory + "/" + lens_model
+        executable_directory = f"{os.path.expanduser('~')}/bin"
+    executable = f"{executable_directory}/{lens_model}"
 
     #Create the submission subdirectory if it doesn't exist
     if not os.path.isdir(submit_directory):
         os.mkdir(submit_directory)
 
-    #Create the .submit file and get the condor settings from the main INI file
-    submit_file = submit_directory + "/generate_lens.sub"
-    condor_settings_dictionary = config._sections["condor_settings"].copy()
+    #Name of submit file
+    submit_file = f"{submit_directory}/lens_generation.sub"
 
     #Open the submit file and write the necessary parts
-    with open(submit_file, "w") as sub:
+    with open(submit_file, "w", encoding="utf-8") as sub:
         sub.write("universe = vanilla\n")
-        sub.write("transfer_input_files = " + os.path.abspath(dim_freq_file)
-                  + "," + os.path.abspath(sour_pos_file) + "\n")
-        sub.write("executable = " + executable + "\n")
+        sub.write(f"initialdir = {data_subdirectory}\n")
+        sub.write(f"executable = {executable}\n")
 
         #Construct the arguments necessary for the function call
-        arguments = ""
+        argument_list = [dim_freq_file, sour_pos_file, amp_fac_real_file, amp_fac_imag_file]\
+                        + additional_lens_parameters
 
-        for argument in (dim_freq_file, sour_pos_file, amp_fac_real_file, amp_fac_imag_file):
-            add = os.path.abspath(argument) + " "
-            arguments += add
-        for argument in additional_lens_parameters:
-            add = argument + " "
-            arguments += add
+        sub.write(f"arguments = {' '.join(argument_list)}\n")
+        sub.write(f"log = {data_subdirectory}/lens_generation.log\n")
+        sub.write(f"output = {data_subdirectory}/lens_generation.out\n")
+        sub.write(f"error = {data_subdirectory}/lens_generation.err\n")
 
-        sub.write("arguments = " + arguments + "\n")
-        sub.write("log = " + data_subdirectory + "/lens_generation.log\n")
-        sub.write("output = " + data_subdirectory + "/lens_generation.out\n")
-        sub.write("error = " + data_subdirectory + "/lens_generation.err\n")
-
-        for key, value in condor_settings_dictionary.items():
-            if key == "request_memory":
-                sub.write(key + " = " + value + " GB \n")
-            else:
-                sub.write(key + " = " + value + "\n")
+        for key, value in config.items("condor_settings"):
+            sub.write(f"{key} = {value}\n")
 
         sub.write("queue 1\n")
+
+    #Logging End
+    bilby.core.utils.logger.info("Lens Generation Submission File Generated") 
 
 def injection_file(config, injection_parameters):
     '''
@@ -95,17 +89,18 @@ def injection_file(config, injection_parameters):
     injected simulated signals
     '''
 
+    #Logging
     bilby.core.utils.logger.info("Generating Injection File")
 
     #Get the proper location for the injection file
     outdir = config.get("output_settings", "outdir")
-    inject_prior = outdir + "/data/injection.prior"
-    inject_file = outdir + "/data/injection.dat"
+    inject_prior = f"{outdir}/data/injection.prior"
+    inject_file = f"{outdir}/data/injection.dat"
 
     #Write the prior file from the injection parameters
-    with open(inject_prior, "w") as prior:
+    with open(inject_prior, "w", encoding="utf-8") as prior:
         for key, value in injection_parameters.items():
-            prior.write(str(key) + "=" + str(value) + "\n")
+            prior.write(f"{key} = {value}\n")
 
     #Run the bilby_pipe_create_injection_file function
     n_injections = config.get("injection_settings", "n-injection")
@@ -114,6 +109,7 @@ def injection_file(config, injection_parameters):
                     "--n-injection", n_injections,
                     "-f", inject_file], check=True)
 
+    #Logging End
     bilby.core.utils.logger.info("Injection File Generated")
 
     return inject_file
