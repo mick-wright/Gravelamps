@@ -29,7 +29,7 @@ def lens_subfile(config, dim_freq_file, sour_pos_file, amp_fac_real_file,
     '''
 
     #Logging
-    bilby.core.utils.logger.info("Generating Lens Generation Submission File") 
+    bilby.core.utils.logger.info("Generating Lens Generation Submission File")
 
     #Get the submission and data subdirectories
     outdir = os.path.abspath(config.get("output_settings", "outdir"))
@@ -74,7 +74,7 @@ def lens_subfile(config, dim_freq_file, sour_pos_file, amp_fac_real_file,
         sub.write("queue 1\n")
 
     #Logging End
-    bilby.core.utils.logger.info("Lens Generation Submission File Generated") 
+    bilby.core.utils.logger.info("Lens Generation Submission File Generated")
 
 def injection_file(config, injection_parameters):
     '''
@@ -132,27 +132,25 @@ def bilby_pipe_ini(config, inject_file, injection_waveform_arguments, waveform_a
     '''
 
     #Get the bilby_pipe INI filename
-    ini_file = config.get("output_settings", "label") + "_" + mode + "_bilby_pipe.ini"
+    ini_file = f"{config.get('output_settings', 'label')}_{mode}_bilby_pipe.ini"
 
     #Create the empty configuration dictionary
-    bilby_pipe_config = dict()
+    bilby_pipe_config = {}
 
     #Insert the accounting tag
     bilby_pipe_config["accounting"] = config.get("condor_settings", "accounting_group")
 
     #Read in the condor settings
-    for key, value in config._sections["condor_settings"].items():
+    for key, value in config.items("condor_settings"):
         bilby_pipe_config[key] = value
 
     #Insert the label and output directory
-    bilby_pipe_config["label"] = config.get("output_settings", "label") + "_" + mode
+    bilby_pipe_config["label"] = f"{config.get('output_settings', 'label')}_{mode}"
     bilby_pipe_config["outdir"] = config.get("output_settings", "outdir")
 
     #Create the detector list
-    detector_string = config.get("analysis_settings", "interferometers")
-    detector_list = list(detector_string.split(","))
-
-    bilby_pipe_config["detectors"] = detector_list
+    bilby_pipe_config["detectors"] =\
+            list(config.get("analysis_settings", "interferometers").split(","))
 
     #Insert the Waveform Generator Class and Frequency Domain Source Model depending on the mode
     if mode == "lensed":
@@ -171,22 +169,22 @@ def bilby_pipe_ini(config, inject_file, injection_waveform_arguments, waveform_a
     bilby_pipe_config["sampling_frequency"] = config.get("analysis_settings", "sampling_frequency")
 
     #Include settings from bilby_pipe_settings
-    for key, value in config._sections["bilby_pipe_settings"].items():
+    for key, value in config.items("bilby_pipe_settings"):
         bilby_pipe_config[key] = value
 
     #If injecting include all the necessary injection settings, otherwise include event settings
     if inject_file is not None:
-        for key, value in config._sections["injection_settings"].items():
+        for key, value in config.items("injection_settings"):
             bilby_pipe_config[key] = value
         bilby_pipe_config["injection_file"] = inject_file
-        bilby_pipe_config["injection_waveform_arguments"] = injection_waveform_arguments 
+        bilby_pipe_config["injection_waveform_arguments"] = injection_waveform_arguments
     else:
-        for key, value in config._sections["event_settings"].items():
+        for key, value in config.items("event_settings"):
             bilby_pipe_config[key] = value
 
     #Include the sampler settings
     bilby_pipe_config["sampler"] = config.get("analysis_settings", "sampler")
-    bilby_pipe_config["sampler-kwargs"] = config._sections["sampler_kwargs"].copy()
+    bilby_pipe_config["sampler-kwargs"] = config.items("sampler_kwargs")
 
     #Include the prior file
     if mode == "lensed":
@@ -207,9 +205,9 @@ def bilby_pipe_ini(config, inject_file, injection_waveform_arguments, waveform_a
     bilby_pipe_config["plot-corner"] = config.get("analysis_settings", "plot_corner")
 
     #Write the dictionary to the file
-    with open(ini_file, "w") as ini:
+    with open(ini_file, "w", encoding="utf-8") as ini:
         for key, value in bilby_pipe_config.items():
-            ini.write(key + " = " + str(value) + "\n")
+            ini.write(f"{key} = {value}\n")
 
     return ini_file
 
@@ -229,17 +227,16 @@ def overarching_dag(config):
     #Get the submission and data subdirectories
     outdir = config.get("output_settings", "outdir")
     label = config.get("output_settings", "label")
-    submit_subdirectory = outdir + "/submit"
+    submit_subdirectory = f"{outdir}/submit"
 
     #Get the Overarching DAG file name
-    dag_file = submit_subdirectory + "/dag_" + label + "_overarch.submit"
+    dag_file = f"{submit_subdirectory}/dag_{label}_overarch.submit"
 
     #Get the lens generation submit file
-    lens_generation_subfile = submit_subdirectory + "/generate_lens.sub"
-    lens_generation_subfile = os.path.abspath(lens_generation_subfile)
+    lens_generation_subfile = os.path.abspath(f"{submit_subdirectory}/generate_lens.sub")
 
     #Open the DAG file for writing
-    with open(dag_file, "w") as dag:
+    with open(dag_file, "w", encoding="utf-8") as dag:
         #Determine methodology
         methodology = config.get("analysis_settings", "methodology")
 
@@ -251,7 +248,7 @@ def overarching_dag(config):
                 "lens_generation_settings", "amplification_factor_imag_file")
 
             if not os.path.isfile(amp_fac_real_file) and not os.path.isfile(amp_fac_imag_file):
-                dag.write("JOB lens_generation " + lens_generation_subfile + "\n")
+                dag.write(f"JOB lens_generation {lens_generation_subfile}\n")
                 lens_generation = True
             else:
                 lens_generation = False
@@ -260,14 +257,13 @@ def overarching_dag(config):
 
         #Add unlensed analysis run, if doing so
         if config.getboolean("unlensed_analysis_settings", "unlensed_analysis_run"):
-            unlensed_sub_file = submit_subdirectory + "/dag_" + label + "_unlensed.submit"
-            unlensed_sub_file = os.path.abspath(unlensed_sub_file)
-            dag.write("SUBDAG EXTERNAL bilby_pipe_unlensed " + unlensed_sub_file + "\n")
+            unlensed_sub_file =\
+                    os.path.abspath(f"{submit_subdirectory}/dag_{label}_unlensed.submit")
+            dag.write(f"SUBDAG EXTERNAL bilby_pipe_unlensed {unlensed_sub_file}\n")
 
         #Add lensed analysis run
-        lensed_sub_file = submit_subdirectory + "/dag_" + label + "_lensed.submit"
-        lensed_sub_file = os.path.abspath(lensed_sub_file)
-        dag.write("SUBDAG EXTERNAL bilby_pipe_lensed " + lensed_sub_file + "\n")
+        lensed_sub_file = os.path.abspath(f"{submit_subdirectory}/dag_{label}_lensed.submit")
+        dag.write(f"SUBDAG EXTERNAL bilby_pipe_lensed {lensed_sub_file}\n")
 
         #Parent-Child Link the jobs so that the lens generation goes first, then the unlensed,
         #then the lensed analysis runs
