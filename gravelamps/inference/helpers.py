@@ -33,7 +33,7 @@ def wy_handler(config):
 
     #Get the data subdirectory location
     outdir = config.get("output_settings", "outdir")
-    data_subdirectory = outdir + "/data"
+    data_subdirectory = f"{outdir}/data"
 
     #If the user has given locations of files containing the data, get those
     dim_freq_file = config.get(
@@ -48,12 +48,12 @@ def wy_handler(config):
 
     #If external files are given, and the user has specfied, copy the files to the data subdirectory
     if config.getboolean("lens_generation_settings", "copy_files_to_data_subdirectory") is True:
-        if dim_freq_file != data_subdirectory + "/w.dat":
-            subprocess.run(["cp", dim_freq_file, data_subdirectory+"/w.dat"], check=True)
-            dim_freq_file = data_subdirectory+"/w.dat"
-        if sour_pos_file != data_subdirectory + "/y.dat":
-            subprocess.run(["cp", sour_pos_file, data_subdirectory+"/y.dat"], check=True)
-            sour_pos_file = data_subdirectory + "/y.dat"
+        if dim_freq_file != f"{data_subdirectory}/w.dat":
+            os.system(f"cp {dim_freq_file} {data_subdirectory}/w.dat")
+            dim_freq_file = f"{data_subdirectory}/w.dat" 
+        if sour_pos_file != f"{data_subdirectory}/y.dat":
+            os.system(f"cp {sour_pos_file} {data_subdirectory}/y.dat")
+            sour_pos_file = f"{data_subdirectory}/y.dat"
 
     dim_freq_file = os.path.abspath(dim_freq_file)
     sour_pos_file = os.path.abspath(sour_pos_file)
