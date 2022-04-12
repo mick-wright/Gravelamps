@@ -43,9 +43,13 @@ def wy_handler(config):
 
     #If the files are not given, call the generator functions
     if sour_pos_file == "None":
-        sour_pos_file = gravelamps.lensing.utils.generate_source_position_file(config)
+        gravelamps.lensing.utils.generate_value_file(
+            config, "source_positon", f"{data_subdirectory}/y.dat")
+        sour_pos_file = f"{data_subdirectory}/y.dat"
     if dim_freq_file == "None":
-        dim_freq_file = gravelamps.lensing.utils.generate_dimensionless_frequency_file(config)
+        gravelamps.lensing.utils.generate_value_file(
+            config, "dimensionless_frequency", f"{data_subdirectory}/w.dat")
+        dim_freq_file = f"{data_subdirectory}/w.dat"
 
     #If external files are given, and the user has specfied, copy the files to the data subdirectory
     if config.getboolean("lens_interpolation_settings", "copy_files_to_data_subdirectory") is True:
@@ -292,7 +296,7 @@ def construct_waveform_arguments(config, mode, dim_freq_file=None, sour_pos_file
 
     #in the direct calculation cases, the remainder of the settings are the lens model and in the
     #case of the NFW model, the scaling constant for the profile
-    elif methodology in ("direct-nonnfw", "direct-nfw"):
+    elif methodology == "direct":
         if mode == "data":
             lens_model = config.get("injection_settings", "lens_model")
         elif mode == "analysis":
@@ -300,7 +304,7 @@ def construct_waveform_arguments(config, mode, dim_freq_file=None, sour_pos_file
 
         waveform_arguments["lens_model"] = lens_model
 
-        if methodology == "direct-nfw":
+        if lens_model == "nfwlens":
             scaling_constant = config.getfloat("lens_executable_settings", "nfw_scaling_constant")
             waveform_arguments["scaling_constant"] = scaling_constant
 
