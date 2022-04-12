@@ -50,65 +50,53 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
                 dimensionless_frequency_file, source_position_file, amplification_factor_real_file,
                 amplification_factor_imag_file)
 
-        elif waveform_arguments["methodology"] == "direct-nonnfw":
-            #Exract the lens model from the waveform arguments
+        elif waveform_arguments["methodology"] == "direct":
+            #Extract the lens model from the waveform arguments
             lens_model = waveform_arguments["lens_model"]
 
             #Get the library needed
-            lens_libstring = "lib" + lens_model[:len(lens_model)-4] + ".so"
-            lens_library_filepath = os.path.expanduser("~") + "/.local/lib/" + lens_libstring
-           
+            lens_library_filepath =\
+                    f"{os.path.expanduser('~')/.local/lib/lib{lens_model[:(lens_model)-4]}.so"
+
             #Load the library
             global lens_cdll
             lens_cdll = ctypes.CDLL(os.path.abspath(lens_library_filepath))
 
             #Set the argument and result types for the c function AFGRealOnly
-            lens_cdll.AFGRealOnly.argtypes = (ctypes.c_double, ctypes.c_double)
-            lens_cdll.AFGRealOnly.restype = ctypes.POINTER(ctypes.c_double)
-
-            #Create the amplification_factor function
-            def amplification_factor(dimensionless_frequency_value, source_position):
-                #Generate the result from the c function and then convert to python
-                result = lens_cdll.AFGRealOnly(
-                    ctypes.c_double(dimensionless_frequency_value),
-                    ctypes.c_double(source_position))
-                amp_fac = complex(result[0], result[1])
-
-                #Destroy the c object to deallocate the memory
-                lens_cdll.destroyObj(result)
-
-                return amp_fac
-
-            #Add the amplification_factor function to the waveform_arguments_dictionary
-            waveform_arguments["amplification_factor_func"] = amplification_factor
-
-        elif waveform_arguments["methodology"] == "direct-nfw":
-            #Get the NFW library
-            lens_libstring = "libsis.so"
-            lens_library_filepath = os.path.expanduser("~") + "/.local/lib/" + lens_libstring
-
-            #Load the Library
-            lens_cdll = ctypes.CDLL(os.path.abspath(lens_library_filepath))
-
-            #Set the argument and result types for the c function AFGRealOnly
-            lens_cdll.AFGRealOnly.argtypes = (ctypes.c_double, ctypes.c_double, ctypes.c_double)
-            lens_cdll.AFGRealOnly.restype = ctypes.POINTER(ctypes.c_double)
+            if lens_model == "nfwlens":
+                lens_cdll.AFGRealOnly.argtypes = (ctypes.c_double, ctypes.c_double, ctypes.c_double)
+            else:
+                lens_cdll.AFGRealOnly.argtypes = (ctypes.c_double, ctypes.c_double)
+            lens_cdll.AFGRealOnly.restype = ctypes.POINTER(ctypes.c_double) 
 
             #Create the amplification factor function
-            def amplification_factor(dimensionless_frequency_value, source_position, scaling_constant):
-                #Generate the result from the c function and then convert to python
-                result = lens_cdll.AFGRealOnly(
-                        ctypes.c_double(dimensionless_frequency_value),
-                        ctypes.c_double(source_position),
-                        ctypes.c_double(scaling_constant))
-                amp_fac = complex(result[0], result[1])
+            if lens_model == "nfwlens":
+                def amplification_factor(dimensionless_frequency,
+                    source_position, scaling_constant):
+                    #Generate the result from the c function AFGRealOnly
+                    result = lens_cdll.AFGRealOnly(
+                            ctypes.c_double(dimensionless_frequency),
+                            ctypes.c_double(source_position),
+                            ctypes.c_double(scaling_constant))
+                    amp_fac = complex(result[0], result[1])
 
-                #Destroy the c object to deallocate the memory
-                lens_cdll.destroyObj(result)
+                    #Destroy the c object to deallocate the memory
+                    lens_cdll.destroyObj(result)
 
-                return amp_fac
+                    return amp_fac
+            else:
+                def amplification_factor(dimensionless_frequency, source_position):
+                    #Generate the result from the c function AFGRealOnly
+                    result = lens_cdll.AFGRealOnly(
+                            ctypes.c_double(dimensionless_frequency),
+                            ctypes.c_double(source_position))
 
-            #Add the amplification factor function to the waveform arguments dictionary
+                    #Destroy the c object to deallocate the memory
+                    lens_cdll.destroyObj(result)
+
+                    return amp_fac
+
+            #Add the amplification factor function to the waveform_arguments dictionary
             waveform_arguments["amplification_factor_func"] = amplification_factor
 
 def BBH_lensed_waveform(frequency_array, mass_1, mass_2, a_1, a_2, tilt_1, tilt_2, phi_12, phi_jl,
@@ -144,13 +132,14 @@ def BBH_lensed_waveform(frequency_array, mass_1, mass_2, a_1, a_2, tilt_1, tilt_
             reference_frequency - the waveform reference frequency in Hz
             minimum_frequency - the waveform minimum frequency in Hz
             maximum_frequency - the waveform maximum frequency in Hz
-            methodology - Can be either 'interpolate' or 'direct-nonnfw' determining which method of
+            methodology - Can be either 'interpolate' or 'direct' determining which method of
                           caluclation will be used to generate the amplification factor
             interpolator - interpolating function to generate the amplification factor used to lens
                            the base waveform when using the interpolate methodology
             amplification_factor_func - function to generate the amplification factor used to lens
                                         the base waveform when using the direct methodology
             scaling_cosntant - constant used for the Navarro Frenk White (NFW) lens model
+            lens_model - which lens model is being used
 
     Outputs:
         lens_waveform - dictionary containing the plus and cross polarisation mode strain data for
@@ -164,7 +153,8 @@ def BBH_lensed_waveform(frequency_array, mass_1, mass_2, a_1, a_2, tilt_1, tilt_
     #Generate the waveform_kwargs dict and then update it using the given kwargs
     waveform_kwargs = dict(waveform_approximant="IMRPhenomPv2", reference_frequency=50,
                            minimum_frequency=20, maximum_frequency=1024, interpolator=None,
-                           amplification_factor_func=None, scaling_constant=None)
+                           amplification_factor_func=None, scaling_constant=None,
+                           lens_model=None)
     waveform_kwargs.update(kwargs)
 
     #Extract the approximant, reference and minimum frequencies and the interpolator
@@ -176,6 +166,7 @@ def BBH_lensed_waveform(frequency_array, mass_1, mass_2, a_1, a_2, tilt_1, tilt_
     interpolator = waveform_kwargs["interpolator"]
     amplification_factor_func = waveform_kwargs["amplification_factor_func"]
     scaling_constant = waveform_kwargs["scaling_constant"]
+    lens_model = waverform_kwargs["lens_model"]
 
     #Calculate the redshifted lens mass
     lens_distance = lens_fractional_distance * luminosity_distance
@@ -204,13 +195,13 @@ def BBH_lensed_waveform(frequency_array, mass_1, mass_2, a_1, a_2, tilt_1, tilt_
         if interpolator is None:
             raise ValueError("To use interpolate method, interpolator must be given!")
         lensing_function = interpolator
-    elif methodology in ("direct-nonnfw", "direct-nfw"):
+    elif methodology == "direct":
         if amplification_factor_func is None:
             raise ValueError("To use direct method, direct calculation function must be given!")
         lensing_function = np.vectorize(amplification_factor_func)
 
     #Now generate the amplification factor array using the interpolator function
-    if methodology == "direct-nfw":
+    if lens_model == "nfwlens" and methodology == "direct":
         amplification_factor_array = lensing_function(dimensionless_frequency_array,
                                                       source_position,
                                                       scaling_constant)
