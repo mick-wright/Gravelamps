@@ -37,15 +37,15 @@ def main():
 
     #Create the Outdir Directory and the Data and Submit Subfolders
     outdir = config.get("output_settings", "outdir")
-    data_subdirectory = outdir + "/data"
-    submit_subdirectory = outdir + "/submit"
+    data_subdirectory = f"{outdir}/data"
+    submit_subdirectory = f"{outdir}/submit"
 
     for folder in (outdir, data_subdirectory, submit_subdirectory):
         if not os.path.isdir(folder):
             os.mkdir(folder)
 
     #Get which methodology is being used
-    methodology = config.get("analysis_settings", "methodology")
+    methodology = config.get("lens_generation_settings", "methodology")
 
     #Dependent upon methodology selected, construct waveform arguments dictionary
     if methodology == "interpolate":
@@ -61,16 +61,17 @@ def main():
             config, "analysis", dim_freq_file=dim_freq_file, sour_pos_file=sour_pos_file,
             amp_fac_real_file=amp_fac_real_file, amp_fac_imag_file=amp_fac_imag_file)
 
-    elif methodology in ("direct-nonnfw", "direct-nfw"):
+    elif methodology == "direct":
         waveform_arguments = gravelamps.inference.helpers.construct_waveform_arguments(
             config, "analysis")
 
     #If Injecting, Generate the Injection File and the Injection Waveform Arguments
     if config.getboolean("injection_settings", "injection"):
         #Read in the Injection Parameters, converting to floats
-        injection_parameters = config._sections["injection_parameters"]
-        injection_parameters.update(
-            (key,float(value)) for key, value in injection_parameters.items())
+        injection_parameters = {}
+
+        for key, value in config.items("injection_parameters"):
+            injection_parameters[key] = float(value)
 
         inject_file = gravelamps.inference.file_generators.injection_file(
             config, injection_parameters)
@@ -82,37 +83,24 @@ def main():
         if injection_methodology == "None":
             injection_waveform_arguments = waveform_arguments.copy()
         else:
-            injection_waveform_arguments = (
-                gravelamps.inference.helpers.construct_waveform_arguments(config, "data"))
+            injection_waveform_arguments =\
+                gravelamps.inference.helpers.construct_waveform_arguments(config, "data")
 
     else:
         inject_file = None
         injection_waveform_arguments = None
 
-    #If user specifies, perform unlensed analysis run
-    if config.getboolean("unlensed_analysis_settings", "unlensed_analysis_run"):
-        #Generate the unlensed run INI
-        unlensed_ini = gravelamps.inference.file_generators.bilby_pipe_ini(
-            config=config, inject_file=inject_file,
-            injection_waveform_arguments=injection_waveform_arguments,
-            waveform_arguments=waveform_arguments, mode="unlensed")
-
-        #Run the bilby_pipe initial run
-        subprocess.run(["bilby_pipe", unlensed_ini], check=True)
-
-        #TODO: MODIFY PRIORS BASED ON UNLENSED RUN
-
     #Generate Lensed Run INI
-    lensed_ini = gravelamps.inference.file_generators.bilby_pipe_ini(
+    bilby_pipe_ini = gravelamps.inference.file_generators.bilby_pipe_ini(
         config=config, inject_file=inject_file,
         injection_waveform_arguments=injection_waveform_arguments,
-        waveform_arguments=waveform_arguments, mode="lensed")
+        waveform_arguments=waveform_arguments)
 
     #Run the bilby_pipe intial run
-    subprocess.run(["bilby_pipe", lensed_ini], check=True)
+    subprocess.run(["bilby_pipe", bilby_pipe_ini], check=True)
 
     #Generate the overarching DAG file
     dag_file = gravelamps.inference.file_generators.overarching_dag(config)
 
     #Message user with submission
-    print("To submit, use \n $ condor_submit_dag " + dag_file)
+    print(f"To submit, use \n $ condor_submit_dag {dag_file}")
