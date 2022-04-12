@@ -37,8 +37,9 @@ def wy_handler(config):
 
     #If the user has given locations of files containing the data, get those
     dim_freq_file = config.get(
-        "lens_generation_settings", "dimensionless_frequency_file", fallback="None")
-    sour_pos_file = config.get("lens_generation_settings", "source_position_file", fallback="None")
+        "lens_interpolation_settings", "dimensionless_frequency_file", fallback="None")
+    sour_pos_file = config.get(
+        "lens_interpolation_settings", "source_position_file", fallback="None")
 
     #If the files are not given, call the generator functions
     if sour_pos_file == "None":
@@ -47,10 +48,10 @@ def wy_handler(config):
         dim_freq_file = gravelamps.lensing.utils.generate_dimensionless_frequency_file(config)
 
     #If external files are given, and the user has specfied, copy the files to the data subdirectory
-    if config.getboolean("lens_generation_settings", "copy_files_to_data_subdirectory") is True:
+    if config.getboolean("lens_interpolation_settings", "copy_files_to_data_subdirectory") is True:
         if dim_freq_file != f"{data_subdirectory}/w.dat":
             os.system(f"cp {dim_freq_file} {data_subdirectory}/w.dat")
-            dim_freq_file = f"{data_subdirectory}/w.dat" 
+            dim_freq_file = f"{data_subdirectory}/w.dat"
         if sour_pos_file != f"{data_subdirectory}/y.dat":
             os.system(f"cp {sour_pos_file} {data_subdirectory}/y.dat")
             sour_pos_file = f"{data_subdirectory}/y.dat"
@@ -60,12 +61,12 @@ def wy_handler(config):
 
     return dim_freq_file, sour_pos_file
 
-def get_additional_parameters(config, geometric_optics_switch=0):
+def get_additional_parameters(config, dim_freq_file):
     '''
     Input:
         config - INI configuration parser
-        geometric_optics_switch - optional value determining where in the array to switch from the
-                                  wave optics calculation to the geometric optics approximation
+        dim_freq_file - File containing the values of dimensionless freuqency to be interpolated
+                        over
 
     Output:
         additional_parameter_list - list containing the additional parameters needed for the model
@@ -73,42 +74,24 @@ def get_additional_parameters(config, geometric_optics_switch=0):
     Function gets the additional parameters necessary for the function call necessary for the model.
     '''
 
-    #Get the lens model
-    lens_model = config.get("lens_generation_settings", "lens_model")
+    #Add to the parameter list, everything within the lens_executable_arguments
+    additional_parameters_list = []
 
-    #Get the precision
-    precision = config.get("lens_generation_settings", "arithmetic_precision")
+    for key, value in config.items("lens_executable_arguments"):
+        # For the changeover frequency, find the location in the dimensionless frequency array
+        # corresponding to that changeover frequency (goes by first over value)
+        if key == "geometric_optics_frequency":
+            geometric_optics_frequency = value
+            dimensionless_frequency_array = np.loadtxt(dim_freq_file)
+            switch_value = np.argmax(dimensionless_frequency_array > geometric_optics_frequency)
+            if dimensionless_frequency_array[switch_value] < geometric_optics_frequency:
+                switch_value = len(dimensionless_frequency_array)
 
-    #For each of the lens models, acquire the necessary additional parameters
-    if lens_model == "pointlens":
-        additional_parameter_list = [precision, geometric_optics_switch]
+            additional_parameters_list.append(switch_value)
+        else:
+            additional_parameters_list.append(value)
 
-    elif lens_model == "sislens":
-        integration_upper_limit = config.get(
-            "lens_generation_settings", "sis_summation_upper_limit")
-        additional_parameter_list = [
-            integration_upper_limit, precision, geometric_optics_switch]
-
-    elif lens_model == "nfwlens":
-        scaling_constant = config.get(
-            "lens_generation_settings", "nfw_scaling_constant")
-        integration_upper_limit = config.get(
-            "lens_generation_settings", "nfw_integration_upper_limit")
-        additional_parameter_list = [
-            scaling_constant, integration_upper_limit, precision, geometric_optics_switch]
-
-    # If using a non-standard program, user may specify the parameters manually. Or may add
-    # additional elif statements in this function
-    else:
-        additional_parameters = config.get(
-            "lens_generation_settings", "additional_parameter_list").replace(" ","").split(",")
-        additional_parameter_list = []
-
-        for parameter in additional_parameters:
-            additional_parameter_list.append(config.get(
-                "lens_generation_settings", parameter))
-
-    return additional_parameter_list
+    return additional_parameters_list
 
 
 def amp_fac_handler(config, dim_freq_file, sour_pos_file, mode="local"):
@@ -132,15 +115,15 @@ def amp_fac_handler(config, dim_freq_file, sour_pos_file, mode="local"):
 
     #Get the data subdirectory location
     outdir = config.get("output_settings", "outdir")
-    data_subdirectory = outdir + "/data"
+    data_subdirectory = f"{outdir}/data"
 
     #If the user has given the locations of files containing the data, get those
     amp_fac_complex_file = config.get(
-        "lens_generation_settings", "amplification_factor_complex_file", fallback="None")
+        "lens_interpolation_settings", "amplification_factor_complex_file", fallback="None")
     amp_fac_real_file = config.get(
-        "lens_generation_settings", "amplification_factor_real_file", fallback="None")
+        "lens_interpolation_settings", "amplification_factor_real_file", fallback="None")
     amp_fac_imag_file = config.get(
-        "lens_generation_settings", "amplification_factor_imag_file", fallback="None")
+        "lens_interpolation_settings", "amplification_factor_imag_file", fallback="None")
 
     #If the complex file exists, read it in and then split it into real and imaginary parts
     if amp_fac_complex_file != "None":
@@ -148,8 +131,8 @@ def amp_fac_handler(config, dim_freq_file, sour_pos_file, mode="local"):
         real_array = np.real(complex_array)
         imag_array = np.imag(complex_array)
 
-        amp_fac_real_file = data_subdirectory + "/fReal.dat"
-        amp_fac_imag_file = data_subdirectory + "/fImag.dat"
+        amp_fac_real_file = f"{data_subdirectory}/fReal.dat"
+        amp_fac_imag_file = f"{data_subdirectory}/fImag.dat"
 
         np.savetxt(amp_fac_real_file, real_array)
         np.savetxt(amp_fac_imag_file, imag_array)
@@ -160,26 +143,14 @@ def amp_fac_handler(config, dim_freq_file, sour_pos_file, mode="local"):
 
     #If the files do not exist, generate the data or the condor submission file
     else:
-        amp_fac_real_file = data_subdirectory + "/fReal.dat"
-        amp_fac_imag_file = data_subdirectory + "/fImag.dat"
+        amp_fac_real_file = f"{data_subdirectory}/fReal.dat"
+        amp_fac_imag_file = f"{data_subdirectory}/fImag.dat"
 
         #Get the Lens Model
         lens_model = config.get("lens_generation_settings", "lens_model")
 
-        #For the geometric optics switch, create the value by loading in the dimensionles frequency
-        #file and finding the first place in the array where the array is greater than the
-        #specified changeover frequency. In the case where the area is entirely below the switch
-        #value, set the switch to the end of the array
-        geometric_optics_min_dim_freq = config.getfloat(
-            "lens_generation_settings", "geometric_optics_changeover_dimensionless_frequency")
-        dim_freq_array = np.loadtxt(dim_freq_file)
-        switch_value = np.argmax(dim_freq_array >= geometric_optics_min_dim_freq)
-        if dim_freq_array[switch_value] < geometric_optics_min_dim_freq:
-            switch_value = len(dim_freq_array)
-        switch_value = str(switch_value)
-
         #Get the additional parameters necessary for the process call
-        additional_parameters = get_additional_parameters(config, switch_value)
+        additional_parameters = get_additional_parameters(config, dim_freq_file)
 
         #Either directly call the lensing function if the mode is local or generate the submit file
         #if the mode is pipe
@@ -197,13 +168,13 @@ def amp_fac_handler(config, dim_freq_file, sour_pos_file, mode="local"):
             bilby.core.utils.logger.info("Lens Data Submit File Generated")
 
     # If the user has specified that the files be copied to the data subdirectory, do this
-    if config.getboolean("lens_generation_settings", "copy_files_to_data_subdirectory"):
-        if amp_fac_real_file != data_subdirectory + "/fReal.dat":
-            subprocess.run(["cp", amp_fac_real_file, data_subdirectory+"/fReal.dat"], check=True)
-            amp_fac_real_file = data_subdirectory + "/fReal.dat"
-        if amp_fac_imag_file != data_subdirectory + "/fImag.dat":
-            subprocess.run(["cp", amp_fac_imag_file, data_subdirectory+"/fImag.dat"], check=True)
-            amp_fac_imag_file = data_subdirectory + "/fImag.dat"
+    if config.getboolean("lens_interpolation_settings", "copy_files_to_data_subdirectory"):
+        if amp_fac_real_file != f"{data_subdirectory}/fReal.dat":
+            os.system(f"cp {amp_fac_real_file} {data_subdirectory}/fReal.dat")
+            amp_fac_real_file = f"{data_subdirectory}/fReal.dat"
+        if amp_fac_imag_file != f"{data_subdirectory}/fImag.dat":
+            os.system(f"cp {amp_fac_imag_file} {data_subdirectory}/fImag.dat")
+            amp_fac_imag_file = f"{data_subdirectory}/fImag.dat"
 
     amp_fac_real_file = os.path.abspath(amp_fac_real_file)
     amp_fac_imag_file = os.path.abspath(amp_fac_imag_file)
@@ -302,7 +273,7 @@ def construct_waveform_arguments(config, mode, dim_freq_file=None, sour_pos_file
     if mode == "data":
         methodology = config.get("injection_settings", "methodology")
     elif mode == "analysis":
-        methodology = config.get("analysis_settings", "methodology")
+        methodology = config.get("lens_generation_settings", "methodology")
 
     #Depending on the methodology choice, get the remainder of the settings needed
     #In interpolation case, the remainder of the settings are the files needed to generate the
@@ -330,7 +301,7 @@ def construct_waveform_arguments(config, mode, dim_freq_file=None, sour_pos_file
         waveform_arguments["lens_model"] = lens_model
 
         if methodology == "direct-nfw":
-            scaling_constant = config.getfloat("lens_generation_settings", "nfw_scaling_constant")
+            scaling_constant = config.getfloat("lens_executable_settings", "nfw_scaling_constant")
             waveform_arguments["scaling_constant"] = scaling_constant
 
     #Write in the general settings
