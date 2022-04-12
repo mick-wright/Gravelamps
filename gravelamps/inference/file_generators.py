@@ -114,7 +114,7 @@ def injection_file(config, injection_parameters):
 
     return inject_file
 
-def bilby_pipe_ini(config, inject_file, injection_waveform_arguments, waveform_arguments, mode):
+def bilby_pipe_ini(config, inject_file, injection_waveform_arguments, waveform_arguments):
     '''
     Input:
         config - INI configuration parser
@@ -122,7 +122,6 @@ def bilby_pipe_ini(config, inject_file, injection_waveform_arguments, waveform_a
         injection_waveform_arguments - dictionary containing arguments to be passed to waveform
                                        during data generatioon only
         waveform_arguments - dictionary containing arguments to be passed to waveform
-        mode - string determinining whether to generate an unlensed or a lensed analysis run
 
     Output:
         ini_file - location of the generated INI file
@@ -132,7 +131,7 @@ def bilby_pipe_ini(config, inject_file, injection_waveform_arguments, waveform_a
     '''
 
     #Get the bilby_pipe INI filename
-    ini_file = f"{config.get('output_settings', 'label')}_{mode}_bilby_pipe.ini"
+    ini_file = f"{config.get('output_settings', 'label')}_bilby_pipe.ini"
 
     #Create the empty configuration dictionary
     bilby_pipe_config = {}
@@ -142,27 +141,22 @@ def bilby_pipe_ini(config, inject_file, injection_waveform_arguments, waveform_a
 
     #Read in the condor settings
     for key, value in config.items("condor_settings"):
-        bilby_pipe_config[key] = value
+        if key != "accounting_group":
+            bilby_pipe_config[key] = value
 
     #Insert the label and output directory
-    bilby_pipe_config["label"] = f"{config.get('output_settings', 'label')}_{mode}"
+    bilby_pipe_config["label"] = f"{config.get('output_settings', 'label')}"
     bilby_pipe_config["outdir"] = config.get("output_settings", "outdir")
 
     #Create the detector list
     bilby_pipe_config["detectors"] =\
             list(config.get("analysis_settings", "interferometers").split(","))
 
-    #Insert the Waveform Generator Class and Frequency Domain Source Model depending on the mode
-    if mode == "lensed":
-        bilby_pipe_config["waveform-generator"] = config.get(
-            "analysis_settings", "lensed_waveform_generator_class")
-        bilby_pipe_config["frequency-domain-source-model"] = config.get(
-            "analysis_settings", "lensed_frequency_domain_source_model")
-    elif mode == "unlensed":
-        bilby_pipe_config["waveform-generator"] = config.get(
-            "unlensed_analysis_settings", "unlensed_waveform_generator_class")
-        bilby_pipe_config["frequency-domain-source-model"] = config.get(
-            "unlensed_analysis_settings", "unlensed_frequency_domain_source_model")
+    #Insert the Waveform Generator Class and Frequency Domain Source Model
+    bilby_pipe_config["waveform-generator"] =\
+            config.get("analysis_settings", "waveform_generator_class")
+    bilby_pipe_config["frequency-domain-source-model"] =\
+            config.get("analysis_settings", "frequency_domain_source_model")
 
     #Include the duration and the sampling frequency
     bilby_pipe_config["duration"] = config.get("analysis_settings", "duration")
@@ -187,10 +181,7 @@ def bilby_pipe_ini(config, inject_file, injection_waveform_arguments, waveform_a
     bilby_pipe_config["sampler-kwargs"] = config.items("sampler_kwargs")
 
     #Include the prior file
-    if mode == "lensed":
-        bilby_pipe_config["prior-file"] = config.get("analysis_settings", "prior_file")
-    elif mode == "unlensed":
-        bilby_pipe_config["prior-file"] = config.get("unlensed_analysis_settings", "prior_file")
+    bilby_pipe_config["prior-file"] = config.get("analysis_settings", "prior_file")
 
     #Include the waveform arguments dictionary
     bilby_pipe_config["waveform_arguments_dict"] = waveform_arguments
@@ -202,7 +193,8 @@ def bilby_pipe_ini(config, inject_file, injection_waveform_arguments, waveform_a
     bilby_pipe_config["trigger-time"] = config.get("analysis_settings", "trigger_time")
 
     #Include whether or not to plot the output as a corner plot
-    bilby_pipe_config["plot-corner"] = config.get("analysis_settings", "plot_corner")
+    bilby_pipe_config["plot-corner"] = config.get("output_settings", "plot_corner")
+    bilby_pipe_config["plot-data"] = config.get("output_settings", "plot_data")
 
     #Write the dictionary to the file
     with open(ini_file, "w", encoding="utf-8") as ini:
@@ -255,24 +247,13 @@ def overarching_dag(config):
         else:
             lens_generation = False
 
-        #Add unlensed analysis run, if doing so
-        if config.getboolean("unlensed_analysis_settings", "unlensed_analysis_run"):
-            unlensed_sub_file =\
-                    os.path.abspath(f"{submit_subdirectory}/dag_{label}_unlensed.submit")
-            dag.write(f"SUBDAG EXTERNAL bilby_pipe_unlensed {unlensed_sub_file}\n")
-
-        #Add lensed analysis run
-        lensed_sub_file = os.path.abspath(f"{submit_subdirectory}/dag_{label}_lensed.submit")
-        dag.write(f"SUBDAG EXTERNAL bilby_pipe_lensed {lensed_sub_file}\n")
+        #Add analysis run
+        sub_file = os.path.abspath(f"{submit_subdirectory}/dag_{label}.submit")
+        dag.write(f"SUBDAG EXTERNAL bilby_pipe_lensed {sub_file}\n")
 
         #Parent-Child Link the jobs so that the lens generation goes first, then the unlensed,
         #then the lensed analysis runs
-        if config.getboolean("unlensed_analysis_settings", "unlensed_analysis_run"):
-            if lens_generation is True:
-                dag.write("PARENT lens_generation CHILD bilby_pipe_unlensed \n")
-            dag.write("PARENT bilby_pipe_unlensed CHILD bilby_pipe_lensed \n")
-        else:
-            if lens_generation is True:
-                dag.write("PARENT lens_generation CHILD bilby_pipe_lensed \n")
+        if lens_generation is True:
+            dag.write("PARENT lens_generation CHILD bilby_pipe_lensed \n")
 
     return dag_file
