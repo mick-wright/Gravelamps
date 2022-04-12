@@ -56,7 +56,7 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
 
             #Get the library needed
             lens_library_filepath =\
-                    f"{os.path.expanduser('~')/.local/lib/lib{lens_model[:(lens_model)-4]}.so"
+                    f"{os.path.expanduser('~')}/.local/lib/lib{lens_model[:(lens_model)-4]}.so"
 
             #Load the library
             global lens_cdll
@@ -67,15 +67,15 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
                 lens_cdll.AFGRealOnly.argtypes = (ctypes.c_double, ctypes.c_double, ctypes.c_double)
             else:
                 lens_cdll.AFGRealOnly.argtypes = (ctypes.c_double, ctypes.c_double)
-            lens_cdll.AFGRealOnly.restype = ctypes.POINTER(ctypes.c_double) 
+            lens_cdll.AFGRealOnly.restype = ctypes.POINTER(ctypes.c_double)
 
             #Create the amplification factor function
             if lens_model == "nfwlens":
-                def amplification_factor(dimensionless_frequency,
+                def amplification_factor(dimensionless_frequency_value,
                     source_position, scaling_constant):
                     #Generate the result from the c function AFGRealOnly
                     result = lens_cdll.AFGRealOnly(
-                            ctypes.c_double(dimensionless_frequency),
+                            ctypes.c_double(dimensionless_frequency_value),
                             ctypes.c_double(source_position),
                             ctypes.c_double(scaling_constant))
                     amp_fac = complex(result[0], result[1])
@@ -85,11 +85,12 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
 
                     return amp_fac
             else:
-                def amplification_factor(dimensionless_frequency, source_position):
+                def amplification_factor(dimensionless_frequency_value, source_position):
                     #Generate the result from the c function AFGRealOnly
                     result = lens_cdll.AFGRealOnly(
-                            ctypes.c_double(dimensionless_frequency),
+                            ctypes.c_double(dimensionless_frequency_value),
                             ctypes.c_double(source_position))
+                    amp_fac = complex(result[0], result[1])
 
                     #Destroy the c object to deallocate the memory
                     lens_cdll.destroyObj(result)
@@ -166,7 +167,7 @@ def BBH_lensed_waveform(frequency_array, mass_1, mass_2, a_1, a_2, tilt_1, tilt_
     interpolator = waveform_kwargs["interpolator"]
     amplification_factor_func = waveform_kwargs["amplification_factor_func"]
     scaling_constant = waveform_kwargs["scaling_constant"]
-    lens_model = waverform_kwargs["lens_model"]
+    lens_model = waveform_kwargs["lens_model"]
 
     #Calculate the redshifted lens mass
     lens_distance = lens_fractional_distance * luminosity_distance
