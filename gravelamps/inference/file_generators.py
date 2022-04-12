@@ -141,7 +141,11 @@ def bilby_pipe_ini(config, inject_file, injection_waveform_arguments, waveform_a
 
     #Read in the condor settings
     for key, value in config.items("condor_settings"):
-        if key != "accounting_group":
+        if key == "accounting_group":
+            continue
+        elif key in ("request_memory", "request_disk"):
+            bilby_pipe_config[key] = value.replace("GB", "")
+        else:
             bilby_pipe_config[key] = value
 
     #Insert the label and output directory
@@ -178,7 +182,7 @@ def bilby_pipe_ini(config, inject_file, injection_waveform_arguments, waveform_a
 
     #Include the sampler settings
     bilby_pipe_config["sampler"] = config.get("analysis_settings", "sampler")
-    bilby_pipe_config["sampler-kwargs"] = config.items("sampler_kwargs")
+    bilby_pipe_config["sampler-kwargs"] = dict(config.items("sampler_kwargs"))
 
     #Include the prior file
     bilby_pipe_config["prior-file"] = config.get("analysis_settings", "prior_file")
@@ -230,7 +234,7 @@ def overarching_dag(config):
     #Open the DAG file for writing
     with open(dag_file, "w", encoding="utf-8") as dag:
         #Determine methodology
-        methodology = config.get("analysis_settings", "methodology")
+        methodology = config.get("lens_generation_settings", "methodology")
 
         #If methodology is interpolate, and the lens files do not exist add the lens generation job
         if methodology == "interpolate":
