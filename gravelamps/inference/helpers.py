@@ -305,7 +305,7 @@ def construct_waveform_arguments(config, mode, dim_freq_file=None, sour_pos_file
         waveform_arguments["lens_model"] = lens_model
 
         if lens_model == "nfwlens":
-            scaling_constant = config.getfloat("lens_executable_settings", "nfw_scaling_constant")
+            scaling_constant = config.getfloat("lens_executable_arguments", "nfw_scaling_constant")
             waveform_arguments["scaling_constant"] = scaling_constant
 
     #Write in the general settings
