@@ -242,7 +242,8 @@ def BBH_lensed_waveform(frequency_array, mass_1, mass_2, a_1, a_2, tilt_1, tilt_
     waveform_kwargs = dict(waveform_approximant="IMRPhenomPv2", reference_frequency=50,
                            minimum_frequency=20, maximum_frequency=1024, interpolator=None,
                            amplification_factor_func=None, scaling_constant=None,
-                           lens_model=None)
+                           lens_model=None, imag_position_func=None,
+			   min_time_delay_phase_func=None)
     waveform_kwargs.update(kwargs)
 
     #Extract the approximant, reference and minimum frequencies and the interpolator
