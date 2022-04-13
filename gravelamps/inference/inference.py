@@ -44,13 +44,13 @@ def main():
 
     #Generate the Lensing Interpolator
     #If the data subdirectory doesn't already exist, create it
-    data_subdirectory = outdir + "/data"
+    data_subdirectory = f"{outdir}/data"
 
     if not os.path.isdir(data_subdirectory):
         os.mkdir(data_subdirectory)
 
     #Get which methodology is being used
-    methodology = config.get("analysis_settings", "methodology")
+    methodology = config.get("lens_generation_settings", "methodology")
 
     #Dependent upon methodology selected, construct waveform arguments dictionary
     if methodology == "interpolate":
@@ -66,7 +66,7 @@ def main():
             config, "analysis", dim_freq_file=dim_freq_file, sour_pos_file=sour_pos_file,
             amp_fac_real_file=amp_fac_real_file, amp_fac_imag_file=amp_fac_imag_file)
 
-    elif methodology in ("direct-nonnfw", "direct-nfw"):
+    elif methodology == "direct":
         analysis_waveform_arguments = gravelamps.inference.helpers.construct_waveform_arguments(
             config, "analysis")
 
@@ -90,9 +90,9 @@ def main():
 
     #Get the Waveform Generator and Frequency Domain Source Model
     lensed_waveform_generator_class = config.get(
-        "analysis_settings", "lensed_waveform_generator_class")
+        "analysis_settings", "waveform_generator_class")
     lensed_frequency_domain_source_model = config.get(
-        "analysis_settings", "lensed_frequency_domain_source_model")
+        "analysis_settings", "frequency_domain_source_model")
 
     lensed_waveform_generator_class, lensed_frequency_domain_source_model = (
         gravelamps.inference.helpers.wfgen_fd_source(
@@ -199,51 +199,6 @@ def main():
 
     for key, value in sampler_kwargs_dict.items():
         sampler_kwargs_dict[key] = int(value)
-
-    #If wanting an unlensed analysis run, do this:
-    if config.getboolean("unlensed_analysis_settings", "unlensed_analysis_run"):
-        #Get the unlensed waveform generator and frequency domain source model
-        unlensed_waveform_generator_class = config.get(
-            "unlensed_analysis_settings", "unlensed_waveform_generator_class")
-        unlensed_frequency_domain_source_model = config.get(
-            "unlensed_analysis_settings", "unlensed_frequency_domain_source_model")
-
-        unlensed_waveform_generator_class, unlensed_frequency_domain_source_model = (
-            gravelamps.inference.helpers.wfgen_fd_source(
-                unlensed_waveform_generator_class, unlensed_frequency_domain_source_model))
-
-        #Generate the Unlensed Waveform
-        unlensed_waveform_generator = unlensed_waveform_generator_class(
-            duration=duration, sampling_frequency=sampling_frequency,
-            frequency_domain_source_model=unlensed_frequency_domain_source_model,
-            parameter_conversion=bilby.gw.conversion.convert_to_lal_binary_black_hole_parameters,
-            waveform_arguments=waveform_arguments)
-
-        #Generate the Unlensed Likelihoods
-        unlensed_likelihood = bilby.gw.GravitationalWaveTransient(
-            interferometers=interferometers, waveform_generator=unlensed_waveform_generator)
-
-        #Fix the Lens Priors for Unlensed Case
-        unlensed_priors = priors
-
-        for parameter in ["lens_mass", "source_position", "lens_fractional_distance"]:
-            unlensed_priors[parameter] = 0
-
-        #Perform the Unlensed Run
-        if config.getboolean("injection_settings", "injection"):
-            result_unlensed = bilby.run_sampler(
-                likelihood=unlensed_likelihood, priors=unlensed_priors, outdir=outdir,
-                label=label+"_unlensed", sampler=sampler,
-                injection_parameters=injection_parameters, **sampler_kwargs_dict)
-        else:
-            result_unlensed = bilby.run_sampler(
-                likelihood=unlensed_likelihood, priors=unlensed_priors, outdir=outdir,
-                label=label+"_unlensed", sampler=sampler, **sampler_kwargs_dict)
-
-        if config.getboolean("analysis_settings", "plot_corner"):
-            result_unlensed.plot_corner()
-
-        #TODO: Handle resultant posteriors
 
     #Generate Lensed Likelihood
     lensed_likelihood = bilby.gw.GravitationalWaveTransient(
