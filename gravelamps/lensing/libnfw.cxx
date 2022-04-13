@@ -956,7 +956,7 @@ std::complex<double> AmplificationFactorGeometric(
 
 // Simplified version of AmplificationFactorGeometric that takes in the image
 // positions and min time delay phase to speed computation
-double * AFGSimplified(
+double * SimpleAmpFac(
     double dimensionless_frequency,
     double source_position,
     double scaling_constant,
@@ -1042,7 +1042,7 @@ double * ImagePositionArray(
                                                          scaling_constant);
 
     // Convert to array
-    double * image_position_array = image_positions.data();
+    double* image_position_array = image_positions.data();
 
     return image_position_array;
 }

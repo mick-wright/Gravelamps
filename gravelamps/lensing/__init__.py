@@ -74,13 +74,13 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
                 lens_cdll.MinTimeDelayPhaseReal.argtypes = (ctypes.c_double, ctypes.c_double)
                 lens_cdll.MinTimeDelayPhaseReal.restype = ctypes.c_double
 
-                lens_cdll.AFGSimplified.argtypes = (ctypes.c_double,
-                                                    ctypes.c_double,
-                                                    ctypes.c_double,
-                                                    ctypes.POINTER(ctypes.c_double),
-                                                    ctypes.c_double,
-                                                    ctypes.c_int)
-                lens_cdll.AFGSimplified.restype = ctypes.POINTER(ctyeps.c_double)
+                lens_cdll.SimpleAmpFac.argtypes = (ctypes.c_double,
+                                                   ctypes.c_double,
+                                                   ctypes.c_double,
+                                                   ctypes.POINTER(ctypes.c_double),
+                                                   ctypes.c_double,
+                                                   ctypes.c_int)
+                lens_cdll.SimpleAmpFac.restype = ctypes.POINTER(ctypes.c_double)
             else:
                 lens_cdll.AFGRealOnly.argtypes = (ctypes.c_double, ctypes.c_double)
                 lens_cdll.AFGRealOnly.restype = ctypes.POINTER(ctypes.c_double)
@@ -153,7 +153,7 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
                         return interpolator(source_position)
                     #If not, feed in the min_time_delay phase and the image_positions
                     #to simplify the calculation considerably for speed
-                    result = lens_cdll.AFGSimplified(
+                    result = lens_cdll.SimpleAmpFac(
                             ctypes.c_double(dimensionless_frequency_value),
                             ctypes.c_double(source_position),
                             ctypes.c_double(scaling_constant),
