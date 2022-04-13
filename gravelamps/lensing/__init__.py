@@ -57,7 +57,7 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
 
             #Get the library needed
             lens_library_filepath =\
-                    f"{os.path.expanduser('~')}/.local/lib/lib{lens_model[:(lens_model)-4]}.so"
+                    f"{os.path.expanduser('~')}/.local/lib/lib{lens_model[:-4]}.so"
 
             #Load the library
             global lens_cdll
