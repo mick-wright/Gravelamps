@@ -73,6 +73,14 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
 
                 lens_cdll.MinTimeDelayPhaseReal.argtypes = (ctypes.c_double, ctypes.c_double)
                 lens_cdll.MinTimeDelayPhaseImag.restype = ctypes.c_double
+
+                lens_cdll.AFGSimplified.argtypes = (ctypes.c_double,
+                                                    ctypes.c_double,
+                                                    ctypes.c_double,
+                                                    ctypes.POINTER(ctypes.c_double),
+                                                    ctypes.c_double,
+                                                    ctypes.c_int)
+                lens_cdll.AFGSimplified.restype = ctypes.POINTER(ctyeps.c_double)
             else:
                 lens_cdll.AFGRealOnly.argtypes = (ctypes.c_double, ctypes.c_double)
                 lens_cdll.AFGRealOnly.restype = ctypes.POINTER(ctypes.c_double)
@@ -149,8 +157,9 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
                             ctypes.c_double(dimensionless_frequency_value),
                             ctypes.c_double(source_position),
                             ctypes.c_double(scaling_constant),
-                            ctypes.POINTER(ctypes.c_double)(image_positions),
-                            ctypes.c_double(min_time_delay_phase))
+                            image_positions.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
+                            ctypes.c_double(min_time_delay_phase),
+                            ctypes.c_int(len(image_positions)))
                     amp_fac = complex(result[0], result[1])
 
                     #Destroy the c object to deallocate the memory

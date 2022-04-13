@@ -961,10 +961,11 @@ double * AFGSimplified(
     double source_position,
     double scaling_constant,
     double * image_positions,
-    double min_time_delay_phase) {
+    double min_time_delay_phase,
+    int number_of_images) {
 
-    // Get the number of image positions
-    int number_of_images = std::size(image_positions);
+    // Using the complex operator i
+    using std::literals::complex_literals::operator""i;
 
     // The amplification factor is constructed as the sum of
     // sqrt(u(xj, ks)) * exp(iw*Tj - I*pi*nj(xj, ks) for each image
@@ -1010,6 +1011,11 @@ double * AFGSimplified(
 
         geometric_factor += factor_contribution;
     }
+    double * afg_arr = new double[2];
+    afg_arr[0] = std::real(geometric_factor);
+    afg_arr[1] = std::imag(geometric_factor);
+
+    return afg_arr;
 }
 
 // Wrapper function converting the result of MinTimeDelayPhase to a real value
