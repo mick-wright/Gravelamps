@@ -72,7 +72,7 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
                 lens_cdll.ImagePositionArray.restype = ctypes.POINTER(ctypes.c_double)
 
                 lens_cdll.MinTimeDelayPhaseReal.argtypes = (ctypes.c_double, ctypes.c_double)
-                lens_cdll.MinTimeDelayPhaseImag.restype = ctypes.c_double
+                lens_cdll.MinTimeDelayPhaseReal.restype = ctypes.c_double
 
                 lens_cdll.AFGSimplified.argtypes = (ctypes.c_double,
                                                     ctypes.c_double,
