@@ -13,6 +13,7 @@ import os
 import numpy as np
 import astropy.constants as const
 
+import scipy.interpolate as scint
 import bilby
 
 from . import utils
@@ -65,25 +66,98 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
             #Set the argument and result types for the c function AFGRealOnly
             if lens_model == "nfwlens":
                 lens_cdll.AFGRealOnly.argtypes = (ctypes.c_double, ctypes.c_double, ctypes.c_double)
+                lens_cdll.AFGRealOnly.restype = ctypes.POINTER(ctypes.c_double)
+
+                lens_cdll.ImagePositionArray.argtypes = (ctypes.c_double, ctypes.c_double)
+                lens_cdll.ImagePositionArray.restype = ctypes.POINTER(ctypes.c_double)
+
+                lens_cdll.MinTimeDelayPhaseReal.argtypes = (ctypes.c_double, ctypes.c_double)
+                lens_cdll.MinTimeDelayPhaseImag.restype = ctypes.c_double
             else:
                 lens_cdll.AFGRealOnly.argtypes = (ctypes.c_double, ctypes.c_double)
-            lens_cdll.AFGRealOnly.restype = ctypes.POINTER(ctypes.c_double)
+                lens_cdll.AFGRealOnly.restype = ctypes.POINTER(ctypes.c_double)
 
             #Create the amplification factor function
             if lens_model == "nfwlens":
-                def amplification_factor(dimensionless_frequency_value,
-                    source_position, scaling_constant):
-                    #Generate the result from the c function AFGRealOnly
+                # Fully direct calculation is simply too slow. To get around this, we compute a
+                # lookup table for the image positions as a function of source positions and
+                # scaling constant
+                scaling_constant = waveform_arguments["scaling_constant"]
+    
+                # Create a space of source positions to interpolate over.
+                # TODO: make this user definable
+                source_position_space = np.linspace(0.15, 3.0, 60)
+                fiducial_dimensionless_frequency = 1000
+
+                def amplification_factor_calc(dimensionless_frequency_value,
+                                              source_position,
+                                              scaling_constant):
                     result = lens_cdll.AFGRealOnly(
                             ctypes.c_double(dimensionless_frequency_value),
                             ctypes.c_double(source_position),
                             ctypes.c_double(scaling_constant))
                     amp_fac = complex(result[0], result[1])
 
+                    lens_cdll.destroyObj(result)
+                    return amp_fac
+                amplification_factor_calc = np.vectorize(amplification_factor_calc)
+                amp_fac_space = amplification_factor_calc(fiducial_dimensionless_frequency,
+                                                          source_position_space,
+                                                          scaling_constant)
+                amp_fac_real_space = np.real(amp_fac_space)
+                amp_fac_imag_space = np.imag(amp_fac_space)
+
+                real_interpolator = scint.interp1d(source_position_space, amp_fac_real_space)
+                imag_interpolator = scint.interp1d(source_position_space, amp_fac_imag_space)
+
+                comp_interpolator = lambda source_position: real_interpolator(source_position)\
+                                                        + 1j*imag_interpolator(source_position)
+
+                waveform_arguments["interpolator"] = comp_interpolator
+
+                # Wrap the image position function
+                def image_positions(source_position, scaling_constant):
+                    array = lens_cdll.ImagePositionArray(source_position, scaling_constant)
+                    res_array = np.array(array)
+                    lens_cdll.destroyObj(array)
+                    return res_array
+                image_positions = np.vectorize(image_positions)
+                waveform_arguments["image_position_func"] = image_positions
+
+                # Map the minimum time delay phase space over the source position space
+                def min_time_delay_phase(source_position, scaling_constant):
+                    result = lens_cdll.MinTimeDelayPhaseReal(source_position, scaling_constant)
+                    return_result = float(result)
+                    lens_cdll.destroyObj(result)
+                    return return_result
+                min_time_delay_phase = np.vectorize(min_time_delay_phase)
+                waveform_arguments["min_time_delay_phase_func"] = min_time_delay_phase
+
+                # Use these to simplify the amplification factor calculations
+                def amplification_factor(dimensionless_frequency_value,
+                                         source_position,
+                                         scaling_constant,
+                                         image_positions,
+                                         min_time_delay_phase,
+                                         interpolator):
+                    #If source position is greater than 0.15 use the interpolator
+                    if source_position > 0.15:
+                        return interpolator(source_position)
+                    #If not, feed in the min_time_delay phase and the image_positions
+                    #to simplify the calculation considerably for speed
+                    result = lens_cdll.AFGSimplified(
+                            ctypes.c_double(dimensionless_frequency_value),
+                            ctypes.c_double(source_position),
+                            ctypes.c_double(scaling_constant),
+                            ctypes.POINTER(ctypes.c_double)(image_positions),
+                            ctypes.c_double(min_time_delay_phase))
+                    amp_fac = complex(result[0], result[1])
+
                     #Destroy the c object to deallocate the memory
                     lens_cdll.destroyObj(result)
 
                     return amp_fac
+
             else:
                 def amplification_factor(dimensionless_frequency_value, source_position):
                     #Generate the result from the c function AFGRealOnly
@@ -141,6 +215,10 @@ def BBH_lensed_waveform(frequency_array, mass_1, mass_2, a_1, a_2, tilt_1, tilt_
                                         the base waveform when using the direct methodology
             scaling_cosntant - constant used for the Navarro Frenk White (NFW) lens model
             lens_model - which lens model is being used
+            image_position_func - function solving the lens equation for image positions needed for
+                                  the NFW direct method
+            min_time_delay_phase_func - function calculating the phase needed for a minimum time
+                                        delay necessary for the NFW direct method
 
     Outputs:
         lens_waveform - dictionary containing the plus and cross polarisation mode strain data for
@@ -168,6 +246,8 @@ def BBH_lensed_waveform(frequency_array, mass_1, mass_2, a_1, a_2, tilt_1, tilt_
     amplification_factor_func = waveform_kwargs["amplification_factor_func"]
     scaling_constant = waveform_kwargs["scaling_constant"]
     lens_model = waveform_kwargs["lens_model"]
+    image_position_func = waveform_kwargs["image_position_func"]
+    min_time_delay_phase_func = waveform_kwargs["min_time_delay_phase_func"]
 
     #Calculate the redshifted lens mass
     lens_distance = lens_fractional_distance * luminosity_distance
@@ -203,9 +283,19 @@ def BBH_lensed_waveform(frequency_array, mass_1, mass_2, a_1, a_2, tilt_1, tilt_
 
     #Now generate the amplification factor array using the interpolator function
     if lens_model == "nfwlens" and methodology == "direct":
+        if source_position > 0.15:
+            image_positions = image_position_func(source_position, scaling_constant)
+            min_time_delay_phase = min_time_delay_phase_func(source_position, scaling_constant)
+        else:
+            image_positions = -1
+            min_time_delay_phase = -1
+
         amplification_factor_array = lensing_function(dimensionless_frequency_array,
                                                       source_position,
-                                                      scaling_constant)
+                                                      scaling_constant,
+                                                      image_positions,
+                                                      min_time_delay_phase,
+                                                      interpolator)
     else:
         amplification_factor_array = lensing_function(dimensionless_frequency_array,
                                                       source_position)

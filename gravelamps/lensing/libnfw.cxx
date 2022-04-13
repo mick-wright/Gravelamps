@@ -954,6 +954,93 @@ std::complex<double> AmplificationFactorGeometric(
     return geometric_factor;
 }
 
+// Simplified version of AmplificationFactorGeometric that takes in the image
+// positions and min time delay phase to speed computation
+double * AFGSimplified(
+    double dimensionless_frequency,
+    double source_position,
+    double scaling_constant,
+    double * image_positions,
+    double min_time_delay_phase) {
+
+    // Get the number of image positions
+    int number_of_images = std::size(image_positions);
+
+    // The amplification factor is constructed as the sum of
+    // sqrt(u(xj, ks)) * exp(iw*Tj - I*pi*nj(xj, ks) for each image
+    // position
+    std::complex<double> geometric_factor;
+
+    for (int i=0; i < number_of_images; i++) {
+        // Compute the time delay
+        std::complex<double> time_delay = TimeDelay(image_positions[i],
+                                                    source_position,
+                                                    scaling_constant,
+                                                    min_time_delay_phase);;
+
+        // Compute the Magnification
+        std::complex<double> magnification = Magnification(image_positions[i],
+                                                           scaling_constant);
+        magnification = abs(magnification);
+
+        // Calculate the morse phase for the image position. This is based on
+        // the surface density for the position.
+        std::complex<double> double_surface_density;
+        double_surface_density = 2. * SurfaceDensity(abs(image_positions[i]),
+                                                     scaling_constant);
+        double testing_condition = std::real(double_surface_density);
+
+        double morse_factor;
+        if (testing_condition == 0) {
+            morse_factor = 0.5;
+        } else if (testing_condition > 0) {
+            morse_factor = 0;
+        } else {
+            morse_factor = 1;
+        }
+
+        // With each of the parameters, we can now construct the amplification
+        // factor contribution
+        std::complex<double> factor_contribution;
+        factor_contribution = (1i * dimensionless_frequency * time_delay)
+                              - (1i * M_PI * morse_factor);
+        factor_contribution = exp(factor_contribution);
+
+        factor_contribution = factor_contribution * sqrt(magnification);
+
+        geometric_factor += factor_contribution;
+    }
+}
+
+// Wrapper function converting the result of MinTimeDelayPhase to a real value
+// for compatibility with ctypes for python
+double MinTimeDelayPhaseReal(
+    double source_position,
+    double scaling_constant) {
+
+    // Calculate the MinTimeDelayPhase
+    double result = std::real(MinTimeDelayPhase(source_position,
+                                                scaling_constant));
+
+    return result;
+}
+
+// Wrapper function converting the vector calculated by ImagePositions to
+// an array of doubles for compatibility with ctypes for python
+double * ImagePositionArray(
+    double source_position,
+    double scaling_constant) {
+
+    // Get the image positions
+    std::vector<double> image_positions = ImagePositions(source_position,
+                                                         scaling_constant);
+
+    // Convert to array
+    double * image_position_array = image_positions.data();
+
+    return image_position_array;
+}
+
 // Wrapper function converting the amplification factor result calculated by
 // AmplificationFactorGeometric to a pair of floats for compatibility with
 // ctypes for python

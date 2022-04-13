@@ -144,6 +144,24 @@ std::complex<double> AmplificationFactorGeometric(
 
 extern "C" {
 
+// Simplified version of AmplificationFactorGeometric that takes in the image
+// positions and min time delay phase to speed computation
+double* AFGSimplified(double dimensionless_frequency,
+                      double source_position,
+                      double scaling_constant,
+                      double * image_positions,
+                      double min_time_delay_phase);
+
+// Wrapper function converting the result of MinTimeDelayPhase to a real value
+// for compatibility with ctypes for python
+double MinTimeDelayPhaseReal(double source_position,
+                             double scaling_constant);
+
+// Wrapper fiunction converting the vector caclulated by ImagePositions to an
+// array of doubles for compatibility with ctypes for python
+double * ImagePositionArray(double source_position,
+                            double scaling_constant);
+
 // Wrapper function converting the amplification factor result calculated by
 // AmplificationFactorGeometric to a pair of floats for compatibility with
 // ctypes for python
@@ -155,6 +173,5 @@ double* AFGRealOnly(double dimensionless_frequency,
 // used by the above function
 void destroyObj(double* object);
 }
-
 
 #endif  // GRAVELAMPS_LENSING_NFW_H_
