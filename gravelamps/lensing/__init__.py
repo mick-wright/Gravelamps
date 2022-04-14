@@ -126,7 +126,9 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
                 # Wrap the image position function
                 def image_positions(source_position, scaling_constant):
                     array = lens_cdll.ImagePositionArray(source_position, scaling_constant)
-                    res_array = np.array(array)
+                    res_array = np.array([])
+                    for position in array:
+                        res_array.append(position)
                     lens_cdll.destroyObj(array)
                     return res_array
                 image_positions = np.vectorize(image_positions)
