@@ -89,39 +89,21 @@ def main():
     priors = bilby.core.prior.PriorDict(prior_file)
 
     #Get the Waveform Generator and Frequency Domain Source Model
-    lensed_waveform_generator_class = config.get(
-        "analysis_settings", "waveform_generator_class")
-    lensed_frequency_domain_source_model = config.get(
-        "analysis_settings", "frequency_domain_source_model")
+    waveform_generator_class = config.get("analysis_settings", "waveform_generator_class")
+    frequency_domain_source_model = \
+        config.get("analysis_settings", "frequency_domain_source_model")
 
-    lensed_waveform_generator_class, lensed_frequency_domain_source_model = (
-        gravelamps.inference.helpers.wfgen_fd_source(
-            lensed_waveform_generator_class, lensed_frequency_domain_source_model))
+    waveform_generator_class, frequency_domain_source_model = \
+        gravelamps.inference.helpers.wfgen_fd_source(waveform_generator_class,
+                                                     frequency_domain_source_model)
 
     #Read in Sampling Frequency
     sampling_frequency = config.getfloat("analysis_settings", "sampling_frequency")
 
-    #Set up the Lensed Waveform Generator and Frequency Domain Source Model
-    lensed_waveform_generator_class = config.get(
-        "analysis_settings", "lensed_waveform_generator_class")
-    lensed_frequency_domain_source_model = config.get(
-        "analysis_settings", "lensed_frequency_domain_source_model")
-
-    lensed_waveform_generator_class, lensed_frequency_domain_source_model = (
-        gravelamps.inference.helpers.wfgen_fd_source(
-            lensed_waveform_generator_class, lensed_frequency_domain_source_model))
-
-    #Generate Lensed Waveform
-    lensed_waveform_generator = lensed_waveform_generator_class(
-        duration=duration, sampling_frequency=sampling_frequency,
-        frequency_domain_source_model=lensed_frequency_domain_source_model,
-        parameter_conversion=bilby.gw.conversion.convert_to_lal_binary_black_hole_parameters,
-        waveform_arguments=waveform_arguments)
-
     #Generate Analysis Waveform
-    analysis_waveform_generator = lensed_waveform_generator_class(
+    analysis_waveform_generator = waveform_generator_class(
         duration=duration, sampling_frequency=sampling_frequency,
-        frequency_domain_source_model=lensed_frequency_domain_source_model,
+        frequency_domain_source_model=frequency_domain_source_model,
         parameter_conversion=bilby.gw.conversion.convert_to_lal_binary_black_hole_parameters,
         waveform_arguments=analysis_waveform_arguments)
 
@@ -131,13 +113,33 @@ def main():
 
     #Generate the Interferometer Data
     if config.getboolean("injection_settings", "injection"):
+        #If injecting a different waveform set up other waveform generator
+        if injection_methodology != "None":
+            injection_generator_class = \
+                config.get("injection_settings", "injection_waveform_generator_class")
+            injection_source_model = \
+                config.get("injection_settings", "injection_frequency_domain_source_model")
+
+            injection_generator_class, injection_source_model = \
+                gravelamps.inference.helpers.wfgen_fd_source(injection_generator_class,
+                                                             injection_source_model)
+
+            injection_generator = injection_generator_class(
+                duration=duration, sampling_frequency=sampling_frequency,
+                frequency_domain_source_model=injection_source_model,
+                parameter_conversion=\
+                    bilby.gw.conversion.convert_to_lal_binary_black_hole_parameters,
+                waveform_arguments=waveform_arguments)
+        else:
+            injection_generator = analysis_waveform_generator
+
         #Create the proper list
         interferometers = bilby.gw.detector.InterferometerList(interferometer_list)
 
         #Read in the Injection Parameters
-        injection_parameters = config._sections["injection_parameters"].copy()
-        injection_parameters.update(
-            (key,float(value)) for key, value in injection_parameters.items())
+        injection_parameters = {}
+        for key, value in config.items("injection_parameters"):
+            injection_parameters[key] = float(value)
 
         #Add the Chirp Mass and Mass Ratio values to the injection parameters
         injection_parameters["chirp_mass"] = bilby.gw.conversion.component_masses_to_chirp_mass(
@@ -149,7 +151,7 @@ def main():
         #Inject Signal into Interferometer
         interferometers.set_strain_data_from_power_spectral_densities(
             sampling_frequency=sampling_frequency, duration=duration, start_time=gps_start_time)
-        interferometers.inject_signal(waveform_generator=lensed_waveform_generator,
+        interferometers.inject_signal(waveform_generator=injection_generator,
                                       parameters=injection_parameters)
 
     else:
@@ -191,13 +193,13 @@ def main():
             priors.update(calibration_prior)
 
     #Plot the Interferometer Data
-    interferometers.plot_data(outdir=data_subdirectory, label=label)
+    if config.getboolean("output_settings", "plot_data"):
+        interferometers.plot_data(outdir=data_subdirectory, label=label)
 
     #Handle the Sampler Settings
     sampler = config.get("analysis_settings", "sampler")
-    sampler_kwargs_dict = config._sections["sampler_kwargs"].copy()
-
-    for key, value in sampler_kwargs_dict.items():
+    sampler_kwargs_dict = {}
+    for key, value in config.items("sampler_settings"):
         sampler_kwargs_dict[key] = int(value)
 
     #Generate Lensed Likelihood
@@ -214,5 +216,5 @@ def main():
             likelihood=lensed_likelihood, priors=priors, outdir=outdir, label=label,
             sampler=sampler, **sampler_kwargs_dict)
 
-    if config.getboolean("analysis_settings", "plot_corner"):
+    if config.getboolean("output_settings", "plot_corner"):
         result_lensed.plot_corner()
