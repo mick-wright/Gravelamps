@@ -199,7 +199,7 @@ def main():
     #Handle the Sampler Settings
     sampler = config.get("analysis_settings", "sampler")
     sampler_kwargs_dict = {}
-    for key, value in config.items("sampler_settings"):
+    for key, value in config.items("sampler_kwargs"):
         sampler_kwargs_dict[key] = int(value)
 
     #Generate Lensed Likelihood
