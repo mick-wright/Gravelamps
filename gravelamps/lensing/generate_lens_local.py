@@ -35,7 +35,7 @@ def main():
 
     #Generate the Lens Data
     output_directory = config.get("output_settings", "outdir")
-    data_subdirectory = output_directory + "/data"
+    data_subdirectory = f"{output_directory}/data"
 
     #If the Data subdirectory doesn't exist make it, along with output directory
     if not os.path.isdir(output_directory):
