@@ -251,7 +251,7 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
             lens_cdll.ImagePositionArray.restype = ctypes.POINTER(ctypes.c_double)
 
             lens_cdll.MinTimeDelayPhaseReal.argtypes = (ctypes.c_double, ctypes.c_double)
-            lens_cdll.MinTimeDelayPhaseREal.restype = ctypes.c_double
+            lens_cdll.MinTimeDelayPhaseReal.restype = ctypes.c_double
 
             lens_cdll.SimpleAmpFac.argtypes = (ctypes.c_double,
                                                ctypes.c_double,
@@ -280,7 +280,7 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
         where the source position is the only variable.
         '''
 
-        source_position_space = (0.16, 3.0, 60)
+        source_position_space = np.linspace(0.16, 3.0, 60)
         fiducial_dimensionless_frequency = 1000
         amp_fac_space = np.zeros(len(source_position_space), dtype=complex)
 
