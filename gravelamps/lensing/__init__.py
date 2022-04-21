@@ -137,10 +137,7 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
             return interpolator(source_position)
 
         image_positions = np.array(image_positions)
-        if hasattr(image_positions, '__len__'):
-            number_of_images = len(image_positions) + 1
-        else:
-            number_of_images = 1
+        number_of_images = image_positions.size
 
         result = lens_cdll.SimpleAmpFac(ctypes.c_double(dimensionless_frequency_value),
                                     ctypes.c_double(source_position),
