@@ -9,6 +9,7 @@ HTCondor scheduler platform
 
 import ctypes
 import os
+import dill
 
 import numpy as np
 import astropy.constants as const
@@ -26,7 +27,7 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
     files containing the dimensionless frequency and source position arrays as well as the
     amplification factor matrices. Using these, it will then generate the interpolator for use
     by the frequency domain source model
-    '''
+    '''	
 
     def __init__(self, duration=None, sampling_frequency=None, start_time=0,
                  frequency_domain_source_model=None, time_domain_source_model=None,
@@ -36,8 +37,6 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
         super().__init__(duration, sampling_frequency, start_time, frequency_domain_source_model,
                          time_domain_source_model, parameters, parameter_conversion,
                          waveform_arguments)
-
-        self.lens_cdll = None
 
         if waveform_arguments["methodology"] == "interpolate":
             #Extract the files necessary to generate the interpolator
@@ -54,7 +53,6 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
         elif waveform_arguments["methodology"] == "direct":
             #Extract the lens model from the waveform arguments
             lens_model = waveform_arguments["lens_model"]
-            self.generate_cdll(lens_model)
 
             #Create the amplification factor function
             if lens_model == "nfwlens":
@@ -69,7 +67,6 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
 
             #Add the amplification factor function to the waveform_arguments dictionary
             waveform_arguments["amplification_factor_func"] = amplification_factor
-            waveform_arguments["lens_cdll"] = self.lens_cdll
 
     @staticmethod
     def two_parameter_amplification_factor(dimensionless_frequency_value,
@@ -226,43 +223,6 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
 
         return res_array
 
-    def generate_cdll(self, lens_model):
-        '''
-        Input:
-            lens_model - string containing the name of the lens model program
-
-        Using the specified lens model, the function loads in the corresponding library containing
-        C++ functions for calculation of the amplification factor. It then sets the necessary
-        typings for the arguments and returns of the needed functions.
-        '''
-
-        lens_library_filepath = f"{os.path.expanduser('~')}/.local/lib/lib{lens_model[:-4]}.so"
-        lens_cdll = ctypes.CDLL(os.path.abspath(lens_library_filepath))
-
-        #Set the argument and result types necessary for the functions
-        if lens_model == "nfwlens":
-            lens_cdll.AFGRealOnly.argtypes = (ctypes.c_double, ctypes.c_double, ctypes.c_double)
-            lens_cdll.AFGRealOnly.restype = ctypes.POINTER(ctypes.c_double)
-
-            lens_cdll.ImagePositionArray.argtypes = (ctypes.c_double, ctypes.c_double)
-            lens_cdll.ImagePositionArray.restype = ctypes.POINTER(ctypes.c_double)
-
-            lens_cdll.MinTimeDelayPhaseReal.argtypes = (ctypes.c_double, ctypes.c_double)
-            lens_cdll.MinTimeDelayPhaseReal.restype = ctypes.c_double
-
-            lens_cdll.SimpleAmpFac.argtypes = (ctypes.c_double,
-                                               ctypes.c_double,
-                                               ctypes.c_double,
-                                               ctypes.POINTER(ctypes.c_double),
-                                               ctypes.c_double,
-                                               ctypes.c_int)
-            lens_cdll.SimpleAmpFac.restype = ctypes.POINTER(ctypes.c_double)
-
-        else:
-            lens_cdll.AFGRealOnly.argtypes = (ctypes.c_double, ctypes.c_double)
-            lens_cdll.AFGRealOnly.restype = ctypes.POINTER(ctypes.c_double)
-
-        self.lens_cdll = lens_cdll
 
     def generate_nfw_interpolator(self, scaling_constant):
         '''
@@ -344,8 +304,6 @@ def BBH_lensed_waveform(frequency_array, mass_1, mass_2, a_1, a_2, tilt_1, tilt_
                                   the NFW direct method
             min_time_delay_phase_func - function calculating the phase needed for a minimum time
                                         delay necessary for the NFW direct method
-            lens_cdll - interface to c++ functions
-
     Outputs:
         lens_waveform - dictionary containing the plus and cross polarisation mode strain data for
                         the lensed waveform
@@ -360,7 +318,7 @@ def BBH_lensed_waveform(frequency_array, mass_1, mass_2, a_1, a_2, tilt_1, tilt_
                            minimum_frequency=20, maximum_frequency=1024, interpolator=None,
                            amplification_factor_func=None, scaling_constant=None,
                            lens_model=None, image_position_func=None,
-			               min_time_delay_phase_func=None, lens_cdll=None)
+			   min_time_delay_phase_func=None)
     waveform_kwargs.update(kwargs)
 
     #Extract the approximant, reference and minimum frequencies and the interpolator
@@ -375,7 +333,9 @@ def BBH_lensed_waveform(frequency_array, mass_1, mass_2, a_1, a_2, tilt_1, tilt_
     lens_model = waveform_kwargs["lens_model"]
     image_position_func = waveform_kwargs["image_position_func"]
     min_time_delay_phase_func = waveform_kwargs["min_time_delay_phase_func"]
-    lens_cdll = waveform_kwargs["lens_cdll"]
+
+    #Get the cdll
+    lens_cdll = generate_cdll(lens_model)
 
     #Calculate the redshifted lens mass
     lens_distance = lens_fractional_distance * luminosity_distance
@@ -482,3 +442,51 @@ def natural_mass(mass, mode="solar"):
     m_nat = m_kg * (const.G/const.c**3)
 
     return m_nat.value
+
+def _create_cdll(abspath, modulename):
+	import ctypes
+	lib = ctypes.CDLL(abspath)
+	lib.__module__ = modulename
+	return lib
+
+@dill.register(type(ctypes.CDLL(None)))
+def save_ctypes_library(pickler, obj):
+	pickler.save_reduce(_create_cdll, (os.path.abspath(obj._name), obj.__module__), obj=obj)
+
+def generate_cdll(lens_model):
+    '''
+    Input:
+        lens_model - string containing the name of the lens model program
+
+    Using the specified lens model, the function loads in the corresponding library containing
+    C++ functions for calculation of the amplification factor. It then sets the necessary
+    typings for the arguments and returns of the needed functions.
+    '''
+
+    lens_library_filepath = f"{os.path.expanduser('~')}/.local/lib/lib{lens_model[:-4]}.so"
+    lens_cdll = ctypes.CDLL(os.path.abspath(lens_library_filepath))
+
+    #Set the argument and result types necessary for the functions
+    if lens_model == "nfwlens":
+        lens_cdll.AFGRealOnly.argtypes = (ctypes.c_double, ctypes.c_double, ctypes.c_double)
+        lens_cdll.AFGRealOnly.restype = ctypes.POINTER(ctypes.c_double)
+
+        lens_cdll.ImagePositionArray.argtypes = (ctypes.c_double, ctypes.c_double)
+        lens_cdll.ImagePositionArray.restype = ctypes.POINTER(ctypes.c_double)
+
+        lens_cdll.MinTimeDelayPhaseReal.argtypes = (ctypes.c_double, ctypes.c_double)
+        lens_cdll.MinTimeDelayPhaseReal.restype = ctypes.c_double
+
+        lens_cdll.SimpleAmpFac.argtypes = (ctypes.c_double,
+                                           ctypes.c_double,
+                                           ctypes.c_double,
+                                           ctypes.POINTER(ctypes.c_double),
+                                           ctypes.c_double,
+                                           ctypes.c_int)
+        lens_cdll.SimpleAmpFac.restype = ctypes.POINTER(ctypes.c_double)
+
+    else:
+        lens_cdll.AFGRealOnly.argtypes = (ctypes.c_double, ctypes.c_double)
+        lens_cdll.AFGRealOnly.restype = ctypes.POINTER(ctypes.c_double)
+
+    return lens_cdll
