@@ -236,7 +236,7 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
         Function generates an interpolator for the NFW geometric optics method in the space
         where the source position is the only variable.
         '''
-	lens_cdll = generate_cdll("nfwlens")
+        lens_cdll = generate_cdll("nfwlens")
         source_position_space = np.linspace(0.16, 3.0, 60)
         fiducial_dimensionless_frequency = 1000
         amp_fac_space = np.zeros(len(source_position_space), dtype=complex)
