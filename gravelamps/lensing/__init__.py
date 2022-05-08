@@ -27,7 +27,7 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
     files containing the dimensionless frequency and source position arrays as well as the
     amplification factor matrices. Using these, it will then generate the interpolator for use
     by the frequency domain source model
-    '''	
+    '''
 
     def __init__(self, duration=None, sampling_frequency=None, start_time=0,
                  frequency_domain_source_model=None, time_domain_source_model=None,
@@ -195,7 +195,8 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
         Function computes the value of the phase required to minimise the time delay to zero
         for the NFW profile for given values of source position and scaling constant
         '''
-        result = lens_cdll.MinTimeDelayPhaseReal(source_position, scaling_constant)
+        result = lens_cdll.MinTimeDelayPhaseReal(ctypes.c_double(source_position),
+                                                 ctypes.c_double(scaling_constant))
         return float(result)
 
     @staticmethod
@@ -214,12 +215,13 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
         C++ function within lens_cdll to solve the lens equation yielding the position of the
         lensed images
         '''
-        array = lens_cdll.ImagePositionArray(source_position, scaling_constant)
-        array_size = int(array[0]) + 1
+        array = lens_cdll.ImagePositionArray(ctypes.c_double(source_position),
+                                             ctypes.c_double(scaling_constant))
+        array_size = int(array[0])
 
         res_array = []
-        for i in range(1, array_size + 1):
-            res_array.append(array[i])
+        for i in range(1, array_size):
+            res_array.append(float(array[i]))
 
         return res_array
 
@@ -442,16 +444,6 @@ def natural_mass(mass, mode="solar"):
     m_nat = m_kg * (const.G/const.c**3)
 
     return m_nat.value
-
-def _create_cdll(abspath, modulename):
-	import ctypes
-	lib = ctypes.CDLL(abspath)
-	lib.__module__ = modulename
-	return lib
-
-@dill.register(type(ctypes.CDLL(None)))
-def save_ctypes_library(pickler, obj):
-	pickler.save_reduce(_create_cdll, (os.path.abspath(obj._name), obj.__module__), obj=obj)
 
 def generate_cdll(lens_model):
     '''

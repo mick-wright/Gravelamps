@@ -1040,9 +1040,15 @@ double * ImagePositionArray(
     // Get the image positions
     std::vector<double> image_positions = ImagePositions(source_position,
                                                          scaling_constant);
+    image_positions.insert(image_positions.begin(), image_positions.size()+1);
+    int image_position_size = image_positions.size() + 1;
 
     // Convert to array
-    double* image_position_array = image_positions.data();
+    double * image_position_array = new double[image_position_size];
+
+    for (int i=0; i < image_positions.size(); ++i) {
+        image_position_array[i] = image_positions[i];
+    }
 
     return image_position_array;
 }
