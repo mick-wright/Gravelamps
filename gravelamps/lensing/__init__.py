@@ -369,10 +369,10 @@ def BBH_lensed_waveform(frequency_array, mass_1, mass_2, a_1, a_2, tilt_1, tilt_
     elif methodology == "direct":
         if amplification_factor_func is None:
             raise ValueError("To use direct method, direct calculation function must be given!")
+        lensing_function = np.vectorize(amplification_factor_func, excluded=['image_positions'])
         if lens_model == "nfwlens":
-            lensing_function = np.vectorize(amplification_factor_func, excluded=['image_positions'])
-        else:
-            lensing_function = np.vectorize(amplification_factor_func)
+            lensing_function.excluded.add(3)
+
 
     #Now generate the amplification factor array using the interpolator function
     if lens_model == "nfwlens" and methodology == "direct":
