@@ -243,9 +243,11 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
         lens_cdll = generate_cdll("nfwlens")
         source_position_space = np.linspace(0.1, 0.16, 1000)
 
-        time_delay_phase_func = np.vectorize(self.min_time_delay_phase)
-        time_delay_space = time_delay_phase_func(source_position_space, scaling_constant, lens_cdll)
+        time_delay_space = []
+        for y in source_position_space:
+            time_delay_space.append(self.min_time_delay_phase(y, scaling_constant, lens_cdll))
 
+        time_delay_space = np.array(time_delay_space)
         time_delay_interpolator = scint.interp1d(source_position_space, time_delay_space)
 
         return time_delay_interpolator
