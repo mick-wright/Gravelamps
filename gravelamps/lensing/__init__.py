@@ -58,8 +58,12 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
             if lens_model == "nfwlens":
                 waveform_arguments["interpolator"] =\
                     self.generate_nfw_interpolator(waveform_arguments["scaling_constant"])
-                waveform_arguments["image_position_func"] = self.image_positions
-                waveform_arguments["min_time_delay_phase_func"] = self.min_time_delay_phase
+                waveform_arguments["image_position_func"] =\
+                    self.generate_nfw_image_position_interpolator(
+                        waveform_arguments["scaling_constant"])
+                waveform_arguments["min_time_delay_phase_func"] =\
+                    self.generate_nfw_min_time_delay_phase_interpolator(
+                        waveform_arguments["scaling_constant"])
                 amplification_factor = self.nfw_amplification_factor_full
 
             else:
@@ -223,7 +227,63 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
         for i in range(1, array_size):
             res_array.append(float(array[i]))
 
+        res_array = np.array(res_array)
         return res_array
+
+    def generate_nfw_min_time_delay_phase_interpolator(self, scaling_constant):
+        '''
+        Inputs:
+            scaling_constant - value of the characteristics scale of the NFW profile
+
+        Outputs:
+            time_delay_interpolator - function that for given source position will return
+                                      the phase needed for a minimum time delay of zero
+        '''
+
+        lens_cdll = generate_cdll("nfwlens")
+        source_position_space = np.linspace(0.1, 0.16, 1000)
+
+        time_delay_phase_func = np.vectorize(self.min_time_delay_phase)
+        time_delay_space = time_delay_phase_func(source_position_space, scaling_constant, lens_cdll)
+
+        time_delay_interpolator = scint.interp1d(source_position_space, time_delay_space)
+
+        return time_delay_interpolator
+
+    def generate_nfw_image_position_interpolator(self, scaling_constant):
+        '''
+        Inputs:
+            scaling_constant - value of the characteristic scale of the NFW profile
+
+        Outputs:
+            position_interpolator - function that for given source position will return
+                                    the three outputs of the image position function.
+
+        Function generates an interpolator for the NFW geometric optics method in the oscillation
+        space below the critical value of source position
+        '''
+
+        lens_cdll = generate_cdll("nfwlens")
+        source_position_space = np.linspace(0.1, 0.16, 1000)
+
+        image_position_func = np.vectorize(self.image_positions, signature='(),(),()->(n)')
+        image_position_arrays = image_position_func(source_position_space,
+                scaling_constant, lens_cdll)
+
+        image_one = image_position_arrays[:,0]
+        image_two = image_position_arrays[:,1]
+        image_three = image_position_arrays[:,2]
+
+        interpolator_one = scint.interp1d(source_position_space, image_one)
+        interpolator_two = scint.interp1d(source_position_space, image_two)
+        interpolator_three = scint.interp1d(source_position_space, image_three)
+
+        position_interpolator = lambda source_position:\
+                [interpolator_one(source_position),
+                 interpolator_two(source_position),
+                 interpolator_three(source_position)]
+
+        return position_interpolator
 
 
     def generate_nfw_interpolator(self, scaling_constant):
@@ -377,9 +437,9 @@ def BBH_lensed_waveform(frequency_array, mass_1, mass_2, a_1, a_2, tilt_1, tilt_
     #Now generate the amplification factor array using the interpolator function
     if lens_model == "nfwlens" and methodology == "direct":
         if source_position < 0.16:
-            image_positions = image_position_func(source_position, scaling_constant, lens_cdll)
+            image_positions = image_position_func(source_position)
             min_time_delay_phase =\
-                min_time_delay_phase_func(source_position, scaling_constant, lens_cdll)
+                min_time_delay_phase_func(source_position)
         else:
             image_positions = -1
             min_time_delay_phase = -1
