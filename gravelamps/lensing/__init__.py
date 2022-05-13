@@ -134,7 +134,7 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
         which are the more computationally intensive parts of the amplification factor calculation
         '''
 
-        if source_position > 0.16:
+        if source_position > 0.15:
             return interpolator(source_position)
 
         image_positions = np.array(image_positions)
@@ -241,7 +241,7 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
         '''
 
         lens_cdll = generate_cdll("nfwlens")
-        source_position_space = np.linspace(0.1, 0.16, 1000)
+        source_position_space = np.linspace(0.1, 0.15, 1000)
 
         time_delay_space = []
         for y in source_position_space:
@@ -266,7 +266,7 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
         '''
 
         lens_cdll = generate_cdll("nfwlens")
-        source_position_space = np.linspace(0.1, 0.16, 1000)
+        source_position_space = np.linspace(0.1, 0.15, 1000)
 
         image_position_func = np.vectorize(self.image_positions, signature='(),(),()->(n)')
         image_position_arrays = image_position_func(source_position_space,
@@ -301,7 +301,7 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
         where the source position is the only variable.
         '''
         lens_cdll = generate_cdll("nfwlens")
-        source_position_space = np.linspace(0.16, 3.0, 60)
+        source_position_space = np.linspace(0.15, 3.0, 60)
         fiducial_dimensionless_frequency = 1000
         amp_fac_space = np.zeros(len(source_position_space), dtype=complex)
 
@@ -438,7 +438,7 @@ def BBH_lensed_waveform(frequency_array, mass_1, mass_2, a_1, a_2, tilt_1, tilt_
 
     #Now generate the amplification factor array using the interpolator function
     if lens_model == "nfwlens" and methodology == "direct":
-        if source_position < 0.16:
+        if source_position <= 0.15:
             image_positions = image_position_func(source_position)
             min_time_delay_phase =\
                 min_time_delay_phase_func(source_position)
