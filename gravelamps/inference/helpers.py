@@ -44,7 +44,7 @@ def wy_handler(config):
     #If the files are not given, call the generator functions
     if sour_pos_file == "None":
         gravelamps.lensing.utils.generate_value_file(
-            config, "source_positon", f"{data_subdirectory}/y.dat")
+            config, "source_position", f"{data_subdirectory}/y.dat")
         sour_pos_file = f"{data_subdirectory}/y.dat"
     if dim_freq_file == "None":
         gravelamps.lensing.utils.generate_value_file(
