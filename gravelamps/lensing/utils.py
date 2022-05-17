@@ -23,7 +23,7 @@ def generate_value_file(config, value_type, output_filename):
 
     min_value = config.getfloat("lens_interpolation_settings", f"minimum_{value_type}")
     max_value = config.getfloat("lens_interpolation_settings", f"maximum_{value_type}")
-    num_values = config.getfloat("lens_interpolation_settings", f"{value_type}_length")
+    num_values = config.getint("lens_interpolation_settings", f"{value_type}_length")
 
     value_array = np.linspace(min_value, max_value, num_values)
 
