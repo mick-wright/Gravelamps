@@ -62,6 +62,11 @@ def lens_subfile(config, dim_freq_file, sour_pos_file, amp_fac_real_file,
         #Construct the arguments necessary for the function call
         argument_list = [dim_freq_file, sour_pos_file, amp_fac_real_file, amp_fac_imag_file]\
                         + additional_lens_parameters
+        for idx, val in enumerate(argument_list):
+            if idx < 4:
+                argument_list[idx] = os.path.basename(val)
+            else:
+                argument_list[idx] = str(val)
 
         sub.write(f"arguments = {' '.join(argument_list)}\n")
         sub.write(f"log = {data_subdirectory}/lens_generation.log\n")
@@ -229,7 +234,7 @@ def overarching_dag(config):
     dag_file = f"{submit_subdirectory}/dag_{label}_overarch.submit"
 
     #Get the lens generation submit file
-    lens_generation_subfile = os.path.abspath(f"{submit_subdirectory}/generate_lens.sub")
+    lens_generation_subfile = os.path.abspath(f"{submit_subdirectory}/lens_generation.sub")
 
     #Open the DAG file for writing
     with open(dag_file, "w", encoding="utf-8") as dag:
@@ -239,9 +244,9 @@ def overarching_dag(config):
         #If methodology is interpolate, and the lens files do not exist add the lens generation job
         if methodology == "interpolate":
             amp_fac_real_file = config.get(
-                "lens_generation_settings", "amplification_factor_real_file")
+                "lens_interpolation_settings", "amplification_factor_real_file")
             amp_fac_imag_file = config.get(
-                "lens_generation_settings", "amplification_factor_imag_file")
+                "lens_interpolation_settings", "amplification_factor_imag_file")
 
             if not os.path.isfile(amp_fac_real_file) and not os.path.isfile(amp_fac_imag_file):
                 dag.write(f"JOB lens_generation {lens_generation_subfile}\n")
