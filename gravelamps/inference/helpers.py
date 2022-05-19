@@ -276,10 +276,10 @@ def construct_waveform_arguments(config, mode, dim_freq_file=None, sour_pos_file
 
     if mode == "data":
         methodology = config.get("injection_settings", "methodology")
-	lens_model = config.get("injection_settings", "lens_model")
+        lens_model = config.get("injection_settings", "lens_model")
     elif mode == "analysis":
         methodology = config.get("lens_generation_settings", "methodology")
-	lens_model = config.get("lens_generation_settings", "lens_model")
+        lens_model = config.get("lens_generation_settings", "lens_model")
 
     #Depending on the methodology choice, get the remainder of the settings needed
     #In interpolation case, the remainder of the settings are the files needed to generate the
