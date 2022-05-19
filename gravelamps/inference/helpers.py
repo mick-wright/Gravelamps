@@ -85,7 +85,7 @@ def get_additional_parameters(config, dim_freq_file):
         # For the changeover frequency, find the location in the dimensionless frequency array
         # corresponding to that changeover frequency (goes by first over value)
         if key == "geometric_optics_frequency":
-            geometric_optics_frequency = value
+            geometric_optics_frequency = float(value)
             dimensionless_frequency_array = np.loadtxt(dim_freq_file)
             switch_value = np.argmax(dimensionless_frequency_array > geometric_optics_frequency)
             if dimensionless_frequency_array[switch_value] < geometric_optics_frequency:
@@ -276,8 +276,10 @@ def construct_waveform_arguments(config, mode, dim_freq_file=None, sour_pos_file
 
     if mode == "data":
         methodology = config.get("injection_settings", "methodology")
+	lens_model = config.get("injection_settings", "lens_model")
     elif mode == "analysis":
         methodology = config.get("lens_generation_settings", "methodology")
+	lens_model = config.get("lens_generation_settings", "lens_model")
 
     #Depending on the methodology choice, get the remainder of the settings needed
     #In interpolation case, the remainder of the settings are the files needed to generate the
@@ -297,13 +299,6 @@ def construct_waveform_arguments(config, mode, dim_freq_file=None, sour_pos_file
     #in the direct calculation cases, the remainder of the settings are the lens model and in the
     #case of the NFW model, the scaling constant for the profile
     elif methodology == "direct":
-        if mode == "data":
-            lens_model = config.get("injection_settings", "lens_model")
-        elif mode == "analysis":
-            lens_model = config.get("lens_generation_settings", "lens_model")
-
-        waveform_arguments["lens_model"] = lens_model
-
         if lens_model == "nfwlens":
             scaling_constant = config.getfloat("lens_executable_arguments", "nfw_scaling_constant")
             waveform_arguments["scaling_constant"] = scaling_constant
@@ -314,5 +309,6 @@ def construct_waveform_arguments(config, mode, dim_freq_file=None, sour_pos_file
     waveform_arguments["maximum_frequency"] = maximum_frequency
     waveform_arguments["reference_frequency"] = reference_frequency
     waveform_arguments["methodology"] = methodology
+    waveform_arguments["lens_model"] = lens_model
 
     return waveform_arguments
