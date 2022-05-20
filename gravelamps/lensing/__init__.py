@@ -437,26 +437,30 @@ def BBH_lensed_waveform(frequency_array, mass_1, mass_2, a_1, a_2, tilt_1, tilt_
 
 
     #Now generate the amplification factor array using the interpolator function
-    if lens_model == "nfwlens" and methodology == "direct":
-        if source_position <= 0.15:
-            image_positions = image_position_func(source_position)
-            min_time_delay_phase =\
-                min_time_delay_phase_func(source_position)
-        else:
-            image_positions = -1
-            min_time_delay_phase = -1
+    if methodology == "direct":
+        if lens_model == "nfwlens":
+            if source_position <= 0.15:
+                image_positions = image_position_func(source_position)
+                min_time_delay_phase =\
+                    min_time_delay_phase_func(source_position)
+            else:
+                image_positions = -1
+                min_time_delay_phase = -1
 
-        amplification_factor_array = lensing_function(dimensionless_frequency_array,
-                                                      source_position,
-                                                      scaling_constant,
-                                                      image_positions,
-                                                      min_time_delay_phase,
-                                                      interpolator,
-                                                      lens_cdll)
+            amplification_factor_array = lensing_function(dimensionless_frequency_array,
+                                                          source_position,
+                                                          scaling_constant,
+                                                          image_positions,
+                                                          min_time_delay_phase,
+                                                          interpolator,
+                                                          lens_cdll)
+        else:
+            amplification_factor_array = lensing_function(dimensionless_frequency_array,
+                                                          source_position,
+                                                          lens_cdll)
     else:
         amplification_factor_array = lensing_function(dimensionless_frequency_array,
-                                                      source_position,
-                                                      lens_cdll)
+                                                      source_position)
 
     #Now create the lens waveform by multiplying the base waveform by thge amplification factor
     #array
