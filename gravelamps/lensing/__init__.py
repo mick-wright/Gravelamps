@@ -19,6 +19,12 @@ import bilby
 
 from . import utils
 
+_nfwlens_cdll = generate_cdll("nfwlens")
+_sislens_cdll = generate_cdll("sislens")
+_pointlens_cdll = generate_cdll("pointlens")
+
+_cdll_dict = {"pointlens": _pointlens_cdll, "sislens":_sislens_cdll, "nfwlens":_nfwlens_cdll}
+
 class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
     '''
     Lensed Waveform Generator Class
@@ -107,8 +113,7 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
                                       scaling_constant,
                                       image_positions,
                                       min_time_delay_phase,
-                                      interpolator,
-                                      lens_cdll):
+                                      interpolator):
         '''
         Input:
             dimensionless_frequency_value - value of the dimensionless frequency at which to
@@ -121,7 +126,6 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
             interpolator - interpolator that calculates the amplification factor in the source
                            position space where the dimensionless frequency has no impact on the
                            value. This has been set at source positions greater than 0.16
-            lens_cdll - DLL containing the C++ functions to calculate the amplification factor
 
         Output:
             amp_fac - value of the amplification factor
@@ -140,7 +144,7 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
         image_positions = np.array(image_positions)
         number_of_images = image_positions.size
 
-        result = lens_cdll.SimpleAmpFac(ctypes.c_double(dimensionless_frequency_value),
+        result = _nfwlens_cdll.SimpleAmpFac(ctypes.c_double(dimensionless_frequency_value),
                                     ctypes.c_double(source_position),
                                     ctypes.c_double(scaling_constant),
                                     image_positions.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
@@ -149,7 +153,7 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
         amp_fac = complex(result[0], result[1])
 
         #Destroy the c object deallocate the memory
-        lens_cdll.destroyObj(result)
+        _nfwlens_cdll.destroyObj(result)
 
         return amp_fac
 
@@ -157,8 +161,7 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
     @staticmethod
     def nfw_amplification_factor_calculation(dimensionless_frequency_value,
                                              source_position,
-                                             scaling_constant,
-                                             lens_cdll):
+                                             scaling_constant):
         '''
         Input:
             dimensionless_frequency_value - value of the dimensionless frequency for which to
@@ -166,7 +169,6 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
             source_position - value of the source position for which to calculate the amplification
                               factor
             scaling_constant - value of the characteristic scale for the NFW profile
-            lens_cdll - the dll containing the C++ functions
 
         Outputs:
             amp_fac - complex value of the amplification factor for given dimensionless frequency
@@ -177,21 +179,20 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
         source position values
         '''
 
-        result = lens_cdll.AFGRealOnly(ctypes.c_double(dimensionless_frequency_value),
-                                       ctypes.c_double(source_position),
-                                       ctypes.c_double(scaling_constant))
+        result = _nfwlens_cdll.AFGRealOnly(ctypes.c_double(dimensionless_frequency_value),
+                                           ctypes.c_double(source_position),
+                                           ctypes.c_double(scaling_constant))
         amp_fac = complex(result[0], result[1])
 
-        lens_cdll.destroyObj(result)
+        _nfwlens_cdll.destroyObj(result)
         return amp_fac
 
     @staticmethod
-    def min_time_delay_phase(source_position, scaling_constant, lens_cdll):
+    def min_time_delay_phase(source_position, scaling_constant):
         '''
         Inputs:
             source_position - value of source position to calulate the phase for
             scaling_constant - characteristic length of the NFW profile
-            lens_cdll - the dll containing the C++ functions
 
         Outputs:
             result - Contains the value of the phase required to minimise the time delay to zero
@@ -199,12 +200,12 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
         Function computes the value of the phase required to minimise the time delay to zero
         for the NFW profile for given values of source position and scaling constant
         '''
-        result = lens_cdll.MinTimeDelayPhaseReal(ctypes.c_double(source_position),
-                                                 ctypes.c_double(scaling_constant))
+        result = _nfwlens_cdll.MinTimeDelayPhaseReal(ctypes.c_double(source_position),
+                                                     ctypes.c_double(scaling_constant))
         return float(result)
 
     @staticmethod
-    def image_positions(source_position, scaling_constant, lens_cdll):
+    def image_positions(source_position, scaling_constant):
         '''
         Inputs:
             source_position - displacement from the optical axis
@@ -219,8 +220,8 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
         C++ function within lens_cdll to solve the lens equation yielding the position of the
         lensed images
         '''
-        array = lens_cdll.ImagePositionArray(ctypes.c_double(source_position),
-                                             ctypes.c_double(scaling_constant))
+        array = _nfwlens_cdll.ImagePositionArray(ctypes.c_double(source_position),
+                                                ctypes.c_double(scaling_constant))
         array_size = int(array[0])
 
         res_array = []
@@ -240,12 +241,11 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
                                       the phase needed for a minimum time delay of zero
         '''
 
-        lens_cdll = generate_cdll("nfwlens")
         source_position_space = np.linspace(0.1, 0.15, 1000)
 
         time_delay_space = []
-        for y in source_position_space:
-            time_delay_space.append(self.min_time_delay_phase(y, scaling_constant, lens_cdll))
+        for y_val in source_position_space:
+            time_delay_space.append(self.min_time_delay_phase(y_val, scaling_constant))
 
         time_delay_space = np.array(time_delay_space)
         time_delay_interpolator = scint.interp1d(source_position_space, time_delay_space)
@@ -265,12 +265,10 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
         space below the critical value of source position
         '''
 
-        lens_cdll = generate_cdll("nfwlens")
         source_position_space = np.linspace(0.1, 0.15, 1000)
 
         image_position_func = np.vectorize(self.image_positions, signature='(),(),()->(n)')
-        image_position_arrays = image_position_func(source_position_space,
-                scaling_constant, lens_cdll)
+        image_position_arrays = image_position_func(source_position_space, scaling_constant)
 
         image_one = image_position_arrays[:,0]
         image_two = image_position_arrays[:,1]
@@ -300,7 +298,6 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
         Function generates an interpolator for the NFW geometric optics method in the space
         where the source position is the only variable.
         '''
-        lens_cdll = generate_cdll("nfwlens")
         source_position_space = np.linspace(0.15, 3.0, 60)
         fiducial_dimensionless_frequency = 1000
         amp_fac_space = np.zeros(len(source_position_space), dtype=complex)
@@ -309,8 +306,7 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
             amp_fac_space[idx] =\
                 self.nfw_amplification_factor_calculation(fiducial_dimensionless_frequency,
                                                           source_position,
-                                                          scaling_constant,
-                                                          lens_cdll)
+                                                          scaling_constant)
 
         amp_fac_real_space = np.real(amp_fac_space)
         amp_fac_imag_space = np.imag(amp_fac_space)
@@ -425,7 +421,6 @@ def BBH_lensed_waveform(frequency_array, mass_1, mass_2, a_1, a_2, tilt_1, tilt_
         if amplification_factor_func is None:
             raise ValueError("To use direct method, direct calculation function must be given!")
 
-        lens_cdll = generate_cdll(lens_model)
         lensing_function = np.vectorize(amplification_factor_func, excluded=["image_positions"])
         if lens_model == "nfwlens":
             lensing_function.excluded.add(3)
@@ -435,16 +430,16 @@ def BBH_lensed_waveform(frequency_array, mass_1, mass_2, a_1, a_2, tilt_1, tilt_
             else:
                 image_positions = -1
                 min_time_delay_phase = -1
-            amplification_factor_array = lensing_function(dimnensionless_frequency_array,
+            amplification_factor_array = lensing_function(dimensionless_frequency_array,
                                                           source_position,
                                                           scaling_constant,
                                                           image_positions,
                                                           min_time_delay_phase,
-                                                          interpolator,
-                                                          lens_cdll)
+                                                          interpolator)
         else:
             amplification_factor_array = lensing_function(dimensionless_frequency_array,
-                                                          source_position)
+                                                          source_position,
+                                                          _cdll_dict[lens_model])
 
     #Create the lens waveform by multiplying the base waveform by the amplification factor array
     lens_waveform = {}
