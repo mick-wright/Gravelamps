@@ -19,12 +19,6 @@ import bilby
 
 from . import utils
 
-_nfwlens_cdll = generate_cdll("nfwlens")
-_sislens_cdll = generate_cdll("sislens")
-_pointlens_cdll = generate_cdll("pointlens")
-
-_cdll_dict = {"pointlens": _pointlens_cdll, "sislens":_sislens_cdll, "nfwlens":_nfwlens_cdll}
-
 class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
     '''
     Lensed Waveform Generator Class
@@ -529,3 +523,9 @@ def generate_cdll(lens_model):
         lens_cdll.AFGRealOnly.restype = ctypes.POINTER(ctypes.c_double)
 
     return lens_cdll
+
+_nfwlens_cdll = generate_cdll("nfwlens")
+_sislens_cdll = generate_cdll("sislens")
+_pointlens_cdll = generate_cdll("pointlens")
+
+_cdll_dict = {"pointlens": _pointlens_cdll, "sislens":_sislens_cdll, "nfwlens":_nfwlens_cdll}
