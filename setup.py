@@ -26,7 +26,7 @@ class Build(build_ext):
         #Run the remaining build process
         build_ext.run(self)
 
-with open("README.md", "r") as readme_contents:
+with open("README.md", "r", encoding="utf-8") as readme_contents:
     long_description = readme_contents.read()
 
 setuptools.setup(
@@ -35,7 +35,7 @@ setuptools.setup(
     download_url = "https://git.ligo.org/michael.wright/Gravelamps",
     version = "1.0.0",
     author = "Mick Wright, Martin Hendry",
-    maintainer = "Mick Wright", 
+    maintainer = "Mick Wright",
     author_email = "michael.wright@ligo.org",
     license = "MIT",
     description = ("Software package designed for running template based analysis of lensed"
@@ -43,7 +43,6 @@ setuptools.setup(
                    "on top of the parameter estimation framework, Bilby, and arbitrary"
                    "precision library arb"),
     long_description = long_description,
-    url = "https://github.com/mick-wright/Gravelamps",
     packages = [
         "gravelamps",
         "gravelamps.inference",
@@ -62,8 +61,7 @@ setuptools.setup(
         "console_scripts": ["gravelamps_local_inference=gravelamps.inference.inference:main",
     "gravelamps_pipe_inference=gravelamps.inference.inference_pipe:main",
     "gravelamps_generate_lens_local=gravelamps.lensing.generate_lens_local:main",
-    "gravelamps_generate_lens_pipe=gravelamps.lensing.generate_lens_pipe:main",
-    "gravelamps_generate_interferometer_data=gravelamps.lensing.generate_interferometer_data:main"],
+    "gravelamps_generate_lens_pipe=gravelamps.lensing.generate_lens_pipe:main"],
     },
     classifiers = [
         "Programming Language :: Python :: 3",
