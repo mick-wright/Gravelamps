@@ -29,14 +29,18 @@ class Build(build_ext):
 with open("README.md", "r", encoding="utf-8") as readme_contents:
     long_description = readme_contents.read()
 
+with open("requirements.txt", "r", encoding="utf-8") as requirement_file:
+    requirements = requirement_file.read().split("\n")
+
 setuptools.setup(
     name = "Gravelamps",
     url = "https://arxiv.org/abs/2112.07012",
     download_url = "https://git.ligo.org/michael.wright/Gravelamps",
-    version = "1.0.0",
+    use_scm_version = True,
+    setup_requires = ['setuptools_scm'],
     author = "Mick Wright, Martin Hendry",
     maintainer = "Mick Wright",
-    author_email = "michael.wright@ligo.org",
+    author_email = "mick.wright@ligo.org",
     license = "MIT",
     description = ("Software package designed for running template based analysis of lensed"
                    "gravitational wave signals to determine the lens profile model. Built"
@@ -49,11 +53,7 @@ setuptools.setup(
         "gravelamps.lensing"
     ],
     has_ext_modules = lambda: True,
-    install_requires = [
-        "numpy",
-        "scipy",
-        "astropy",
-        "bilby"],
+    install_requires = requirements,
     cmdclass = {
         "build_ext": Build,
     },
@@ -69,7 +69,7 @@ setuptools.setup(
         "Operating System :: POSIX :: Linux",
         "License :: OSI Approved :: MIT License",
         "Intended Audience :: GW Lensing Community",
-        "Topic :: GW Lensing - Lens Mass Profile Model Selection"
+        "Topic :: GW Lensing :: Lens Mass Profile Model Selection"
         ],
     python_requires = ">=3.8",
 )
