@@ -52,11 +52,11 @@ class LensedWaveformGenerator(WaveformGenerator):
             #Extract the lens model from the waveform arguments
             lens_model = waveform_arguments["lens_model"]
 
-            lens_module_spec = importlib.util.find_spec(lens_model)
+            lens_module_spec = importlib.util.find_spec(f"gravelamps.lensing.{lens_model}")
 
             if lens_module_spec is None:
                 if lens_model.endswith("lens"):
-                    lens_module_spec = importlib.util.find_spec(lens_model[:-4])
+                    lens_module_spec = importlib.util.find_spec(f"gravelamps.lensing.{lens_model[:-4]}")
             if lens_module_spec is None:
                 raise ModuleNotFoundError(f"No module corresponding to {lens_model} found!")
 
