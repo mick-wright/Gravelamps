@@ -43,7 +43,7 @@ def amplification_factor(dimensionless_frequency_array, source_position):
     frequencies and source position.
     '''
 
-    amplification_array = np.zeros(len(dimensionless_frequency_array), dtype=complex)
+    amplification_array = np.empty(len(dimensionless_frequency_array), dtype=complex)
 
     for idx, dimensionless_frequency in enumerate(dimensionless_frequency_array):
         c_result = _cdll.AFGRealOnly(ctypes.c_double(dimensionless_frequency),
