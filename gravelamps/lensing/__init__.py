@@ -66,6 +66,10 @@ class LensedWaveformGenerator(WaveformGenerator):
             except NameError:
                 print(f"amplification_factor not defined within {lens_module_spec.name}")
 
+            if lens_model == "nfwlens":
+                scaling_setter = getattr(importlib.import_module(lens_module_spec.name), "set_scaling")
+                scaling_setter(waveform_arguments["nfw_scaling_constant"]) 
+
 def BBH_lensed_waveform(frequency_array, mass_1, mass_2, a_1, a_2, tilt_1, tilt_2, phi_12, phi_jl,
                         luminosity_distance, theta_jn, phase, ra, dec, geocent_time, psi,
                         lens_mass, source_position, lens_fractional_distance, **kwargs):
