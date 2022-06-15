@@ -38,6 +38,17 @@ _cdll.SimpleAmpFac.argtypes = (ctypes.c_double,
                                ctypes.c_int)
 _cdll.SimpleAmpFac.restype = ctypes.POINTER(ctypes.c_double)
 
+#Location of the executable. This executabnle is made by Gravelamps upon install and placed
+#into the bin directory in the user's home folder
+_executable = f"{os.path.expanduser('~')}/bin/nfwlens"
+
+#Additional arguments necessary for the running of the executable in addition to the files for the
+#interpolator construction
+_additional_arguments = ["nfw_scaling_constant",
+                         "nfw_integration_upper_limit",
+                         "arithemtic_precision",
+                         "geometric_optics_frequency"]
+
 #The following are global properties of the module. These are the scaling constant of the profile
 #and the critical value of source position --- that corresponding to the caustic. The scaling may
 #be adjusted by the set_scaling function which will also correspondingly calculate the appropriate
@@ -103,12 +114,14 @@ def __generate_image_position_interpolator__():
     image_two_interpolator = interp1d(source_position_space, image_two)
     image_three_interpolator = interp1d(source_position_space, image_three)
 
-    global _image_position_interpolator
-    def _image_position_interpolator(source_position):
+    def image_position_interpolator(source_position):
         position_list = [image_one_interpolator(source_position),
                          image_two_interpolator(source_position),
                          image_three_interpolator(source_position)]
         return np.array(position_list)
+
+    global _image_position_interpolator
+    _image_position_interpolator = image_position_interpolator
 
 def __generate_amplification_factor_interpolator__():
     '''
@@ -133,9 +146,11 @@ def __generate_amplification_factor_interpolator__():
     real_interpolator = interp1d(source_position_space, amplification_real_space)
     imag_interpolator = interp1d(source_position_space, amplification_imag_space)
 
-    global _amplification_factor_interpolator
-    def _amplification_factor_interpolator(source_position):
+    def amplification_factor_interpolator(source_position):
         return real_interpolator(source_position) + 1j*imag_interpolator(source_position)
+
+    global _amplification_factor_interpolator
+    _amplification_factor_interpolator = amplification_factor_interpolator
 
 def set_scaling(scaling_constant : float):
     '''
