@@ -1,11 +1,7 @@
 from __future__ import division, print_function
-import bilby
 import matplotlib.pyplot as plt
 import numpy as np
 import h5py
-
-
-GCSM = 2.47701878*1.98892*10**(-6) # G/c^3 *solar mass
 
 #Read the lookuptable
 f = h5py.File('lookuptable.h5', 'r')
@@ -14,7 +10,7 @@ d11 = f['f11']
 d12 = f['f12']
 d21 = f['f21']
 d22 = f['f22']
-
+f.close()
 D11 = []
 D12 = []
 D21 = []
@@ -27,7 +23,6 @@ for i in np.arange(291):
     D21.append(d21[i])
 for i in np.arange(291):
     D22.append(d22[i])
-print(D11[200][10000])
 
 D11 = np.array(D11)
 D12 = np.array(D12)
@@ -37,14 +32,13 @@ D22 = np.array(D22)
 d1 = D11 + 1j*D12
 d2 = D21 + 1j*D22
 
-def amplification_isolated_pm(freq, Log_M_lz, y):        
+def amplification_isolated_pm(dimensionless_frequency_array, y):        
     # Calculate Amplification functions using isolated point mass.
     mup = 0.5 + ((2+y**2) / (2*y*np.sqrt(4+y**2)))
     mum = 0.5 - ((2+y**2) / (2*y*np.sqrt(4+y**2)))
     del_T = y*np.sqrt(4+y**2)/2 + np.log((np.sqrt(4+y**2)+y)/(np.sqrt(4+y**2)-y))
     jstep = 8.0*np.pi*4.93E-6*0.1*(1+1)*1000
-    fr = freq
-    w = 8*(10**Log_M_lz)*np.pi*fr*GCSM
+    w = dimensionless_frequency_array
     if max(w) <= 246.0:
         if y > 0.3:
             istep = 0.01
