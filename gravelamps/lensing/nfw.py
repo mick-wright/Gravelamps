@@ -261,7 +261,7 @@ def amplification_factor(dimensionless_frequency_array,
     allows for speedier computation of the value than the complete method outlined above.
     '''
 
-    amplification_array = np.empty(len(dimensionless_frequency_array))
+    amplification_array = np.empty(len(dimensionless_frequency_array), dtype=complex)
 
     if source_position > _CRITICAL_VALUE:
         amplification_array[:] = _amplification_factor_interpolator(source_position)
