@@ -104,11 +104,19 @@ def __generate_image_position_interpolator__():
     '''
 
     source_position_space = np.linspace(0, _CRITICAL_VALUE, 1000)
-    image_one = image_two = image_three = np.empty(len(source_position_space))
+    image_one = np.empty(len(source_position_space))
+    image_two = np.empty(len(source_position_space))
+    image_three = np.empty(len(source_position_space))
 
     for idx, source_position in enumerate(source_position_space):
-        image_one[idx], image_two[idx], image_three[idx] =\
-            find_image_positions(source_position)
+        image_positions = find_image_positions(source_position)
+        image_one[idx] = image_positions[0]
+        image_two[idx] = image_positions[1]
+        image_three[idx] = image_positions[2]
+
+    print(image_one)
+    print(image_two)
+    print(image_three)
 
     image_one_interpolator = interp1d(source_position_space, image_one)
     image_two_interpolator = interp1d(source_position_space, image_two)
