@@ -7,19 +7,17 @@ necessary to perform analysis runs for both local machines and for cluster machi
 HTCondor scheduler platform
 '''
 
-import ctypes
-import os
-import dill
+import importlib
 
 import numpy as np
 import astropy.constants as const
 
-import scipy.interpolate as scint
 import bilby
+from bilby.gw.waveform_generator import WaveformGenerator
 
 from . import utils
 
-class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
+class LensedWaveformGenerator(WaveformGenerator):
     '''
     Lensed Waveform Generator Class
 
@@ -54,264 +52,23 @@ class LensedWaveformGenerator(bilby.gw.waveform_generator.WaveformGenerator):
             #Extract the lens model from the waveform arguments
             lens_model = waveform_arguments["lens_model"]
 
-            #Create the amplification factor function
+            lens_module_spec = importlib.util.find_spec(f"gravelamps.lensing.{lens_model}")
+
+            if lens_module_spec is None:
+                if lens_model.endswith("lens"):
+                    lens_module_spec = importlib.util.find_spec(f"gravelamps.lensing.{lens_model[:-4]}")
+            if lens_module_spec is None:
+                raise ModuleNotFoundError(f"No module corresponding to {lens_model} found!")
+
+            try:
+                waveform_arguments["amplification_factor_function"] = getattr(
+                    importlib.import_module(lens_module_spec.name), "amplification_factor")
+            except NameError:
+                print(f"amplification_factor not defined within {lens_module_spec.name}")
+
             if lens_model == "nfwlens":
-                waveform_arguments["interpolator"] =\
-                    self.generate_nfw_interpolator(waveform_arguments["scaling_constant"])
-                waveform_arguments["image_position_func"] =\
-                    self.generate_nfw_image_position_interpolator(
-                        waveform_arguments["scaling_constant"])
-                waveform_arguments["min_time_delay_phase_func"] =\
-                    self.generate_nfw_min_time_delay_phase_interpolator(
-                        waveform_arguments["scaling_constant"])
-                amplification_factor = self.nfw_amplification_factor_full
-
-            else:
-                amplification_factor = self.two_parameter_amplification_factor
-
-            #Add the amplification factor function to the waveform_arguments dictionary
-            waveform_arguments["amplification_factor_func"] = amplification_factor
-
-    @staticmethod
-    def two_parameter_amplification_factor(dimensionless_frequency_value,
-                                           source_position,
-                                           lens_cdll):
-        '''
-        Input:
-            dimensionless_frequency_value - value of the dimensionelss frequency at which to
-                                            calculate the amplification factor
-            source_position - value of the source position at which to calculate the amplification
-                              factor
-            lens_cdll - DLL containing the C++ functions to calculate the amplification factor
-
-        Output:
-            amp_fac - the complex value of the amplification factor
-
-        Function uses C++ backend to calculate the amplification factor in geometric optifcs for
-        those lens models that rely solely on the dimensionless frequency and source position for
-        the calculations.
-        '''
-
-        result = lens_cdll.AFGRealOnly(ctypes.c_double(dimensionless_frequency_value),
-                                       ctypes.c_double(source_position))
-        amp_fac = complex(result[0], result[1])
-
-        #Destroy the c object to deallocate the memory
-        lens_cdll.destroyObj(result)
-
-        return amp_fac
-
-    @staticmethod
-    def nfw_amplification_factor_full(dimensionless_frequency_value,
-                                      source_position,
-                                      scaling_constant,
-                                      image_positions,
-                                      min_time_delay_phase,
-                                      interpolator):
-        '''
-        Input:
-            dimensionless_frequency_value - value of the dimensionless frequency at which to
-                                            calculate the amplification factor
-            source_position - value of the source position at which to calculate the amplification
-                              factor
-            scaling_constant - characteristic scale length for the NFW profile
-            image_positions - array containing the positions of the images generated
-            min_time_delay_phase - value of the phase required for a minimum time delawy of zero
-            interpolator - interpolator that calculates the amplification factor in the source
-                           position space where the dimensionless frequency has no impact on the
-                           value. This has been set at source positions greater than 0.16
-
-        Output:
-            amp_fac - value of the amplification factor
-
-        Function calculates the value of the amplification factor for the NFW geometric optics
-        case. It does this by either means of the interpolator if the source position value is
-        in the space that makes it invariant to dimensionless frequency. This has been set to be
-        source position > 0.16. In the case it is below that value, it will quickly calculate the
-        value of the amplification factor for the given values of the phase and image positions,
-        which are the more computationally intensive parts of the amplification factor calculation
-        '''
-
-        if source_position > 0.15:
-            return interpolator(source_position)
-
-        image_positions = np.array(image_positions)
-        number_of_images = image_positions.size
-
-        result = _nfwlens_cdll.SimpleAmpFac(ctypes.c_double(dimensionless_frequency_value),
-                                    ctypes.c_double(source_position),
-                                    ctypes.c_double(scaling_constant),
-                                    image_positions.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
-                                    ctypes.c_double(min_time_delay_phase),
-                                    ctypes.c_int(number_of_images))
-        amp_fac = complex(result[0], result[1])
-
-        #Destroy the c object deallocate the memory
-        _nfwlens_cdll.destroyObj(result)
-
-        return amp_fac
-
-
-    @staticmethod
-    def nfw_amplification_factor_calculation(dimensionless_frequency_value,
-                                             source_position,
-                                             scaling_constant):
-        '''
-        Input:
-            dimensionless_frequency_value - value of the dimensionless frequency for which to
-                                            calulate the amplification factor
-            source_position - value of the source position for which to calculate the amplification
-                              factor
-            scaling_constant - value of the characteristic scale for the NFW profile
-
-        Outputs:
-            amp_fac - complex value of the amplification factor for given dimensionless frequency
-                      and source position for the NFW profile with given scale
-
-        Function uses the C++ backend through lens_cdll to calculate the amplification factor for
-        the NFW profile with the given scaling constant for the given dimensionless frequency and
-        source position values
-        '''
-
-        result = _nfwlens_cdll.AFGRealOnly(ctypes.c_double(dimensionless_frequency_value),
-                                           ctypes.c_double(source_position),
-                                           ctypes.c_double(scaling_constant))
-        amp_fac = complex(result[0], result[1])
-
-        _nfwlens_cdll.destroyObj(result)
-        return amp_fac
-
-    @staticmethod
-    def min_time_delay_phase(source_position, scaling_constant):
-        '''
-        Inputs:
-            source_position - value of source position to calulate the phase for
-            scaling_constant - characteristic length of the NFW profile
-
-        Outputs:
-            result - Contains the value of the phase required to minimise the time delay to zero
-
-        Function computes the value of the phase required to minimise the time delay to zero
-        for the NFW profile for given values of source position and scaling constant
-        '''
-        result = _nfwlens_cdll.MinTimeDelayPhaseReal(ctypes.c_double(source_position),
-                                                     ctypes.c_double(scaling_constant))
-        return float(result)
-
-    @staticmethod
-    def image_positions(source_position, scaling_constant):
-        '''
-        Inputs:
-            source_position - displacement from the optical axis
-            scaling_constant - characteristic length of the NFW profile
-            lens_cdll - the dll containing the C++ functions
-
-        Outputs:
-            res_array - Array containing the positions of the images resulting from the lens
-                        equations
-
-        For given values of the source position and scaling constant, the function uses the
-        C++ function within lens_cdll to solve the lens equation yielding the position of the
-        lensed images
-        '''
-        array = _nfwlens_cdll.ImagePositionArray(ctypes.c_double(source_position),
-                                                ctypes.c_double(scaling_constant))
-        array_size = int(array[0])
-
-        res_array = []
-        for i in range(1, array_size):
-            res_array.append(float(array[i]))
-
-        res_array = np.array(res_array)
-        return res_array
-
-    def generate_nfw_min_time_delay_phase_interpolator(self, scaling_constant):
-        '''
-        Inputs:
-            scaling_constant - value of the characteristics scale of the NFW profile
-
-        Outputs:
-            time_delay_interpolator - function that for given source position will return
-                                      the phase needed for a minimum time delay of zero
-        '''
-
-        source_position_space = np.linspace(0.1, 0.15, 1000)
-
-        time_delay_space = []
-        for y_val in source_position_space:
-            time_delay_space.append(self.min_time_delay_phase(y_val, scaling_constant))
-
-        time_delay_space = np.array(time_delay_space)
-        time_delay_interpolator = scint.interp1d(source_position_space, time_delay_space)
-
-        return time_delay_interpolator
-
-    def generate_nfw_image_position_interpolator(self, scaling_constant):
-        '''
-        Inputs:
-            scaling_constant - value of the characteristic scale of the NFW profile
-
-        Outputs:
-            position_interpolator - function that for given source position will return
-                                    the three outputs of the image position function.
-
-        Function generates an interpolator for the NFW geometric optics method in the oscillation
-        space below the critical value of source position
-        '''
-
-        source_position_space = np.linspace(0.1, 0.15, 1000)
-
-        image_position_func = np.vectorize(self.image_positions, signature='(),(),()->(n)')
-        image_position_arrays = image_position_func(source_position_space, scaling_constant)
-
-        image_one = image_position_arrays[:,0]
-        image_two = image_position_arrays[:,1]
-        image_three = image_position_arrays[:,2]
-
-        interpolator_one = scint.interp1d(source_position_space, image_one)
-        interpolator_two = scint.interp1d(source_position_space, image_two)
-        interpolator_three = scint.interp1d(source_position_space, image_three)
-
-        position_interpolator = lambda source_position:\
-                [interpolator_one(source_position),
-                 interpolator_two(source_position),
-                 interpolator_three(source_position)]
-
-        return position_interpolator
-
-
-    def generate_nfw_interpolator(self, scaling_constant):
-        '''
-        Inputs:
-            scaling_constant - value of the characteristic scale of the NFW profile
-
-        Outputs:
-            complex_interpolator - function that for given source position will return
-                                   the value of the amplification factor
-
-        Function generates an interpolator for the NFW geometric optics method in the space
-        where the source position is the only variable.
-        '''
-        source_position_space = np.linspace(0.15, 3.0, 60)
-        fiducial_dimensionless_frequency = 1000
-        amp_fac_space = np.zeros(len(source_position_space), dtype=complex)
-
-        for idx, source_position in enumerate(source_position_space):
-            amp_fac_space[idx] =\
-                self.nfw_amplification_factor_calculation(fiducial_dimensionless_frequency,
-                                                          source_position,
-                                                          scaling_constant)
-
-        amp_fac_real_space = np.real(amp_fac_space)
-        amp_fac_imag_space = np.imag(amp_fac_space)
-
-        real_interpolator = scint.interp1d(source_position_space, amp_fac_real_space)
-        imag_interpolator = scint.interp1d(source_position_space, amp_fac_imag_space)
-
-        complex_interpolator = lambda source_position: real_interpolator(source_position)\
-                                                       +1j*imag_interpolator(source_position)
-
-        return complex_interpolator
+                scaling_setter = getattr(importlib.import_module(lens_module_spec.name), "set_scaling")
+                scaling_setter(waveform_arguments["scaling_constant"]) 
 
 def BBH_lensed_waveform(frequency_array, mass_1, mass_2, a_1, a_2, tilt_1, tilt_2, phi_12, phi_jl,
                         luminosity_distance, theta_jn, phase, ra, dec, geocent_time, psi,
@@ -381,10 +138,7 @@ def BBH_lensed_waveform(frequency_array, mass_1, mass_2, a_1, a_2, tilt_1, tilt_
     minimum_frequency = waveform_kwargs["minimum_frequency"]
     maximum_frequency = waveform_kwargs["maximum_frequency"]
     interpolator = waveform_kwargs["interpolator"]
-    amplification_factor_func = waveform_kwargs["amplification_factor_func"]
-    scaling_constant = waveform_kwargs["scaling_constant"]
-    lens_model = waveform_kwargs["image_position_func"]
-    min_time_delay_phase_func = waveform_kwargs["min_time_delay_phase_func"]
+    amplification_factor_function = waveform_kwargs["amplification_factor_function"]
     methodology = waveform_kwargs["methodology"]
 
     #Construct the base waveform using lal_binary_black_hole
@@ -412,28 +166,10 @@ def BBH_lensed_waveform(frequency_array, mass_1, mass_2, a_1, a_2, tilt_1, tilt_
             raise ValueError("To use interpolate method, interpolator must be given!")
         amplification_factor_array = interpolator(dimensionless_frequency_array, source_position)
     else:
-        if amplification_factor_func is None:
+        if amplification_factor_function is None:
             raise ValueError("To use direct method, direct calculation function must be given!")
-
-        lensing_function = np.vectorize(amplification_factor_func, excluded=["image_positions"])
-        if lens_model == "nfwlens":
-            lensing_function.excluded.add(3)
-            if source_position <= 0.15:
-                image_positions = image_position_func(source_position)
-                min_time_delay_phase = min_time_delay_phase_func(source_position)
-            else:
-                image_positions = -1
-                min_time_delay_phase = -1
-            amplification_factor_array = lensing_function(dimensionless_frequency_array,
-                                                          source_position,
-                                                          scaling_constant,
-                                                          image_positions,
-                                                          min_time_delay_phase,
-                                                          interpolator)
-        else:
-            amplification_factor_array = lensing_function(dimensionless_frequency_array,
-                                                          source_position,
-                                                          _cdll_dict[lens_model])
+        amplification_factor_array = amplification_factor_function(dimensionless_frequency_array,
+                                                                   source_position)
 
     #Create the lens waveform by multiplying the base waveform by the amplification factor array
     lens_waveform = {}
@@ -485,47 +221,3 @@ def natural_mass(mass, mode="solar"):
     m_nat = m_kg * (const.G/const.c**3)
 
     return m_nat.value
-
-def generate_cdll(lens_model):
-    '''
-    Input:
-        lens_model - string containing the name of the lens model program
-
-    Using the specified lens model, the function loads in the corresponding library containing
-    C++ functions for calculation of the amplification factor. It then sets the necessary
-    typings for the arguments and returns of the needed functions.
-    '''
-
-    lens_library_filepath = f"{os.path.expanduser('~')}/.local/lib/lib{lens_model[:-4]}.so"
-    lens_cdll = ctypes.CDLL(os.path.abspath(lens_library_filepath))
-
-    #Set the argument and result types necessary for the functions
-    if lens_model == "nfwlens":
-        lens_cdll.AFGRealOnly.argtypes = (ctypes.c_double, ctypes.c_double, ctypes.c_double)
-        lens_cdll.AFGRealOnly.restype = ctypes.POINTER(ctypes.c_double)
-
-        lens_cdll.ImagePositionArray.argtypes = (ctypes.c_double, ctypes.c_double)
-        lens_cdll.ImagePositionArray.restype = ctypes.POINTER(ctypes.c_double)
-
-        lens_cdll.MinTimeDelayPhaseReal.argtypes = (ctypes.c_double, ctypes.c_double)
-        lens_cdll.MinTimeDelayPhaseReal.restype = ctypes.c_double
-
-        lens_cdll.SimpleAmpFac.argtypes = (ctypes.c_double,
-                                           ctypes.c_double,
-                                           ctypes.c_double,
-                                           ctypes.POINTER(ctypes.c_double),
-                                           ctypes.c_double,
-                                           ctypes.c_int)
-        lens_cdll.SimpleAmpFac.restype = ctypes.POINTER(ctypes.c_double)
-
-    else:
-        lens_cdll.AFGRealOnly.argtypes = (ctypes.c_double, ctypes.c_double)
-        lens_cdll.AFGRealOnly.restype = ctypes.POINTER(ctypes.c_double)
-
-    return lens_cdll
-
-_nfwlens_cdll = generate_cdll("nfwlens")
-_sislens_cdll = generate_cdll("sislens")
-_pointlens_cdll = generate_cdll("pointlens")
-
-_cdll_dict = {"pointlens": _pointlens_cdll, "sislens":_sislens_cdll, "nfwlens":_nfwlens_cdll}
