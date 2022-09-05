@@ -67,9 +67,24 @@ The `lalsuite` optional dependency of `bilby` is also required.
 
 # Citation
 
-The source code of Gravelamps is provided under the MIT License. If used for scientific purposes, please cite:
+[![DOI](https://zenodo.org/badge/328470267.svg)](https://zenodo.org/badge/latestdoi/328470267)
 
-+ [Gravelamps: Gravitational Wave Lensing Mass Profile Model Selection](https://doi.org/10.3847/1538-4357/AC7EC2) authored by Mick Wright and Martin Hendry
+The source code of Gravelamps is provided under the MIT License. If the software has been helpful to you, citation of the code may be done using the DOI above. If used for scientific purposes, a citation is provided for the paper describing the methodology is provided below:
+	
+	@article{Wright_2022,
+	doi = {10.3847/1538-4357/ac7ec2},
+	url = {https://doi.org/10.3847/1538-4357/ac7ec2},
+	year = 2022,
+	month = {aug},
+	publisher = {American Astronomical Society},
+	volume = {935},
+	number = {2},
+	pages = {68},
+	author = {Mick Wright and Martin Hendry},
+	title = {Gravelamps: Gravitational Wave Lensing Mass Profile Model Selection},
+	journal = {The Astrophysical Journal},
+	abstract = {We present the package Gravelamps, which is designed to analyze gravitationally lensed gravitational wave signals in order to constrain the mass density profile of the lensing object. Gravelamps does this via parameter estimation using the framework of bilby, which enables estimation of both the lens and the source parameters. The package can be used to study both microlensing and macrolensing cases, where the lensing mass distribution is described by a point-mass and extended-mass density profile, respectively. It allows the user to easily and freely switch between a full wave optics and approximate geometric optics description. The performance of Gravelamps is demonstrated via simulated analysis of both microlensing and macrolensing events, illustrating its capability for both parameter estimation and model selection in the wave optics and hybrid environments. To further demonstrate the utility of the package, the real gravitational-wave event GW170809 was analyzed using Gravelamps; this event was found to yield no strong evidence supporting the lensing hypothesis, consistent with previously published results.}
+	}
 
 In addition, due to the dependency of Gravelamps upon in particular `bilby`, `bilby_pipe`, and `arb`, but all of the mentioned components, please follow their citation practices. 
 
