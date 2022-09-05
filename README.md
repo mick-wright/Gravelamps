@@ -2,9 +2,9 @@
 
 ## What is Gravelamps?
 
-Gravelamps is a python package built upon the [`bilby`](https://git.ligo.org/lscsoft/bilby) framework and is designed to perform template based analysis of both simulated and real gravitationally lensed gravitational wave signals to determine the mass density profile of the lensing object. In so doing, it will also give estimates of the lens and source parameters for each of the mass density profiles that is tested. 
+Gravelamps is a python package built upon the [`bilby`](https://git.ligo.org/lscsoft/bilby) framework designed to perform template based analysis of both simulated and real gravitationally lensed gravitational wave signals to determine the mass density profile of the lensing object. In so doing, it will also give estimates of the lens and source parameters for each of the mass density profiles that is tested. 
 
-It is able to do this in both the wave optics and the geometric optics regimes - corresponding to lower and higher mass lenses as well as being able to cross between regimes in a single run allowing for the entire mass spectrum to be covered without break. The wave optics calculations represent particularly complex calculations which to be performed effectively are done using the C arbitrary precision library [`arb`](https://github.com/fredrik-johansson/arb/) with the overall lensing generation performed in a variety of C++ subprograms inside of Gravelamps.
+It is able to do this in both the wave optics only regime as well as in a hybrid environment crossing into the geometric optics regime at a specified threshold allowing a great deal of flexibility in the mass spectrum of the lensing object. The particularly complex calculations required to compute the wave optics case are done using the C arbitrary precision library [`arb`](https://github.com/fredrik-johansson/arb/) with the C++ libraries that have been written to implement these computations are contained within `gravelamps.model`. 
 
 ## How Does It Work?
 
@@ -21,12 +21,17 @@ This process will yield estimates of the lens and source parameters as well as t
 
 ## How Do I Perform A Run?
 
-Once installed, the process of performing an analysis run is very easy. Simply modify the INI file for the flavour of Gravelamps you wish to use (local for running on a local machine, pipe for running on a clusterised machine using the HTCondor Scheduler), and call the appropriate inference function giving it the INI as the only argument, these being
+Once installed, the process of performining an alysis run is very easy. Simply modify the example INI file given to the specifications that are desired for your analysis run and call the inference program as follows:
 
-+ `gravelamps_local_inference` for local machine runs
-+ `gravelamps_pipe_inference` for clusterised machine runs using the HTCondor Scheduler
+`gravelamps_inference yourfile.ini`
 
-In the case of `gravelamps_local_inference`, this will immediately start the run using the local resources available. In the case of `gravelamps_pipe_inference` this will generate a series of HTCondor submit files and an overarching DAG that can be submitted to the scheduler. In the latter case, the output of the program will detail the submission command.
+This will then either run the jobs directly or generate a DAG which you can either submit yourself or have Gravelamps submit for you depending upon settings within the INI. Additional help may be gathered by running:
+
+`gravelamps_inference -h`
+
+Should you only desire to have Gravelamps perform the generation of data for a lensing interpolator, this may be done by running
+
+`gravelamps_generate_lens yourfile.ini`
 
 ## Installation Instructions
 
@@ -55,6 +60,8 @@ In addition to a working `python 3` environment, the following are required for 
 + `scipy`
 + `astropy`
 + `bilby`
++ `htcondor`
++ `bilby_pipe`
 
 The `lalsuite` optional dependency of `bilby` is also required.
 
@@ -62,9 +69,9 @@ The `lalsuite` optional dependency of `bilby` is also required.
 
 The source code of Gravelamps is provided under the MIT License. If used for scientific purposes, please cite:
 
-+ [Gravelamps: Gravitational Wave Lensing Mass Profile Model Selection](https://arxiv.org/abs/2112.07012) authored by Mick Wright and Martin Hendry
++ [Gravelamps: Gravitational Wave Lensing Mass Profile Model Selection](https://doi.org/10.3847/1538-4357/AC7EC2) authored by Mick Wright and Martin Hendry
 
-In addition, due to the dependency of Gravelamps upon in particular `bilby` and `arb`, but all of the mentioned components, please follow their citation practices. 
+In addition, due to the dependency of Gravelamps upon in particular `bilby`, `bilby_pipe`, and `arb`, but all of the mentioned components, please follow their citation practices. 
 
 # Contribution Guidelines
 

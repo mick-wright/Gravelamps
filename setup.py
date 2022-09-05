@@ -16,11 +16,11 @@ class Build(build_ext):
     def run(self):
         #Get the current directory, from which find the lensing subdirectory
         current_directory = os.getcwd()
-        lensing_subfolder = current_directory + "/gravelamps/lensing"
+        model_subfolder = f"{current_directory}/gravelamps/model"
 
         #Change to the subdirectory, run the makefile, return to present
-        os.chdir(lensing_subfolder)
-        subprocess.run(["make"], check=True)
+        os.chdir(model_subfolder)
+        subprocess.run(['make'], check=True)
         os.chdir(current_directory)
 
         #Run the remaining build process
@@ -49,7 +49,7 @@ setuptools.setup(
     long_description = long_description,
     packages = [
         "gravelamps",
-        "gravelamps.inference",
+        "gravelamps.core",
         "gravelamps.lensing"
     ],
     has_ext_modules = lambda: True,
@@ -58,11 +58,10 @@ setuptools.setup(
         "build_ext": Build,
     },
     entry_points = {
-        "console_scripts": ["gravelamps_local_inference=gravelamps.inference.inference:main",
-    "gravelamps_pipe_inference=gravelamps.inference.inference_pipe:main",
-    "gravelamps_generate_lens_local=gravelamps.lensing.generate_lens_local:main",
-    "gravelamps_generate_lens_pipe=gravelamps.lensing.generate_lens_pipe:main"],
-    },
+        "console_scripts": [
+            "gravelamps_inference=gravelamps.inference:main",
+            "gravelamps_generate_lens=gravelamps.generate_lens:main",
+            "gravelamps_generate_interpolator_data=gravelamps.lensing.generic:main"]},
     classifiers = [
         "Programming Language :: Python :: 3",
         "Programming Language :: C++",
