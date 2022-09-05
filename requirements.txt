@@ -2,3 +2,5 @@ numpy
 scipy
 astropy
 bilby
+bilby_pipe
+htcondor

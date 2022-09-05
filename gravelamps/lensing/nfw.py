@@ -16,38 +16,48 @@ import numpy as np
 from numpy.typing import ArrayLike
 from scipy.interpolate import interp1d
 
+from gravelamps.core.gravelog import gravelogger
+from gravelamps.lensing.generic import get_additional_arguments
+
 #The following loads in the DLL containing the C++ functions for the direct implementations for
 #goemetric optics runs. It then sets the argument and result types accordingly
 
 _cdll = ctypes.CDLL(f"{os.path.expanduser('~')}/.local/lib/libnfw.so")
 
-_cdll.AFGRealOnly.argtypes = (ctypes.c_double, ctypes.c_double, ctypes.c_double)
-_cdll.AFGRealOnly.restype = ctypes.POINTER(ctypes.c_double)
+_cdll.PyPhase.argtypes = (ctypes.c_double, ctypes.c_double)
+_cdll.PyPhase.restype = ctypes.c_double
 
-_cdll.ImagePositionArray.argtypes = (ctypes.c_double, ctypes.c_double)
-_cdll.ImagePositionArray.restype = ctypes.POINTER(ctypes.c_double)
+_cdll.PyImagePositions.argtypes = (ctypes.c_double, ctypes.c_double)
+_cdll.PyImagePositions.restype = ctypes.POINTER(ctypes.c_double)
 
-_cdll.MinTimeDelayPhaseReal.argtypes = (ctypes.c_double, ctypes.c_double)
-_cdll.MinTimeDelayPhaseReal.restype = ctypes.c_double
+_cdll.PyAmplificationFactorGeometric.argtypes = (ctypes.c_double,
+                                                 ctypes.c_double,
+                                                 ctypes.c_double,
+                                                 ctypes.POINTER(ctypes.c_double),
+                                                 ctypes.c_double,
+                                                 ctypes.c_int)
+_cdll.PyAmplificationFactorGeometric.restype = ctypes.POINTER(ctypes.c_double)
 
-_cdll.SimpleAmpFac.argtypes = (ctypes.c_double,
-                               ctypes.c_double,
-                               ctypes.c_double,
-                               ctypes.POINTER(ctypes.c_double),
-                               ctypes.c_double,
-                               ctypes.c_int)
-_cdll.SimpleAmpFac.restype = ctypes.POINTER(ctypes.c_double)
-
-#Location of the executable. This executabnle is made by Gravelamps upon install and placed
-#into the bin directory in the user's home folder
-_executable = f"{os.path.expanduser('~')}/bin/nfwlens"
+_cdll.GenerateLensData.argtypes = (ctypes.c_char_p,
+                                   ctypes.c_char_p,
+                                   ctypes.c_char_p,
+                                   ctypes.c_char_p,
+                                   ctypes.c_double,
+                                   ctypes.c_double,
+                                   ctypes.c_int,
+                                   ctypes.c_int)
+_cdll.GenerateLensData.restype = ctypes.c_int
 
 #Additional arguments necessary for the running of the executable in addition to the files for the
 #interpolator construction
 _additional_arguments = ["nfw_scaling_constant",
                          "nfw_integration_upper_limit",
-                         "arithemtic_precision",
+                         "arithmetic_precision",
                          "geometric_optics_frequency"]
+_additional_argument_types = [float, float, int, int]
+
+#Parameters for the model
+_lens_parameters = ["lens_mass", "lens_fractional_distance", "source_position"]
 
 #The following are global properties of the module. These are the scaling constant of the profile
 #and the critical value of source position --- that corresponding to the caustic. The scaling may
@@ -114,10 +124,6 @@ def __generate_image_position_interpolator__():
         image_two[idx] = image_positions[1]
         image_three[idx] = image_positions[2]
 
-    print(image_one)
-    print(image_two)
-    print(image_three)
-
     image_one_interpolator = interp1d(source_position_space, image_one)
     image_two_interpolator = interp1d(source_position_space, image_two)
     image_three_interpolator = interp1d(source_position_space, image_three)
@@ -170,12 +176,21 @@ def set_scaling(scaling_constant : float):
     '''
 
     global _SCALING
+
+    gravelogger.info("Setting NFW scaling value to %s", scaling_constant)
     _SCALING = scaling_constant
 
     __calculate_critical_value__()
+    gravelogger.info("NFW Critical Value calulcated as %s", _CRITICAL_VALUE)
+
     __generate_phase_interpolator__()
+    gravelogger.info("NFW Phase Interpolator Generated")
+
     __generate_image_position_interpolator__()
+    gravelogger.info("NFW Image Position Interpolator Generated")
+
     __generate_amplification_factor_interpolator__()
+    gravelogger.info("NFW Above Critical Amplification Factor Interpolator Generated")
 
 def find_image_positions(source_position):
     '''
@@ -191,16 +206,13 @@ def find_image_positions(source_position):
     then converts that to a numpy array for ease of python use.
     '''
 
-    c_position_array = _cdll.ImagePositionArray(ctypes.c_double(source_position),
-                                                ctypes.c_double(_SCALING))
+    c_position_array = _cdll.PyImagePositions(ctypes.c_double(source_position),
+                                              ctypes.c_double(_SCALING))
 
-    number_of_images = int(c_position_array[0]-1)
-    position_array = np.empty(number_of_images)
+    position_array = np.ctypeslib.as_array(c_position_array, shape=(int(c_position_array[0]),))
+    position_array = position_array[1:]
 
-    for idx, _ in enumerate(position_array):
-        position_array[idx] = c_position_array[idx+1]
-
-    _cdll.destroyObj(c_position_array)
+    print(position_array)
 
     return position_array
 
@@ -218,8 +230,8 @@ def min_time_delay_phase(source_position):
     given source position.
     '''
 
-    phase = float(_cdll.MinTimeDelayPhaseReal(ctypes.c_double(source_position),
-                                              ctypes.c_double(_SCALING)))
+    phase = float(_cdll.PyPhase(ctypes.c_double(source_position),
+                                ctypes.c_double(_SCALING)))
 
     return phase
 
@@ -240,9 +252,12 @@ def complete_amplification_factor(dimensionless_frequency,
     expensive than the simpler version contained within SimpleAmpFac.
     '''
 
-    c_result = _cdll.AFGRealOnly(ctypes.c_double(dimensionless_frequency),
-                                 ctypes.c_double(source_position),
-                                 ctypes.c_double(_SCALING))
+    c_result = _cdll.PyAmplificationFactorGeometric(ctypes.c_double(dimensionless_frequency),
+                                                    ctypes.c_double(source_position),
+                                                    ctypes.c_double(_SCALING),
+                                                    None,
+                                                    ctypes.c_double(0.0),
+                                                    ctypes.c_int(0))
     amplification_value = complex(c_result[0], c_result[1])
 
     _cdll.destroyObj(c_result)
@@ -280,7 +295,7 @@ def amplification_factor(dimensionless_frequency_array,
     phase = _phase_interpolator(source_position)
 
     for idx, dimensionless_frequency in enumerate(dimensionless_frequency_array):
-        c_result = _cdll.SimpleAmpFac(
+        c_result = _cdll.PyAmplificationFactorGeometric(
             ctypes.c_double(dimensionless_frequency),
             ctypes.c_double(source_position),
             ctypes.c_double(_SCALING),
@@ -292,3 +307,32 @@ def amplification_factor(dimensionless_frequency_array,
         _cdll.destroyObj(c_result)
 
     return amplification_array
+
+def generate_interpolator_data(config, args, file_dict):
+    '''
+    Input:
+        config - INI configuration parser
+        args - Commandline arguments passed to the program
+        file_dict - dictionary of files containing dimensionless frequency and source poisition
+                    values over which to generate the interpolator, followed by the corresponding
+                    files containing the real and imaginary amplification factor values to use as
+                    the interpolating data
+
+    Function uses the C++ backend function within libnfw to generate the amplification factor data
+    files from the input dimensionless frequency and source position files
+    '''
+
+    additional_arguments = get_additional_arguments(config, args,
+                                                    _additional_arguments,
+                                                    _additional_argument_types)
+
+    gravelogger.info("Generating Lens Interpolator Data")
+    _cdll.GenerateLensData(ctypes.c_char_p(file_dict["dimensionless_frequency"].encode("utf-8")),
+                           ctypes.c_char_p(file_dict["source_position"].encode("utf-8")),
+                           ctypes.c_char_p(file_dict["amplification_factor_real"].encode("utf-8")),
+                           ctypes.c_char_p(file_dict["amplification_factor_imag"].encode("utf-8")),
+                           ctypes.c_double(additional_arguments[0]),
+                           ctypes.c_double(additional_arguments[1]),
+                           ctypes.c_int(additional_arguments[2]),
+                           ctypes.c_int(additional_arguments[3]))
+    gravelogger.info("Lens Interpolator Data Generated")
