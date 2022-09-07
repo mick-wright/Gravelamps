@@ -41,7 +41,7 @@ class LensedWaveformGenerator(WaveformGenerator):
 
         if waveform_arguments["lens_module"] == "gravelamps.lensing.interpolator":
             self.lens_module.generate_interpolator(waveform_arguments["dimensionless_frequency"],
-                                                   waveform_arguments["source_position"],
+                                                   waveform_arguments["source_position_file"],
                                                    waveform_arguments["amplification_factor_real"],
                                                    waveform_arguments["amplification_factor_imag"])
 
@@ -56,7 +56,7 @@ class LensedWaveformGenerator(WaveformGenerator):
             gravelogger.warning("No Amplification Factor Function detected, \
                                  signal will be unlensed")
 
-        self.source_parameter_keys.update(self.lens_parameters)
+        self.source_parameter_keys.update(self.lens_parameters())
 
     def _strain_from_model(self, model_data_points, model):
         unlensed_waveform = model(model_data_points, **self.parameters)
