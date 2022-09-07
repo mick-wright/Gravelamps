@@ -56,8 +56,7 @@ class LensedWaveformGenerator(WaveformGenerator):
             gravelogger.warning("No Amplification Factor Function detected, \
                                  signal will be unlensed")
 
-        self.lens_parameters = self._lens_parameters
-        self.source_parameter_keys.update(*self.lens_parameters)
+        self.source_parameter_keys.update(self.lens_parameters)
 
     def _strain_from_model(self, model_data_points, model):
         unlensed_waveform = model(model_data_points, **self.parameters)
@@ -83,6 +82,14 @@ class LensedWaveformGenerator(WaveformGenerator):
         for key, value in unlensed_waveform.items():
             lensed_waveform[key] = np.multiply(value, amplification_factor)
         return lensed_waveform
+
+    @property
+    def lens_parameters(self):
+        '''
+        Lens Parameters to Infer
+        '''
+
+        return self._lens_parameters
 
     def _lens_parameters(self):
         if hasattr(self.lens_module, "_lens_parameters"):
