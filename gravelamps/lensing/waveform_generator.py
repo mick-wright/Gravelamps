@@ -93,7 +93,7 @@ class LensedWaveformGenerator(WaveformGenerator):
 
     def _lens_parameters(self):
         if hasattr(self.lens_module, "_lens_parameters"):
-            lens_parameters = getattr(self.lens_module, "_lens_parameters")
+            lens_parameters = self.lens_module._lens_parameters
         elif hasattr(self.lens_module, "get_lens_parameters"):
             parameter_func = getattr(self.lens_module, "get_lens_parameters")
             lens_parameters = parameter_func(self.waveform_arguments)
