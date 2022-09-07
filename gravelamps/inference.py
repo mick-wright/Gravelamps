@@ -98,7 +98,7 @@ def generate_waveform_arguments(config, args):
             waveform_arguments["scaling_constant"] = config.get("lens_generation_settings",
                                                                 "nfw_scaling_constant")
 
-    waveform_arguments["lens_model"] = lens_module
+    waveform_arguments["lens_module"] = lens_module
 
     return waveform_arguments
 
