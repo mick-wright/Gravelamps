@@ -50,7 +50,8 @@ def create_bilby_pipe_config(config, args, output_directories, **kwargs):
                                                                  fallback=False)
     bilby_pipe_config["submit"] = False
 
-    bilby_pipe_config["accounting"] = config.get("condor_settings", "accounting_group", fallback=None)
+    bilby_pipe_config["accounting"] =\
+        config.get("condor_settings", "accounting_group", fallback=None)
     if bilby_pipe_config["accounting"] is None:
         gravelogger.warning("No accounting tag, jobs will not submit!")
 

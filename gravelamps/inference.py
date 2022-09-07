@@ -70,7 +70,6 @@ def generate_waveform_arguments(config, args):
     lens_package = importlib.import_module(lens_module)
 
     gravelogger.info("Lens Module: %s", lens_module)
-    print(args)
 
     interpolator_files = generate_files(config, lens_module, lens_package,  args, args.injection)
 
@@ -98,6 +97,8 @@ def generate_waveform_arguments(config, args):
         if waveform_arguments["scaling_constant"] is None:
             waveform_arguments["scaling_constant"] = config.get("lens_generation_settings",
                                                                 "nfw_scaling_constant")
+
+    waveform_arguments["lens_model"] = lens_module
 
     return waveform_arguments
 
