@@ -37,7 +37,7 @@ class LensedWaveformGenerator(WaveformGenerator):
                          time_domain_source_model, parameters, parameter_conversion,
                          waveform_arguments)
 
-        self.lens_module = importlib.import_module(waveform_arguments["lens_model"])
+        self.lens_module = importlib.import_module(waveform_arguments["lens_module"])
 
         if waveform_arguments["lens_module"] == "gravelamps.lensing.interpolator":
             self.lens_module.generate_interpolator(waveform_arguments["dimensionless_frequency"],
