@@ -111,8 +111,10 @@ def create_final_dag(config, output_directories):
 
     final_dag_file = f"{output_directories['submit']}/gravelamps_inference.dag"
 
-    injection_generation_file = f"{output_directories['submit']}/generate_injection_interpolator_data.sub"
-    analysis_generation_file = f"{output_directories['submit']}/generate_analysis_interpolator_data.sub"
+    injection_generation_file =\
+        f"{output_directories['submit']}/generate_injection_interpolator_data.sub"
+    analysis_generation_file =\
+        f"{output_directories['submit']}/generate_analysis_interpolator_data.sub"
     bilby_pipe_dag_file = f"{output_directories['submit']}/dag_{label}.submit"
 
     with open(final_dag_file, "w", encoding="utf-8") as dag:
@@ -149,10 +151,9 @@ def create_injection_file(config):
     '''
 
     injection_file = f"{config.get('output_settings', 'outdir')}/data/injection.dat"
-
     prior_dict = config.items("injection_parameters")
+    prior_file = injection_file.replace("injection.dat", "prior.dat")
 
-    prior_file = injection_file.replace("injection", "prior")
     with open(prior_file, "w", encoding="utf-8") as prior:
         for key, value in prior_dict:
             prior.write(f"{key} = {value} \n")
