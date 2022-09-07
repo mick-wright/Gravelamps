@@ -57,7 +57,7 @@ class LensedWaveformGenerator(WaveformGenerator):
                                  signal will be unlensed")
 
         self.lens_parameters = self._lens_parameters
-        self.source_parameter_keys.update(**self.lens_parameters)
+        self.source_parameter_keys.update(*self.lens_parameters)
 
     def _strain_from_model(self, model_data_points, model):
         unlensed_waveform = model(model_data_points, **self.parameters)
