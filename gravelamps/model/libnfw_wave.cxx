@@ -74,7 +74,7 @@ std::complex<double> TimeDelay(double image_position,
         LensingPotential(abs(image_position), scaling_constant);
 
     // Construct the final time delay
-    std::complex<double> time_delay = 
+    std::complex<double> time_delay =
         positional_term - lensing_potential + phase;
 
     return time_delay;
@@ -363,7 +363,10 @@ int AmplificationWaveIntegrand(acb_ptr integrand,
     acb_t exponential_term;
     acb_init(exponential_term);
     acb_set_d_d(exponential_term, 0, dimensionless_frequency);
-    acb_mul(exponential_term, exponential_term, integration_parameter, precision);
+    acb_mul(exponential_term,
+            exponential_term,
+            integration_parameter,
+            precision);
     acb_exp(exponential_term, exponential_term, precision);
 
     // Calculate the final value
@@ -501,9 +504,7 @@ void SecondCorrectionDerivative(acb_t derivative_term,
                                 double phase,
                                 slong precision) {
     // Setting the stepsize
-    const int radix = std::numeric_limits<double>::radix;
-    const int mantissa = std::numeric_limits<double>::digits;
-    double stepsize = std::pow(1.0/radix, mantissa/2);
+    double stepsize = 0.00001;
 
     // Calculating f(x+h) & f(x-h)
     double x_plus = max_image_position + stepsize;
