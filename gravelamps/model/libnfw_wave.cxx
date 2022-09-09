@@ -5,6 +5,294 @@
 
 #include "src/nfw.h"
 
+// Function computes the value of psi - the value of the lensing potential
+void LensingPotential(acb_t lensing_potential,
+                      const acb_t scaled_surface_density,
+                      acb_t scaling_constant,
+                      slong precision) {
+    // For comparison purposes, we need a double version of the scaled
+    // surface density so as to decide on the which case we are in
+    double scaled_surf_den_val = arf_get_d(
+        arb_midref(acb_realref(scaled_surface_density)), ARF_RND_NEAR);
+
+    // In the case of the scaled surface density being 1, the value of psi
+    // is zero, so we can quickly return this
+    if (scaled_surf_den_val == 1) {
+        acb_zero(lensing_potential);
+        return;
+    }
+
+    // Otherwise begin constructing the lensing potential function. This is
+    // done in three seperate term. A prefactor which is simply half of the
+    // scaling constant. The first main term, which is given by the square of
+    // the log of half of the scaled surface density - and the third term which
+    // is trigonometric in nature and dependant upon whether the scaled surface
+    // density is greater or less than one.
+    acb_t lensing_potential_prefactor;
+    acb_t lensing_potential_log_term;
+    acb_t lensing_potential_trig_term;
+    acb_t two;
+
+    acb_init(lensing_potential_prefactor);
+    acb_init(lensing_potential_log_term);
+    acb_init(lensing_potential_trig_term);
+    acb_init(two);
+
+    acb_set_d(two, 2);
+
+    // The prefactor is given by the scaling_constant/2
+    acb_div(lensing_potential_prefactor, scaling_constant, two, precision);
+
+    // The logarithmic term is given by log(scaled_surface_density/2)^2
+    acb_div(
+        lensing_potential_log_term, scaled_surface_density, two, precision);
+    acb_log(lensing_potential_log_term, lensing_potential_log_term, precision);
+    acb_sqr(lensing_potential_log_term, lensing_potential_log_term, precision);
+
+    // Perform the check as to whether the scaled surface density is greater or
+    // less than one
+    if (scaled_surf_den_val < 1) {
+        // If less than one the value of the trigonometric term is given by
+        // -ArcTanh(sqrt(1 - scaled_surface_density^2))^2
+        acb_one(lensing_potential_trig_term);
+        acb_submul(lensing_potential_trig_term,
+                   scaled_surface_density,
+                   scaled_surface_density,
+                   precision);
+        acb_sqrt(lensing_potential_trig_term,
+                 lensing_potential_trig_term,
+                 precision);
+        acb_atanh(lensing_potential_trig_term,
+                  lensing_potential_trig_term,
+                  precision);
+        acb_sqr(lensing_potential_trig_term,
+                lensing_potential_trig_term,
+                precision);
+        acb_neg(lensing_potential_trig_term, lensing_potential_trig_term);
+    } else {
+        // If greater than one the value of the trigonometric term is given by
+        // ArcTan(sqrt(scaled_surface_density^2 - 1))^2
+        acb_t one;
+        acb_init(one);
+        acb_one(one);
+
+        acb_sqr(
+            lensing_potential_trig_term, scaled_surface_density, precision);
+        acb_sub(lensing_potential_trig_term,
+                lensing_potential_trig_term,
+                one,
+                precision);
+        acb_sqrt(lensing_potential_trig_term,
+                 lensing_potential_trig_term,
+                 precision);
+        acb_atan(lensing_potential_trig_term,
+                 lensing_potential_trig_term,
+                 precision);
+        acb_sqr(lensing_potential_trig_term,
+                lensing_potential_trig_term,
+                precision);
+
+        acb_clear(one);
+    }
+
+    // With each part of the lensing potential calculated, construct the final
+    // value:
+    // lensing_potential = prefactor*(log_term + trig_term)
+    acb_add(lensing_potential,
+            lensing_potential_log_term,
+            lensing_potential_trig_term,
+            precision);
+    acb_mul(lensing_potential,
+            lensing_potential_prefactor,
+            lensing_potential,
+            precision);
+
+    // For memory management, destroy the constructed acb values
+    acb_clear(lensing_potential_prefactor);
+    acb_clear(lensing_potential_log_term);
+    acb_clear(lensing_potential_trig_term);
+    acb_clear(two);
+}
+
+// Function computes the value of the intermediate function k(w,y,z,ks) for the
+// amplification factor calculation. The function k is given by
+// -iw*(exp[iw(y^2/2 + phimin)]*J0(wy*sqrt(2x))*exp(-iw*psi(sqrt(2x),ks)))
+void IntermediateFunctionCalculation(acb_t intermediate_function_value,
+                                     acb_t dimensionless_frequency,
+                                     acb_t source_position,
+                                     const acb_t integration_parameter,
+                                     acb_t scaling_constant,
+                                     double minimum_phase,
+                                     slong precision) {
+    // Initialise the components of the function - as can be seen there are
+    // four - a prefactor (-iw), a first expontential term (exp(iw*(y^2/2))), a
+    // bessel term (J0(wy*sqrt(2x))), and a second expontential term
+    // (exp(-iw * psi(sqrt(2x), ks)))
+    acb_t prefactor;
+    acb_t first_exponential_term;
+    acb_t bessel_term;
+    acb_t second_exponential_term;
+
+    acb_init(prefactor);
+    acb_init(first_exponential_term);
+    acb_init(bessel_term);
+    acb_init(second_exponential_term);
+
+    // In addition, we need to initalise a zero and a two value for use in the
+    // calculations
+    acb_t two;
+    acb_t zero;
+
+    acb_init(zero);
+    acb_init(two);
+
+    acb_set_d(two, 2.);
+    acb_zero(zero);
+
+    // Finally we need to calculate phimin - the phase required for a minimum
+    // time delay of zero;
+    acb_t minimum_phase_acb;
+    acb_init(minimum_phase_acb);
+    acb_set_d(minimum_phase_acb, minimum_phase);
+
+    // Construct the prefactor term
+    acb_mul_onei(prefactor, dimensionless_frequency);
+    acb_neg(prefactor, prefactor);
+
+    // Construct the first exponential term
+    acb_sqr(first_exponential_term, source_position, precision);
+    acb_div(first_exponential_term, first_exponential_term, two, precision);
+    acb_add(first_exponential_term,
+            first_exponential_term,
+            minimum_phase_acb,
+            precision);
+    acb_mul(first_exponential_term,
+            dimensionless_frequency,
+            first_exponential_term,
+            precision);
+    acb_mul_onei(first_exponential_term, first_exponential_term);
+    acb_exp(first_exponential_term, first_exponential_term, precision);
+
+    // Construct the bessel term
+    acb_mul(bessel_term, two, integration_parameter, precision);
+    acb_sqrt(bessel_term, bessel_term, precision);
+    acb_mul(bessel_term, bessel_term, source_position, precision);
+    acb_mul(bessel_term, bessel_term, dimensionless_frequency, precision);
+    acb_hypgeom_bessel_j(bessel_term, zero, bessel_term, precision);
+
+    // Construct the second exponential term
+    acb_mul(second_exponential_term, integration_parameter, two, precision);
+    acb_sqrt(second_exponential_term, second_exponential_term, precision);
+    LensingPotential(second_exponential_term,
+                     second_exponential_term,
+                     scaling_constant,
+                     precision);
+    acb_mul(second_exponential_term,
+            second_exponential_term,
+            dimensionless_frequency,
+            precision);
+    acb_mul_onei(second_exponential_term, second_exponential_term);
+    acb_neg(second_exponential_term, second_exponential_term);
+    acb_exp(second_exponential_term, second_exponential_term, precision);
+
+    // Construct the value of the intermediate function by multiplying the
+    // terms together
+    acb_mul(intermediate_function_value,
+            prefactor,
+            first_exponential_term,
+            precision);
+    acb_mul(intermediate_function_value,
+            intermediate_function_value,
+            bessel_term,
+            precision);
+    acb_mul(intermediate_function_value,
+            intermediate_function_value,
+            second_exponential_term,
+            precision);
+
+    // Memory Management - clear up the declared acbs
+    acb_clear(prefactor);
+    acb_clear(first_exponential_term);
+    acb_clear(second_exponential_term);
+    acb_clear(bessel_term);
+    acb_clear(zero);
+    acb_clear(two);
+    acb_clear(minimum_phase_acb);
+}
+
+// Function computes the value of the integrand being integrated in the
+// amplification factor calculation. The order parameter is unused but is
+// required by the integration process.
+int NfwIntegrand(acb_ptr integrand,
+                 const acb_t integration_parameter,
+                 void * parameter_set,
+                 slong order,
+                 slong precision) {
+    // The parameter_set contains a vector which itself contains the
+    // dimensionless frequency, source position, and scaling constant. These
+    // need to be extracted and then placed into acb types for the rest of the
+    // calculation
+    std::vector<double> parameter_vector = (
+        (std::vector<double> *) parameter_set)[0];
+    double dimensionless_frequency_value = parameter_vector[0];
+    double source_position_value = parameter_vector[1];
+    double scaling_constant_value = parameter_vector[2];
+    double minimum_phase = parameter_vector[3];
+
+    acb_t dimensionless_frequency;
+    acb_t source_position;
+    acb_t scaling_constant;
+
+    acb_init(dimensionless_frequency);
+    acb_init(source_position);
+    acb_init(scaling_constant);
+
+    acb_set_d(dimensionless_frequency, dimensionless_frequency_value);
+    acb_set_d(source_position, source_position_value);
+    acb_set_d(scaling_constant, scaling_constant_value);
+
+    // The integrand is a combination of two terms - the first is the
+    // intermediate function k(w,y,x,ks) and the second is exp(iwx).
+    // We must first then construct each of these terms and then
+    // multiply them
+    acb_t intermediate_function_term;
+    acb_t exponential_term;
+
+    acb_init(intermediate_function_term);
+    acb_init(exponential_term);
+
+    // Calculation of the k function term
+    IntermediateFunctionCalculation(intermediate_function_term,
+                                    dimensionless_frequency,
+                                    source_position,
+                                    integration_parameter,
+                                    scaling_constant,
+                                    minimum_phase,
+                                    precision);
+
+    // Calculation of the exponential term
+    acb_mul(exponential_term,
+            dimensionless_frequency,
+            integration_parameter,
+            precision);
+    acb_mul_onei(exponential_term, exponential_term);
+    acb_exp(exponential_term, exponential_term, precision);
+
+    // Multiplication of the terms to the resultant acb at integrand
+    acb_mul(
+        integrand, intermediate_function_term, exponential_term, precision);
+
+    // Memory Management - clear up the declared acbs inside the fucntion
+    acb_clear(dimensionless_frequency);
+    acb_clear(source_position);
+    acb_clear(scaling_constant);
+    acb_clear(intermediate_function_term);
+    acb_clear(exponential_term);
+
+    // Now return a zero to indicate function's successful completion
+    return 0;
+}
+
 // Function computes the value of the lensing potential for specified values
 // of the image position and scaling constant. This value is zero in the case
 // where the image position is equal to one.
@@ -119,528 +407,165 @@ std::complex<double> Phase(double source_position, double scaling_constant) {
     return -1.*phase;
 }
 
-// Function computes the value of the positive exponential term for the
-// intermediate K function used in the calculation of the amplification factor
-// for the specified dimensionless frequency, source position, and phase  with
-// the exponentiation being done at the specified precision. The resultant value
-// is assigned to the given acb_t object.
-//
-// Input:
-//      acb_t positive_exponential_term : object for containing the complex
-//                                        value of the positiuve exponential
-//                                        term of the function
-//      double dimensionless_frequency : dimensionless form of the frequency
-//                                       being amplified
-//      double source_position : dimensionless displacement from the optical
-//                               axis
-//      double phase : phase such that the minimum time delay induced by the
-//                     lensing is zero
-//      slong precision : arithmetic precision to use in arbitrary precision
-//                        calculations
-void KFunctionPositiveExponential(acb_t positive_exponential_term,
-                                  double dimensionless_frequency,
-                                  double source_position,
-                                  double phase,
-                                  slong precision) {
-    double source_position_sq = source_position * source_position;
-    double positive_exponential_inner_bracket =
-        source_position_sq/2. + phase;
-    double positive_exponential_term_imag =
-        dimensionless_frequency * positive_exponential_inner_bracket;
 
-    acb_set_d_d(positive_exponential_term, 0,
-                positive_exponential_term_imag);
-    acb_exp(positive_exponential_term, positive_exponential_term, precision);
-}
+// Function computes the value of the first correction term for the
+// amplification factor. The first correction term is given by
+// -((k(w,y,x_upper_limit,ks) * exp(iw*x_upper_limit))/iw)
+void FirstCorrectionTerm(acb_t first_correction_term,
+                         acb_t dimensionless_frequency,
+                         acb_t source_position,
+                         acb_t integration_upper_limit,
+                         acb_t scaling_constant,
+                         double minimum_phase,
+                         slong precision) {
+    // The function is calculated by splitting the calculation into three parts
+    // an intermediate function term, an exponential term, and the denominator
+    // term. These must be initialised as acbs
+    acb_t intermediate_function_term;
+    acb_t exponential_term;
+    acb_t denominator_term;
 
-// Function computes the value of the negative exponential term for the
-// intermediate K function used in the calculation of the amplification factor
-// for the specified dimensionless frequency, image position, and scaling
-// constant with the exponentiation being done at the specified precision.
-// The resultant value is assigned to the given acb_t object.
-//
-// Input:
-//      acb_t negative_exponential_term : object for containing the complex
-//                                        value of the negative exponential
-//                                        term of the function
-//      double dimensionless_frequency : dimensionless form of the frequency
-//                                       being amplified
-//      double image_position : dimensionless position of image considered
-//      double scaling_constant : characteristic scale of the profile
-//      slong precision : arithmetic precision to use in arbitrary precision
-//                        calculation
-void KFunctionNegativeExponential(acb_t negative_exponential_term,
-                                  double dimensionless_frequency,
-                                  double image_position,
-                                  double scaling_constant,
-                                  slong precision) {
-    using std::literals::complex_literals::operator""i;
+    acb_init(intermediate_function_term);
+    acb_init(exponential_term);
+    acb_init(denominator_term);
 
-    double lensing_potential_arg = sqrt(2 * image_position);
-    std::complex<double> lensing_potential =
-        LensingPotential(lensing_potential_arg, scaling_constant);
-
-    std::complex<double> exponential_arg = -1i * dimensionless_frequency
-                                           * lensing_potential;
-
-    acb_set_d_d(negative_exponential_term,
-                std::real(exponential_arg),
-                std::imag(exponential_arg));
-    acb_exp(negative_exponential_term, negative_exponential_term, precision);
-}
-
-// Function computes the value of the bessel function term for the intermediate
-// K function used in the calculation of the amplification factor for the
-// specified dimensionless frequency, source position, and image position with
-// the function calculated to the specified precision. The resultant value is
-// assigned to the given acb_t object.
-//
-// Input:
-//      acb_t bessel_term : object for containing the complex value of the
-//                          bessel function term of the function
-//      double dimensionless_frequency : dimensionless form of the frequency
-//                                       being amplified
-//      double source_position : dimensionless displacement from optical axis
-//      double image_position : dimensionless posiition of image considered
-//      slong precision : arithmetic precision to use in arbitrary precision
-//                        calculation
-void KFunctionBessel(acb_t bessel_term,
-                     double dimensionless_frequency,
-                     double source_position,
-                     double image_position,
-                     slong precision) {
-    double bessel_term_real = dimensionless_frequency * source_position
-                              * sqrt(2 * image_position);
-
-    // Zero needed for bessel function level
-    acb_t zero;
-    acb_init(zero);
-    acb_zero(zero);
-
-    acb_set_d(bessel_term, bessel_term_real);
-    acb_hypgeom_bessel_j(bessel_term, zero, bessel_term, precision);
-
-    // Clearing declared acb to release memory
-    acb_clear(zero);
-}
-
-// Function computes the value of the intermediate K function used in the
-// calculation of the amplification factor for the wave optics case for
-// specified dimensionless frequency, source position, image position
-// scaling constant, and phase with the functions calculated with specified
-// precision. The value of the function is assigned to the
-// given acb_t object.
-//
-// Input:
-//      acb_t intermediate_function_value : object for containing the complex
-//                                          value of the K function
-//      double dimensionless_frequency : dimensionless form of the frequency
-//                                       being amplified
-//      double source_position : dimensionless displacement from optical axis
-//      double image_position : dimensionless position of image considered
-//      double scaling_constant : characteristic scale of the profile
-//      double phase : phase such that the minimum time delay induced by the
-//                     lensing is zero
-//      slong precision : arithmetic precision to use in arbitrary precision
-//                        calculation
-void KFunctionCalculation(acb_t k_function_value,
-                          double dimensionless_frequency,
-                          double source_position,
-                          double image_position,
-                          double scaling_constant,
-                          double phase,
-                          slong precision) {
-    // Construct the dimensionless frequency term
-    double dimensionless_frequency_term_imag = -1 * dimensionless_frequency;
-
-    acb_t dimensionless_frequency_term;
-    acb_init(dimensionless_frequency_term);
-    acb_set_d_d(dimensionless_frequency_term, 0,
-                dimensionless_frequency_term_imag);
-
-    // Construct the positive exponential term
-    acb_t positive_exponential_term;
-    acb_init(positive_exponential_term);
-    KFunctionPositiveExponential(positive_exponential_term,
-                                 dimensionless_frequency,
-                                 source_position,
-                                 phase,
-                                 precision);
-
-    // Construct the bessel function term
-    acb_t bessel_term;
-    acb_init(bessel_term);
-    KFunctionBessel(bessel_term,
-                    dimensionless_frequency,
-                    source_position,
-                    image_position,
-                    precision);
-
-    // Construct the negative exponential term
-    acb_t negative_exponential_term;
-    acb_init(negative_exponential_term);
-    KFunctionNegativeExponential(negative_exponential_term,
-                                 dimensionless_frequency,
-                                 image_position,
-                                 scaling_constant,
-                                 precision);
-
-    // Construct the final value of the intermediate function
-    acb_mul(k_function_value,
-            dimensionless_frequency_term,
-            positive_exponential_term,
-            precision);
-    acb_mul(k_function_value,
-            k_function_value,
-            bessel_term,
-            precision);
-    acb_mul(k_function_value,
-            k_function_value,
-            negative_exponential_term,
-            precision);
-
-    // Clear declared acbs to free memory
-    acb_clear(dimensionless_frequency_term);
-    acb_clear(positive_exponential_term);
-    acb_clear(bessel_term);
-    acb_clear(negative_exponential_term);
-}
-
-// Function computes the value of the integrand for the integral in the
-// calculation of the amplification factor for the specified parameters.
-// These parameters are passed as a single object to the function and then
-// extracted for consistency with arb's integration methodology. The order
-// parameter required by said methodology is not implemented, however
-// the functions are calculated with precision as specified. The resultant
-// value is assigned to the pointer provided to the function.
-//
-// Input:
-//      acb_ptr integrand : pointer to object containing the complex integrand
-//                          value
-//      const acb_t integration_parameter : parameter over which the
-//                                          integration is occurring. This is
-//                                          over image positions.
-//      void * parameter_set : object containing the set of parameters to be
-//                             used to determine the integrand function value.
-//                             These parameters are the dimensionless frequency
-//                             , source position, scaling constant, and phase
-//                             value
-//      slong order : Unimplemented parameter to specify whether to calculate
-//                    the integral as the first n coefficients of a Taylor
-//                    expansion
-//      slong precision : arithemtic precision to use in arbitrary precision
-//                        calculations
-int AmplificationWaveIntegrand(acb_ptr integrand,
-                               const acb_t integration_parameter,
-                               void * parameter_set,
-                               slong order,
-                               slong precision) {
-    // Extracting the parameters from the parameter_set object
-    std::vector<double> parameter_vector =
-        ((std::vector<double> *) parameter_set)[0];
-
-    double dimensionless_frequency = parameter_vector[0];
-    double source_position = parameter_vector[1];
-    double scaling_constant = parameter_vector[2];
-    double phase = parameter_vector[3];
-
-    // Extracting the value of the integration parameter for use in functions
-    double image_position =
-        arf_get_d(arb_midref(acb_realref(integration_parameter)), ARF_RND_NEAR);
-
-    // Caclulate the K function term
-    acb_t k_function_term;
-    acb_init(k_function_term);
-    KFunctionCalculation(k_function_term,
-                         dimensionless_frequency,
-                         source_position,
-                         image_position,
-                         scaling_constant,
-                         phase,
-                         precision);
+    // Calculate the intermediate function term
+    IntermediateFunctionCalculation(intermediate_function_term,
+                                    dimensionless_frequency,
+                                    source_position,
+                                    integration_upper_limit,
+                                    scaling_constant,
+                                    minimum_phase,
+                                    precision);
 
     // Calculate the exponential term
-    acb_t exponential_term;
-    acb_init(exponential_term);
-    acb_set_d_d(exponential_term, 0, dimensionless_frequency);
     acb_mul(exponential_term,
-            exponential_term,
-            integration_parameter,
+            dimensionless_frequency,
+            integration_upper_limit,
             precision);
+    acb_mul_onei(exponential_term, exponential_term);
     acb_exp(exponential_term, exponential_term, precision);
 
-    // Calculate the final value
-    acb_mul(integrand, k_function_term, exponential_term, precision);
+    // Calculate the denominator term
+    acb_mul_onei(denominator_term, dimensionless_frequency);
 
-    // Clear declared acb objects to clear memory
-    acb_clear(k_function_term);
-    acb_clear(exponential_term);
-
-    return 0;
-}
-
-// Function computes the value of the exponential term of the first correction
-// to the amplification factor for the specified value of dimensionlesss
-// frequency and maximum image position at the specified precision. The
-// resultant value is assigned to the given acb_t object.
-//
-// Input:
-//      acb_t exponential_term : object for containing the complex value of the
-//                               exponential term
-//      double dimensionless_frequency : dimensionless form of the frequency
-//                                       being amplified
-//      double max_image_position : the maximal value of image position used as
-//                                  the upper limit of the integration being
-//                                  performed in the calculation of the
-//                                  amplification factor
-//      slong precision : arithmetic precision to be used in arbitrary precision
-//                        calculations
-void FirstCorrectionExponential(acb_t exponential_term,
-                                double dimensionless_frequency,
-                                double max_image_position,
-                                slong precision) {
-    double exponential_term_imag = dimensionless_frequency * max_image_position;
-
-    acb_set_d_d(exponential_term, 0, exponential_term_imag);
-    acb_exp(exponential_term, exponential_term, precision);
-}
-
-// Function computes the value of the first correction term to the
-// amplification factor for the specified values of the dimensionless
-// frequency, source position, scaling constant and phase at the specified
-// precision. This correction term relies on the maximal image position value
-// being considered in the integration. The resultant value is assigned to the
-// given acb_t object.
-//
-// Input:
-//      acb_t first_correction_term : object for containing the complex value
-//                                    of the first correction term to the
-//                                    amplification factor
-//      double dimensionless_frequency : dimensionless form of the frequency
-//                                       being amplified
-//      double source_position : dimensionless displacement from optical axis
-//      double max_image_position : the maximal value of image position used as
-//                                  the upper limit of the integration being
-//                                  performed in the calculation of the
-//                                  amplification factor
-//      double scaling_constant : charcateristic scale of the profile
-//      double phase : phase required for the minimum time delay induced by the
-//                     lensing to be zero
-//      slong precision : arithmetic precision to be used in arbitrary precision
-//                        calculations
-void AmplificationWaveFirstCorrection(acb_t first_correction_term,
-                                      double dimensionless_frequency,
-                                      double source_position,
-                                      double max_image_position,
-                                      double scaling_constant,
-                                      double phase,
-                                      slong precision) {
-    // Compute the K-function value
-    acb_t k_function_term;
-    acb_init(k_function_term);
-    KFunctionCalculation(k_function_term,
-                         dimensionless_frequency,
-                         source_position,
-                         max_image_position,
-                         scaling_constant,
-                         phase,
-                         precision);
-
-    // Compute the exponential term
-    acb_t exponential_term;
-    acb_init(exponential_term);
-    FirstCorrectionExponential(exponential_term,
-                               dimensionless_frequency,
-                               max_image_position,
-                               precision);
-
-    // Create the denominator term
-    acb_t dimensionless_frequency_term;
-    acb_init(dimensionless_frequency_term);
-    acb_set_d_d(dimensionless_frequency_term, 0, dimensionless_frequency);
-
-    // Construct the correction term
+    // Construct the correction term value
     acb_mul(first_correction_term,
-            k_function_term,
+            intermediate_function_term,
             exponential_term,
             precision);
     acb_div(first_correction_term,
             first_correction_term,
-            dimensionless_frequency_term,
+            denominator_term,
             precision);
     acb_neg(first_correction_term, first_correction_term);
 
-    // Clear the declared acb_t objects to free memory
-    acb_clear(k_function_term);
+    // Memory Management - clear the declared acbs inside the function
+    acb_clear(intermediate_function_term);
     acb_clear(exponential_term);
-    acb_clear(dimensionless_frequency_term);
+    acb_clear(denominator_term);
 }
 
-// Function computes the value of the derivative term of the second correction
-// term to the amplification factor at the specified dimensionles frequency,
-// source position, scaling constant, image position, and phase values. The
-// derivative is calculated using a central finite differences method. The
-// resultant value is assigned to the given acb_t object.
-//
-// Input:
-//      acb_t derivative_term : object for containing the complex value of the
-//                              derivative term of the second correction term
-//      double dimensionless_frequency : dimensionless form of the frequency
-//                                       being amplified
-//      double source_position : dimensionless displacement from optical axis
-//      double max_image_position : the maximal image position value being used
-//                                  as the upper limit of integration in the
-//                                  calculation of the amplification factor
-//      double scaling_constant : characteristic scale of the profile
-//      double phase : phase required for the minimum time delay induced by the
-//                     lensing to be zero
-//      slong precision : arithmetic precision to use in arbitrary precision
-//                        calculations
-void SecondCorrectionDerivative(acb_t derivative_term,
-                                double dimensionless_frequency,
-                                double source_position,
-                                double max_image_position,
-                                double scaling_constant,
-                                double phase,
-                                slong precision) {
-    // Setting the stepsize
-    double stepsize = 0.00001;
 
-    // Calculating f(x+h) & f(x-h)
-    double x_plus = max_image_position + stepsize;
-    double x_minus = max_image_position - stepsize;
-
-    acb_t x_plus_term;
-    acb_init(x_plus_term);
-    KFunctionCalculation(x_plus_term,
-                         dimensionless_frequency,
-                         source_position,
-                         x_plus,
-                         scaling_constant,
-                         phase,
-                         precision);
-
-    acb_t x_minus_term;
-    acb_init(x_minus_term);
-    KFunctionCalculation(x_minus_term,
-                         dimensionless_frequency,
-                         source_position,
-                         x_minus,
-                         scaling_constant,
-                         phase,
-                         precision);
-
-    // Setting the denominator of the finite differences
-    double denominator_value = 2 * stepsize;
-
-    arb_t denominator;
-    arb_init(denominator);
-    arb_set_d(denominator, denominator_value);
-
-    // Calculate the final value
-    acb_sub(derivative_term, x_plus_term, x_minus_term, precision);
-    acb_div_arb(derivative_term, derivative_term, denominator, precision);
-
-    // Clear declared acb_t and arb_t objects to free memory
-    acb_clear(x_plus_term);
-    acb_clear(x_minus_term);
-    arb_clear(denominator);
-}
-
-// Function computes the value of the exponential term of the second correction
-// term to the amplification factor at the specified values of dimensionless
-// frequency and image position with the desired precision in the
-// exponentiation. The resultant value is assigned to the given acb_t object.
-//
-// Input:
-//      acb_t exponential_term : object for containing the complex value of the
-//                               second correction term
-//      double dimensionless_frequency : dimensionless form of the frequency
-//                                       being amplified
-//      double max_image_position : the maximal image position value being used
-//                                  as the upper limit of integration in the
-//                                  calculation of the amplification factor
-//      slong precision : arithmetic precision to use in arbitrary precision
-//                        calculations
-void SecondCorrectionExponential(acb_t exponential_term,
-                                 double dimensionless_frequency,
-                                 double max_image_position,
-                                 slong precision) {
-    double exponential_term_imag = dimensionless_frequency * max_image_position;
-
-    acb_set_d_d(exponential_term, 0, exponential_term_imag);
-    acb_exp(exponential_term, exponential_term, precision);
-}
-
-// Function computes the value of the second correction term to the
-// amplification factor at the specified dimensionless frequency, source
-// position, scaling constant, and phase values. The correction term also
-// relies on the maximal image position being considered as part of the
-// integration in the main amplification factor calculation. The resultant
-// value is assigned to the given acb_t object.
-//
-// Input:
-//      acb_t second_correction_term : object for containing the complex value
-//                                     of the second correction term
-//      double dimensionless_frequency : dimensionless form of the frequency
-//                                       being amplified
-//      double source_position : dimensionless displacement from optical axis
-//      double max_image_position : the maximal image position value being used
-//                                  as the upper limit of integration in the
-//                                  calculation of the amplification factor
-//      double scaling_constant : characteristic scale of the profile
-//      double phase : phase required for the minimum time delay induced by the
-//                     lensing to be zero
-//      slong precision : arithemetic precision to use in arbitrary precision
-//                        calculations
-void AmplificationWaveSecondCorrection(acb_t second_correction_term,
-                                       double dimensionless_frequency,
-                                       double source_position,
-                                       double max_image_position,
-                                       double scaling_constant,
-                                       double phase,
-                                       slong precision) {
-    // Calculate the derivative term
+// Function computes the value of the second correction term for the
+// amplification factor. This term is given by
+// d(k(w,y,x,ks)*exp(iwz))/dx/(iw)^2
+void SecondCorrectionTerm(acb_t second_correction_term,
+                          acb_t dimensionless_frequency,
+                          acb_t source_position,
+                          acb_t integration_upper_limit,
+                          acb_t scaling_constant,
+                          double minimum_phase,
+                          slong precision) {
+    // The function will be computed by constructing three terms, the
+    // derivative term, the exponential term, and the denominator term.
+    // To first calculate the derivative term, a central finite differences
+    // method is being applied with a set step-size of 0.00001. This means that
+    // df/dx = f(x+h)-f(x-h)/2h.
+    // Firstly we must initialise the necessary values of h, 2h, x+h, x-h,
+    // f(x+h), f(x-h), and df/dx
+    acb_t stepsize;
+    acb_t upper_limit_plus;
+    acb_t upper_limit_minus;
+    acb_t double_stepsize;
+    acb_t function_value_plus;
+    acb_t function_value_minus;
     acb_t derivative_term;
-    acb_init(derivative_term);
-    SecondCorrectionDerivative(derivative_term,
-                               dimensionless_frequency,
-                               source_position,
-                               max_image_position,
-                               scaling_constant,
-                               phase,
-                               precision);
 
-    // Calculate exponential term
+    acb_init(stepsize);
+    acb_init(upper_limit_plus);
+    acb_init(upper_limit_minus);
+    acb_init(double_stepsize);
+    acb_init(function_value_plus);
+    acb_init(function_value_minus);
+    acb_init(derivative_term);
+
+    // Calculate the values of the easily constructed values
+    acb_set_d(stepsize, 0.00001);
+    acb_add(double_stepsize, stepsize, stepsize, precision);
+    acb_add(upper_limit_plus, integration_upper_limit, stepsize, precision);
+    acb_sub(upper_limit_minus, integration_upper_limit, stepsize, precision);
+
+    // Calculate the two function values
+    IntermediateFunctionCalculation(function_value_plus,
+                                    dimensionless_frequency,
+                                    source_position,
+                                    upper_limit_plus,
+                                    scaling_constant,
+                                    minimum_phase,
+                                    precision);
+    IntermediateFunctionCalculation(function_value_minus,
+                                    dimensionless_frequency,
+                                    source_position,
+                                    upper_limit_minus,
+                                    scaling_constant,
+                                    minimum_phase,
+                                    precision);
+
+    // Now calculate the derivative term by using the central differences
+    // method
+    acb_sub(
+        derivative_term, function_value_plus, function_value_minus, precision);
+    acb_div(derivative_term, derivative_term, double_stepsize, precision);
+
+    // Calculate the exponential term
     acb_t exponential_term;
     acb_init(exponential_term);
-    SecondCorrectionExponential(exponential_term,
-                                dimensionless_frequency,
-                                max_image_position,
-                                precision);
 
-    // Calculate the dimensionless frequency term
-    double dimensionless_frequency_isq = -1 * dimensionless_frequency
-                                         * dimensionless_frequency;
+    acb_mul(exponential_term,
+            dimensionless_frequency,
+            integration_upper_limit,
+            precision);
+    acb_mul_onei(exponential_term, exponential_term);
+    acb_exp(exponential_term, exponential_term, precision);
 
-    acb_t dimensionless_frequency_term;
-    acb_init(dimensionless_frequency_term);
-    acb_set_d(dimensionless_frequency_term, dimensionless_frequency);
+    // Calculate the denominator
+    acb_t denominator_term;
+    acb_init(denominator_term);
 
-    // Construct the final correction term
+    acb_mul_onei(denominator_term, dimensionless_frequency);
+    acb_sqr(denominator_term, denominator_term, precision);
+
+    // Construct the full correction term
     acb_mul(second_correction_term,
             derivative_term,
             exponential_term,
             precision);
     acb_div(second_correction_term,
             second_correction_term,
-            dimensionless_frequency_term,
+            denominator_term,
             precision);
 
-    // Clear declared acb_t objects to free memory
+    // Memory Management - clear the declared acbs
+    acb_clear(stepsize);
+    acb_clear(upper_limit_plus);
+    acb_clear(upper_limit_minus);
+    acb_clear(double_stepsize);
+    acb_clear(function_value_plus);
+    acb_clear(function_value_minus);
     acb_clear(derivative_term);
     acb_clear(exponential_term);
-    acb_clear(dimensionless_frequency_term);
+    acb_clear(denominator_term);
 }
 
 // Function computes the amplification factor for an isolated axially symmetric
@@ -707,7 +632,7 @@ void AmplificationFactorWave(acb_t amplification_factor,
     acb_t integration_term;
     acb_init(integration_term);
     acb_calc_integrate(integration_term,
-                       AmplificationWaveIntegrand,
+                       NfwIntegrand,
                        &parameter_set,
                        lower_limit,
                        upper_limit,
@@ -716,27 +641,39 @@ void AmplificationFactorWave(acb_t amplification_factor,
                        options,
                        goal);
 
+    acb_t w;
+    acb_t y;
+    acb_t ks;
+
+    acb_init(w);
+    acb_init(y);
+    acb_init(ks);
+
+    acb_set_d(w, dimensionless_frequency);
+    acb_set_d(y, source_position);
+    acb_set_d(ks, scaling_constant);
+
     // Caclulate the first correction term
     acb_t first_correction_term;
     acb_init(first_correction_term);
-    AmplificationWaveFirstCorrection(first_correction_term,
-                                     dimensionless_frequency,
-                                     source_position,
-                                     max_image_position,
-                                     scaling_constant,
-                                     phase,
-                                     precision);
+    FirstCorrectionTerm(first_correction_term,
+                        w,
+                        y,
+                        upper_limit,
+                        ks,
+                        phase,
+                        precision);
 
     // Calculate the second correction term
     acb_t second_correction_term;
     acb_init(second_correction_term);
-    AmplificationWaveSecondCorrection(second_correction_term,
-                                      dimensionless_frequency,
-                                      source_position,
-                                      max_image_position,
-                                      scaling_constant,
-                                      phase,
-                                      precision);
+    SecondCorrectionTerm(second_correction_term,
+                         w,
+                         y,
+                         upper_limit,
+                         ks,
+                         phase,
+                         precision);
 
     // Construct the final value of the amplification factor
     acb_add(amplification_factor,
@@ -754,5 +691,10 @@ void AmplificationFactorWave(acb_t amplification_factor,
     acb_clear(integration_term);
     acb_clear(first_correction_term);
     acb_clear(second_correction_term);
+    acb_clear(w);
+    acb_clear(y);
+    acb_clear(ks);
 }
+
+
 
