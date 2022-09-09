@@ -92,7 +92,9 @@ def main(_config=None, _args=None, _injection=False):
                                                 interpolator_files)
             generate_interpolator_condor(args, output_directories, condor_settings)
 
-    return interpolator_files
+    if _config is not None:
+        return interpolator_files
+    return
 
 if __name__ == "__main__":
     main()
