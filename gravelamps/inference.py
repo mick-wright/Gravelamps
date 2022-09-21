@@ -101,6 +101,9 @@ def generate_waveform_arguments(config, args):
         if waveform_arguments["scaling_constant"] is None:
             waveform_arguments["scaling_constant"] = config.get("lens_generation_settings",
                                                                 "nfw_scaling_constant")
+    elif lens_module == "gravelamps.lensing.o3point":
+        waveform_arguments["lookup_table_location"] =\
+            config.get("run_settings", "lookup_table_location")
 
     waveform_arguments["lens_module"] = lens_module
 
