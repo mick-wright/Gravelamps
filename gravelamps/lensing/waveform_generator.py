@@ -45,6 +45,10 @@ class LensedWaveformGenerator(WaveformGenerator):
                                                    waveform_arguments["amplification_factor_real"],
                                                    waveform_arguments["amplification_factor_imag"])
 
+        if hasattr(self.lens_module, "load_table"):
+            load_table_func = getattr(self.lens_module, "load_table")
+            load_table_func(waveform_arguments["lookup_table_location"])
+
         if hasattr(self.lens_module, "set_scaling"):
             scaling_setter_func = getattr(self.lens_module, "set_scaling")
             scaling_setter_func(waveform_arguments["scaling_constant"])
