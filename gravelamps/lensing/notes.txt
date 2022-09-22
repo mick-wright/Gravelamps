@@ -1,3 +1,0 @@
-For the millilensing problem, create the more optimised function using the kwargs.
-Since the infer_from_function will fail, this needs a solution.
-Proposed solution would be to simply generate the list of parameters from the max_kmax. 

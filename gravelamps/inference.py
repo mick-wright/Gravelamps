@@ -105,6 +105,9 @@ def generate_waveform_arguments(config, args):
         waveform_arguments["lookup_table_location"] =\
             config.get("run_settings", "lookup_table_location")
 
+    elif lens_module == "gravelamps.lensing.millilensing":
+        waveform_arguments["millilensing_kmax"] = config.get("run_settings", "millilensing_kmax")
+
     waveform_arguments["lens_module"] = lens_module
 
     return waveform_arguments

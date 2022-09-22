@@ -78,6 +78,17 @@ class LensedWaveformGenerator(WaveformGenerator):
             amplification_factor =\
                 self.amplification_factor_func(dimensionless_frequency_array,
                                                self.parameters["source_position"])
+        elif "k" in self.source_parameter_keys:
+            image_times, luminosity_distances, phases =\
+                self.lens_module.gather_parameter_lists(self.lens_parameters(), self.parameters)
+
+            amplification_factor =\
+                self.amplification_factor_func(model_data_points,
+                                               int(self.parameters["k"]),
+                                               image_times,
+                                               luminosity_distances,
+                                               phases)
+
         else:
             amplification_factor = self.amplification_factor_func(model_data_points,
                                                                   **self.parameters)
