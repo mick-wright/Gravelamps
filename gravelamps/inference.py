@@ -77,9 +77,9 @@ def generate_waveform_arguments(config, args):
     if interpolator_files is not None:
         for key, value in interpolator_files.items():
             if key == "source_position":
-                waveform_arguments["source_position_file"] = value
+                waveform_arguments["source_position_file"] = os.path.abspath(value)
             else:
-                waveform_arguments[key] = value
+                waveform_arguments[key] = os.path.abspath(value)
 
     if args.injection:
         prepend = "injection_"
