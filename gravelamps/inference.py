@@ -9,6 +9,7 @@ Written by Mick Wright 2022
 
 from argparse import Namespace
 import importlib
+import os
 
 from bilby_pipe.main import (MainInput,
                              perform_runtime_checks,
