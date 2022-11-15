@@ -12,7 +12,6 @@ import importlib
 import os
 
 from bilby_pipe.main import (MainInput,
-                             perform_runtime_checks,
                              write_complete_config_file)
 from bilby_pipe.job_creation import generate_dag
 import htcondor
@@ -146,7 +145,6 @@ def run_bilby_pipe_functions(bilby_pipe_config):
     bilby_pipe_parser, bilby_pipe_args, bilby_pipe_unknown_args =\
         get_bilbypipe_args(bilby_pipe_config)
     bilby_pipe_input = MainInput(bilby_pipe_args, bilby_pipe_unknown_args)
-    perform_runtime_checks(bilby_pipe_input, bilby_pipe_args)
     bilby_pipe_input.pretty_print_prior()
     write_complete_config_file(bilby_pipe_parser, bilby_pipe_args, bilby_pipe_input)
     generate_dag(bilby_pipe_input)
