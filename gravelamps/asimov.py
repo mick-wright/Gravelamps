@@ -12,6 +12,7 @@ Written by Daniel Williams
 import configparser
 import glob
 import os
+import re
 import subprocess
 import time
 
@@ -19,7 +20,7 @@ import git.exc
 from liquid import Liquid
 
 from asimov import config
-from asimov.pipeline import Pipeline, PipelineException, PipelineLogger
+from asimov.pipeline import Pipeline, PipelineException, PipelineLogger, PESummaryPipeline
 from asimov.utils import update
 
 class Gravelamps(Pipeline):
@@ -212,7 +213,153 @@ class Gravelamps(Pipeline):
             time.sleep(10)
             return PipelineLogger(message=out, production=self.production.name)
 
-    def submit_dag(self):
+    def submit_dag(self, dryrun=False):
+        '''
+        Submits DAG file to the condor cluster
+
+        Parameters
+        ----------
+        dryrun : bool
+            If set to true the DAG will not be submitted but all commands will be
+            printed to standard output instead. Defaults to False
+
+        Returns
+        -------
+        int
+            The cluster ID assigned to the running DAG file
+        PipelineLogger
+            The pipeline logger message.
+
+        Raises
+        ------
+        PipelineException
+            This will be raised if the pipeline fails to submit the job
+        '''
+
+        cwd = os.getcwd()
+        self.logger.info(f"Working in {cwd}")
+
+        self.before_submit()
+
+        try:
+            dag_filename = "gravelamps_inference.dag"
+
+            command = ["condor_submit_dag",
+                       "-batch-name",
+                       f"gravelamps/{self.production.event.name}/{self.production.name}",
+                       os.path.join(self.production.rundir, "submit", dag_filename)]
+
+            if dryrun:
+                print(" ".join(command))
+            else:
+                dagman = subprocess.Popen(command,
+                                          stdout=subprocess.PIPE,
+                                          stderr=subprocess.STDOUT)
+
+                self.logger.info(" ".join(command))
+
+                stdout, stderr = dagman.communicate()
+
+                if "submitted to cluster" in str(stdout):
+                    cluster = re.search(r"submitted to cluster ([\d]+)", str(stdout)).groups[0]
+                    self.logger.info(f"Submitted successfully. Running with job ID {int(cluster)}")
+
+                    self.production.status = "running"
+                    self.production.job_id = int(cluster)
+
+                    return cluster, PipelineLogger(stdout)
+
+                self.logger.error("Could not submit the job to the cluster")
+                self.logger.info(stdout)
+                self.logger.error(stderr)
+
+                raise PipelineException("The DAG file could not be submitted")
+
+        except FileNotFoundError as error:
+            self.logger.exception(error)
+            raise PipelineException("It appears HTCondor is not installed on this system.\n"
+                                    f'''Command that would have been run: {" ".join(command)}.''')\
+                                    from error
+
+    def collect_assets(self):
+        '''
+        Gather all of the result assets for this job
+        '''
+
+        return {"samples", self.samples()}
+
+    def samples(self, absolute=False):
+        '''
+        Collect the combined samples file for PESummary
+        '''
+
+        if absolute:
+            rundir = os.path.abspath(self.production.rundir)
+        else:
+            rundir = self.production.rundir
+        self.logger.info(f"Rundir for samples: {rundir}")
+
+        sample_files = glob.glob(os.path.join(rundir, "result", "*_merge*_result.hdf5"))\
+                       + glob.glob(os.path.join(rundir, "result", "*_merge*_result.json"))
+
+        return sample_files
+
+    def after_completion(self):
+        post_pipeline = PESummaryPipeline(production=self.production)
+        self.logger.info("Job has completed. Running PESummary")
+        cluster = post_pipeline.submit_dag()
+        self.production.meta["job id"] = int(cluster)
+        self.production.status = "processing"
+        self.production.event.update_data()
+
+    def collect_logs(self):
+        '''
+        Collect all of the log files which have been produced by this production and return
+        their contents as a dictionary
+        '''
+
+        logs = glob.glob(f"{self.production.rundir}/submit/*.err")\
+               + glob.glob(f"{self.production.rundir}/log*/*.err")\
+               + glob.glob(f"{self.production.rundir}/*/*.out")\
+               + glob.glob(f"{self.production.rundir}/*.log")
+
+        messages = {}
+
+        for log in logs:
+            try:
+                with open(log, "r", encoding="utf-8") as log_f:
+                    message = log_f.read()
+                    message = message.split("\n")
+                    messages[log.split("/")[-1]] = "\n".join(message[-100:])
+            except FileNotFoundError:
+                messages[log.split("/")[-1]] = "There was a problem opening this log file"
+
+        return messages
+
+    def check_progress(self):
+        '''
+        Check the convergence progress of a job
+        '''
+
+        logs = glob.glob(f"{self.production.rundir}/log_data_analysis/*.out")
+
+        messages = {}
+        for log in logs:
+            try:
+                with open(log, "r", encoding="utf-8") as log_f:
+                    message = log_f.read()
+                    message = message.split("\n")[-1]
+                    pat = re.compile(r"([\d]+)it")
+                    iterations = pat.search(message)
+                    pat = re.compile(r"dlogz:([\d]*\.[d]*)")
+                    dlogz = pat.search(message)
+                    if iterations:
+                        messages[log.split("/")[-1]] = (iterations.group(),
+                                                        dlogz.group())
+            except FileNotFoundError:
+                messages[log.split("/")[-1]] = "There was a problem opening this log file."
+
+        return messages
 
     @classmethod
     def read_ini(cls, filepath):
@@ -226,3 +373,22 @@ class Gravelamps(Pipeline):
         config_parser.read(filepath)
 
         return config_parser
+
+    def html(self):
+        out = ""
+        return out
+
+    def resurrect(self):
+        '''
+        Attempt to ressurect a failed job.
+        '''
+
+        try:
+            count = self.production.meta["resurrections"]
+        except KeyError:
+            count = 0
+
+        if count < 5 and\
+           len(glob.glob(os.path.join(self.production.rundir, "submit", "*.rescue"))) > 0:
+            count += 1
+            self.submit_dag()
