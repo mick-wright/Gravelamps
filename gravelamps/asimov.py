@@ -19,7 +19,6 @@ import time
 import git.exc
 from liquid import Liquid
 
-import asimov
 from asimov import config
 from asimov.pipeline import Pipeline, PipelineException, PipelineLogger, PESummaryPipeline
 from asimov.utils import update
@@ -109,7 +108,6 @@ class Gravelamps(Pipeline):
                     config.get("Gravelamps", "priors"), template_filename)
             except (configparser.NoOptionError, configparser.NoSectionError):
                 from pkg_resources import resource_filename
-
                 template = resource_filename("asimov", f"priors/{template_filename}")
 
         priors = {}

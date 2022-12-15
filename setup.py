@@ -62,7 +62,7 @@ setuptools.setup(
             "gravelamps_inference=gravelamps.inference:main",
             "gravelamps_generate_lens=gravelamps.generate_lens:main",
             "gravelamps_generate_interpolator_data=gravelamps.lensing.generic:main"],
-        "asimov.pipelines": ["gravelamps=gravelamps.gravemov:Gravelamps"]},
+        "asimov.pipelines": ["gravelamps=gravelamps.asimov:Gravelamps"]},
     classifiers = [
         "Programming Language :: Python :: 3",
         "Programming Language :: C++",
