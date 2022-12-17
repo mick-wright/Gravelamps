@@ -261,7 +261,7 @@ class Gravelamps(Pipeline):
                 stdout, stderr = dagman.communicate()
 
                 if "submitted to cluster" in str(stdout):
-                    cluster = re.search(r"submitted to cluster ([\d]+)", str(stdout)).groups[0]
+                    cluster = re.search(r"submitted to cluster ([\d]+)", str(stdout)).groups()[0]
                     self.logger.info(f"Submitted successfully. Running with job ID {int(cluster)}")
 
                     self.production.status = "running"
