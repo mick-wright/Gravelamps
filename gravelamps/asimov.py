@@ -209,8 +209,9 @@ class Gravelamps(Pipeline):
                     f"DAG file could not be created.\n{command}\n{out}\n{err}",
                     production=self.production.name)
 
-            time.sleep(10)
-            return PipelineLogger(message=out, production=self.production.name)
+            else:
+                time.sleep(10)
+                return PipelineLogger(message=out, production=self.production.name)
 
     def submit_dag(self, dryrun=False):
         '''
