@@ -387,7 +387,7 @@ def data_file_handler(args,
         if bool(file_dict[file_type]):
             data_grid = np.loadtxt(file_dict[file_type])
 
-            if grid_shape in (data_grid.shape, data_grid.transpose.shape):
+            if grid_shape in (data_grid.shape, data_grid.transpose().shape):
                 complete_files += 1
 
             shutil.copyfile(file_dict[file_type], default_outfile)
