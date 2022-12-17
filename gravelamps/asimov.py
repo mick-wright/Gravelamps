@@ -268,12 +268,12 @@ class Gravelamps(Pipeline):
                     self.production.job_id = int(cluster)
 
                     return cluster, PipelineLogger(stdout)
+                else:
+                    self.logger.error("Could not submit the job to the cluster")
+                    self.logger.info(stdout)
+                    self.logger.error(stderr)
 
-                self.logger.error("Could not submit the job to the cluster")
-                self.logger.info(stdout)
-                self.logger.error(stderr)
-
-                raise PipelineException("The DAG file could not be submitted")
+                    raise PipelineException("The DAG file could not be submitted")
 
         except FileNotFoundError as error:
             self.logger.exception(error)
