@@ -65,13 +65,18 @@ class Gravelamps(Pipeline):
 
         self.logger.info("Running pre-submit hook")
 
-        submission_files = glob.glob(f"{self.production.rundir}/submit/*.sub*")
+        submission_files = glob.glob(f"{self.production.rundir}/submit/*.submit")
         for sub_file in submission_files:
             if "dag" in sub_file:
                 continue
 
             with open(sub_file, "r", encoding="utf-8") as file:
-                original = file.read()
+                original = file.readlines()
+                #Implementing Daniel's fix --- replace when bilby_pipe fixes
+                for idx, line in original:
+                    if line.startswith("transfer_input_files"):
+                        original[idx] = line.replace("\n", ",results\n")
+
             with open(sub_file, "w", encoding="utf-8") as file:
                 self.logger.info(f"Adding preserve relative_paths to {sub_file}")
                 file.write("preserve_relative_paths = True\n" + original)
