@@ -79,7 +79,7 @@ class Gravelamps(Pipeline):
 
             with open(sub_file, "w", encoding="utf-8") as file:
                 self.logger.info(f"Adding preserve relative_paths to {sub_file}")
-                file.write("preserve_relative_paths = True\n" + ''.join(priginal))
+                file.write("preserve_relative_paths = True\n" + ''.join(original))
 
     def _determine_prior(self):
         '''
