@@ -73,7 +73,7 @@ class Gravelamps(Pipeline):
             with open(sub_file, "r", encoding="utf-8") as file:
                 original = file.readlines()
                 #Implementing Daniel's fix --- replace when bilby_pipe fixes
-                for idx, line in original:
+                for idx, line in enumerate(original):
                     if line.startswith("transfer_input_files"):
                         original[idx] = line.replace("\n", ",results\n")
 
