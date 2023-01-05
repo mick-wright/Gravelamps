@@ -75,7 +75,7 @@ class Gravelamps(Pipeline):
                 #Implementing Daniel's fix --- replace when bilby_pipe fixes
                 for idx, line in enumerate(original):
                     if line.startswith("transfer_input_files"):
-                        original[idx] = line.replace("\n", ",results\n")
+                        original[idx] = line.replace("\n", ",result\n")
 
             with open(sub_file, "w", encoding="utf-8") as file:
                 self.logger.info(f"Adding preserve relative_paths to {sub_file}")
