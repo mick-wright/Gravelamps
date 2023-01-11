@@ -51,7 +51,8 @@ The following are required for the compilation and running of the C++ subprogram
 + `arb`
 + `openMP`
 + `g++`
-+  `GNU make` 
++  `GNU make`
++  `Boost`
 
 #### Python Dependencies
 
