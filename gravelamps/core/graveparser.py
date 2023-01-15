@@ -38,14 +38,15 @@ def create_graveparser():
         graveparser = graveparser_lens_generation_parser()
 
     elif any(check in sys.argv[0]\
-             for check in ("gravelamps_generate_interpolator_data", "generic.py")):
+             for check in ("gravelamps_generate_interpolator_data", "generic.py", "condor_exec")):
         graveparser = graveparser_interpolator_parser()
 
     elif "inference" in sys.argv[0]:
         graveparser = graveparser_inference_parser()
 
     else:
-        raise ValueError(f"{sys.argv[0]} not recognised as a Graveparser compatible program")
+        raise ValueError(f"{sys.argv[0]} not recognised as a Graveparser compatible program\n"\
+                         f"\n sys.argv: {sys.argv}")
 
     return graveparser
 

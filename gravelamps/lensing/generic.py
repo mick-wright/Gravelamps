@@ -74,7 +74,7 @@ def get_condor_config(config, args, output_directories, model, file_dict):
     default_condor_settings = {
         "executable": f"{os.path.dirname(sys.executable)}/gravelamps_generate_interpolator_data",
         "initialdir": os.path.abspath(output_directories["data"]),
-        "transfer_files": "YES",
+        "should_transfer_files": "YES",
         "when_to_transfer_output": "ON_EXIT_OR_EVICT",
         "output": f"{lens_type}_data_generation.out",
         "error": f"{lens_type}_data_generation.err",
@@ -91,14 +91,13 @@ def get_condor_config(config, args, output_directories, model, file_dict):
             base_dict[key] = os.path.basename(value)
         else:
             base_dict[key] = os.path.abspath(value)
+
     dict_string = str(base_dict).replace("'", "####").replace(" ", "")
     default_condor_settings["arguments"] = f"{model} {dict_string} {os.path.abspath(args.ini)}"
 
     default_condor_settings["transfer_input_files"] =\
-        f"{base_dict['dimensionless_frequency']}, {base_dict['source_position']}"
-    default_condor_settings["transfer_output_files"] =\
-        f"{base_dict['amplification_factor_real']},\
-          {base_dict['amplification_factor_imag']}"
+        f"{base_dict['dimensionless_frequency']}, {base_dict['source_position']},"\
+	f"{base_dict['amplification_factor_real']}, {base_dict['amplification_factor_imag']}"
 
     user_condor_settings = dict(config.items("condor_settings"))
     if "accounting_group" not in user_condor_settings:
@@ -182,14 +181,9 @@ def main():
 
     config = get_config(args)
 
-    output_directories = get_output_directories(config, from_config=False)
-    for key, value in output_directories.items():
-        output_directories[key] = os.path.abspath(value)
-
     logging_level = config.get("output_settings", "logging_level", fallback="INFO")
-    setup_logger(output_directories["outdir"], logging_level, args=args)
-    gravelogger.info("Gravelogger setup complete, log will be output to %s/grave.log",
-                      output_directories["outdir"])
+    setup_logger(".", logging_level, args=args)
+    gravelogger.info("Gravelogger setup complete, log will be output to grave.log")
 
     dictstring = args.filedict.replace("'","")
     dictstring = args.filedict.replace("####","'")
