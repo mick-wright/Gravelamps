@@ -95,10 +95,10 @@ def get_condor_config(config, args, output_directories, model, file_dict):
     default_condor_settings["arguments"] = f"{model} {dict_string} {os.path.abspath(args.ini)}"
 
     default_condor_settings["transfer_input_files"] =\
-        f"{base_dict['dimensionless_frequency_file']}, {base_dict['source_position_file']}"
+        f"{base_dict['dimensionless_frequency']}, {base_dict['source_position']}"
     default_condor_settings["transfer_output_files"] =\
-        f"{base_dict['amplification_factor_real_file']},\
-          {base_dict['amplification_factor_imag_file']}"
+        f"{base_dict['amplification_factor_real']},\
+          {base_dict['amplification_factor_imag']}"
 
     user_condor_settings = dict(config.items("condor_settings"))
     if "accounting_group" not in user_condor_settings:
