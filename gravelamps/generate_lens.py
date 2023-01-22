@@ -51,6 +51,8 @@ def main(_config=None, _args=None, _injection=False):
             args.injection = True
         if config.getboolean("run_settings", "local", fallback=False):
             args.local = True
+        if config.getboolean("run_settings", "submit", fallback=False:
+            args.submit = True
 
     else:
         config = _config
