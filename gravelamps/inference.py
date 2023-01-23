@@ -186,7 +186,7 @@ def main():
     gravelogger.info("Generating Analysis Waveform Arguments")
     analysis_args = generate_inference_args(args, injection=False)
     analysis_waveform_arguments = generate_waveform_arguments(config, analysis_args)
-    gravelogger.info("Analysis Waveform Argumnets: %s", analysis_waveform_arguments)
+    gravelogger.info("Analysis Waveform Arguments: %s", analysis_waveform_arguments)
 
     gravelogger.info("Running bilby_pipe functions")
     bilby_pipe_config =\
