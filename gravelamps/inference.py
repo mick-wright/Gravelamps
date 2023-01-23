@@ -207,6 +207,8 @@ def main():
             schedd = htcondor.Schedd()
             with schedd.transaction() as txn:
                 cluster_id = dag_submit.queue(txn)
+                gravelogger.info("DAG Submitted to cluster with id: %s", cluster_id)
+        else:
             gravelogger.info("To submit, use the following command: \n\
                              \t$ condor_submit_dag %s", dag_file)
 
