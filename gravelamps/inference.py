@@ -202,8 +202,11 @@ def main():
         dag_file = create_final_dag(config, output_directories)
         if args.submit or config.getboolean("run_settings", "submit", fallback=False):
             gravelogger.info("Submitting DAG to scheduler")
-            htcondor.Submit.from_dag(dag_file)
-        else:
+            dag_submit = htcondor.Submit.from_dag(dag_file)
+
+            schedd = htcondor.Schedd()
+            with schedd.transaction() as txn:
+                cluster_id = dag_submit.queue(txn)
             gravelogger.info("To submit, use the following command: \n\
                              \t$ condor_submit_dag %s", dag_file)
 
