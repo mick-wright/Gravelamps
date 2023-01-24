@@ -1,13 +1,13 @@
-'''
-Gravelamps-Asimov Pipeline Integration
+"""Asimov Pipeline Integration
 
-The following is based upon the generic work performed by Daniel Williams as well as Asimov
-documentation to create a setup for Gravelamps as a workable pipeline within the Asimov
-automation framework, allowing event handling to be automated
+Following is implementation of Gravelamps as an Asimov pipeline based on the generic instructions
+provided by Daniel Williams within the Asimov documentation. This sets up the configuration
+required to automate Gravelamps running within the Asimov framework, allowing event handling to
+be automated.
 
-Written by Daniel Williams
-           Mick Wright
-'''
+Written by Daniel Williams,
+           Mick Wright.
+"""
 
 import configparser
 import glob
@@ -24,9 +24,38 @@ from asimov.pipeline import Pipeline, PipelineException, PipelineLogger, PESumma
 from asimov.utils import update
 
 class Gravelamps(Pipeline):
-    '''
-    Gravelamps Pipeline Integration --- based primarily on the bilby Pipeline
-    '''
+    """
+    Gravelamps specific Pipeline configuration.
+
+    Based primarily upon Asimov's built-in Bilby Pipeline class. This handles building and
+    submtiting individual event runs from a properly configured ledger.
+
+    Methods
+    -------
+    detect_completion
+        Assess if job has completed
+    before_submit
+        Presubmission hook
+    build_dag
+        Build Gravelamps DAG
+    submit_dag
+        Submits Gravelamps DAG to HTCondor
+    collect_assets
+        Collect result assets
+    samples
+        Collect result sample files for PESummary
+    after_completion
+        Post completion hook to run PESummary
+    collect_logs
+        Collect logs into dictionary
+    check_progress
+        Checks job progress
+
+    See Also
+    --------
+    Asimov Documentation: for greater explanation of the concepts behind the class
+    construction.
+    """
 
     def __init__(self, production, category=None):
         super(Gravelamps, self).__init__(production, category)
