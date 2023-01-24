@@ -1,7 +1,7 @@
 asimov
-numpy
-scipy
 astropy
 bilby
 bilby_pipe
 htcondor
+numpy
+scipy
