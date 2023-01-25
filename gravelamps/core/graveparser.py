@@ -1,11 +1,26 @@
-'''
-Gravelamps Argument Parser
+"""Gravelamps Program Argument Parsing
 
-Functions within control the use of the parser used within Gravelamps utilising the python bulitin
-argparse module
+Following are functions handling the various argument parsers used by programs within Gravelamps
+using the python builtin argparse module.
 
 Written by Mick Wright 2022
-'''
+
+Routines
+--------
+create_bilbypipe_parser
+    Create a parser for bilby_pipe function usage
+create_graveparser
+    Metafunction that creates the specific gravelamps parser based on the program name
+get_bilbypipe_args
+    Parses arguments into known and unknown for bilby_pipe
+graveparser_lens_generation_parser
+    Creates a parser for lens generation program usage
+graveparser_inference_parser
+    Creates a parser for inference program usage
+graveparser_interpolator_parser
+    Creates a parser for the minimal interpolator data program usage
+
+"""
 
 import argparse
 import json
@@ -15,24 +30,32 @@ import sys
 from bilby_pipe.parser import create_parser
 
 def create_bilbypipe_parser():
-    '''
-    Output:
-        bilbypipe_parser - Parser to be passed to bilby_pipe functions
+    """
+    Creates a parser for bilby_pipe function usage
 
-    Function creates a parser for bilby_pipe's functions
-    '''
+    Returns
+    -------
+    bilbypipe_parser : argparse.ArgumentParser
+        parser for the bilby_pipe program
+
+    See Also
+    --------
+    bilby_pipe documentation: for a complete list of arguments that can be parsed by this parser
+    """
 
     bilbypipe_parser = create_parser()
 
     return bilbypipe_parser
 
 def create_graveparser():
-    '''
-    Output:
-        graveparser - Gravelamps argument parser
+    """
+    Metafunction that creates the specific gravelamps parser based on the program name
 
-    Creates argument parser based on the program being run
-    '''
+    Returns
+    -------
+    graveparser : argparse.ArgumentParser
+        parser for the specific gravelamps program being run
+    """
 
     if "generate_lens" in sys.argv[0]:
         graveparser = graveparser_lens_generation_parser()
@@ -51,16 +74,23 @@ def create_graveparser():
     return graveparser
 
 def get_bilbypipe_args(bilby_pipe_config):
-    '''
-    Input:
-        bilby_pipe_config - Dictionary containing settings for bilby_pipe
+    """
+    Parses a configuration file for bilby_pipe into known and unknown arguments
 
-    Output:
-        bilby_pipe_args - Known arguments to bilby_pipe
-        bilby_pipe_unknown_args - Unknown arguments to bilby_pipe
+    Parameters
+    ----------
+    bilby_pipe_config : dict
+        Contains arguments to bilby_pipe to be stored in configuration file
 
-    Function gets the arguments to bilby_pipe separated into known and unknown lists
-    '''
+    Returns
+    -------
+    bilby_pipe_parser : argparse.ArgumentParser
+        bilby_pipe configuration parser
+    bilby_pipe_args : argparse.Namespace
+        Object containing known settings and values for bilby_pipe
+    bilby_pipe_unknown_args : argparse.Namespace
+        Object containing any unknown settings and values for bilby_pipe
+    """
 
     bilby_pipe_parser = create_bilbypipe_parser()
     bilby_pipe_ini = f"{bilby_pipe_config['outdir']}/bilbypipe.ini"
@@ -76,12 +106,14 @@ def get_bilbypipe_args(bilby_pipe_config):
     return bilby_pipe_parser, bilby_pipe_args, bilby_pipe_unknown_args
 
 def graveparser_lens_generation_parser():
-    '''
-    Output:
-        graveparser - Gravelamps argument parser
+    """
+    Create a parser for lens generation program usage
 
-    Creates an argument parser for the lens data generation utility
-    '''
+    Returns
+    -------
+    graveparser : argparse.ArgumentParser
+        `gravelamps_generate_lens` program argument parser
+    """
 
     prog = "gravelamps_generate_lens"
     description = "Gravelamps Lens Data Generation Utility"
@@ -108,12 +140,15 @@ def graveparser_lens_generation_parser():
     return graveparser
 
 def graveparser_inference_parser():
-    '''
-    Output:
-        graveparser - Gravelamps argument parser
+    """
+    Create a parser for inference program usage
 
-    Creates an argument parser for the inference program utility
-    '''
+    Returns
+    -------
+    graveparser : argparse.ArgumentParser
+        `gravelamps_inference` program argument parser
+
+    """
 
     prog = "gravelamps_inference"
     description = "Gravelamps Inference Program"
@@ -140,12 +175,14 @@ def graveparser_inference_parser():
     return graveparser
 
 def graveparser_interpolator_parser():
-    '''
-    Output:
-        graveparser - Gravelamps argument parser
+    """
+    Create a parser for the minimal lens interpolator program usage
 
-    Creates an argument parser for the interpolator data generation utility for HTCondor
-    '''
+    Returns
+    -------
+    graveparser : argparse.ArgumentParser
+        Minimal lens interpolator (`gravelamps_interpolator_data`) program argument parser
+    """
 
     prog = "gravelamps_generate_interpolator_data"
     description = "Barebones lens data generation utility. To be used by HTCondor"
