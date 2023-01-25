@@ -1,9 +1,9 @@
 """Asimov Pipeline Integration
 
-Following is implementation of Gravelamps as an Asimov pipeline based on the generic instructions
-provided by Daniel Williams within the Asimov documentation. This sets up the configuration
-required to automate Gravelamps running within the Asimov framework, allowing event handling to
-be automated.
+Following is the implementation of Gravelamps as an Asimov pipeline based on the generic
+instructions provided by Daniel Williams within the Asimov documentation. This sets up the
+configuration required to automate Gravelamps running within the Asimov framework, allowing event
+handling to be automated.
 
 Written by Daniel Williams,
            Mick Wright.
