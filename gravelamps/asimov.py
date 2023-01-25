@@ -338,16 +338,29 @@ class Gravelamps(Pipeline):
                                     from error
 
     def collect_assets(self):
-        '''
-        Gather all of the result assets for this job
-        '''
+        """
+        Collect result assets.
 
-        return {"samples", self.samples()}
+        The current result assests are deemed to be the samples produced by the nested sampling
+        run.
+        """
+
+        return {"samples": self.samples()}
 
     def samples(self, absolute=False):
-        '''
+        """
         Collect the combined samples file for PESummary
-        '''
+
+        Parameters
+        ----------
+        absolute : bool
+            Flag to return the absolute or relative filepath
+
+        Returns
+        -------
+        sample_files : str
+            Path to the combined sample file
+        """
 
         if absolute:
             rundir = os.path.abspath(self.production.rundir)
@@ -361,6 +374,11 @@ class Gravelamps(Pipeline):
         return sample_files
 
     def after_completion(self):
+        """
+        Post pipeline completion hook to run PESummary.
+
+        The hook runs the PESummary pipeline to produce post-completion output.
+        """
         post_pipeline = PESummaryPipeline(production=self.production)
         self.logger.info("Job has completed. Running PESummary")
         cluster = post_pipeline.submit_dag()
@@ -369,10 +387,16 @@ class Gravelamps(Pipeline):
         self.production.event.update_data()
 
     def collect_logs(self):
-        '''
+        """
         Collect all of the log files which have been produced by this production and return
         their contents as a dictionary
-        '''
+
+        Returns
+        -------
+        messages : dict
+            Dictionary containing the log file content or notification that the file could not
+            be opened
+        """
 
         logs = glob.glob(f"{self.production.rundir}/submit/*.err")\
                + glob.glob(f"{self.production.rundir}/log*/*.err")\
@@ -393,9 +417,20 @@ class Gravelamps(Pipeline):
         return messages
 
     def check_progress(self):
-        '''
-        Check the convergence progress of a job
-        '''
+        """
+        Checks job progress.
+
+        The job progress is checked up on by finding the number of iterations and the current value
+        of the dlogz for the sampling runs. This combined information can be used to obtain a rough
+        estimate of how far through the job the run is. This is returned in dictionary format.
+
+        Returns
+        -------
+        messages : dict
+            Dictionary containing job progress in the form of the number of iterations and current
+            dlogz value. Will contain a message noting if the log file for the job could not be
+            opened.
+        """
 
         logs = glob.glob(f"{self.production.rundir}/log_data_analysis/*.out")
 
@@ -419,11 +454,17 @@ class Gravelamps(Pipeline):
 
     @classmethod
     def read_ini(cls, filepath):
-        '''
+        """
         Read and parse Gravelamps configuration file.
+
         Gravelamps configuration files are INI compliant, with dedicated and important sections
         Individual options can be repeated between sections.
-        '''
+
+        Returns
+        -------
+        config_parser : ConfigParser
+            Object containing Gravelamps configuration settings based on the INI structure.
+        """
 
         config_parser = configparser.ConfigParser()
         config_parser.read(filepath)
@@ -435,9 +476,12 @@ class Gravelamps(Pipeline):
         return out
 
     def resurrect(self):
-        '''
+        """
         Attempt to ressurect a failed job.
-        '''
+
+        A failed job will be resurrected a maximum of five times assuming that a rescue DAG
+        has been produced. 
+        """
 
         try:
             count = self.production.meta["resurrections"]
