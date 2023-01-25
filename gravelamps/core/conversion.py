@@ -47,7 +47,7 @@ def lens_mass_to_redshifted_lens_mass(lens_mass, lens_fractional_distance, lumin
 
 def solar_mass_to_natural_mass(solar_mass):
     """
-    Converts mass from units of solar mass to natural units such that c=G=1. 
+    Converts mass from units of solar mass to natural units such that c=G=1.
 
     Parameters
     ----------

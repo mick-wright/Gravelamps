@@ -1,10 +1,29 @@
-'''
-Gravelamps File Handling
+"""Gravelamps File Handling
 
-Functions within handle input and output files from the Gravelamps programs.
+Following are functions handling input and output files from the Gravelamps programs.
 
 Written by Mick Wright 2022
-'''
+
+Routines
+--------
+create_bilby_pipe_config
+    Generate a bilby_pipe configuration dictionary
+create_final_dag
+    Generate the overall gravelamps DAG
+create_injection_file
+    Generate a bilby_pipe injection file
+get_config
+    Retrieves user INI configuration from arguments
+get_output_directories
+    Retrieves the output directories
+retrieve_interpolator_files
+    Retrieves the files necessary for lens interpolator generation
+grid_file_handler
+    Handles the interpolator grid file generation and locations
+data_file_handler
+    Handles the interpolator data file generation and locations
+
+"""
 
 from configparser import ConfigParser
 import os
@@ -18,22 +37,28 @@ from bilby_pipe.input import Input
 from gravelamps.core.gravelog import gravelogger
 
 def create_bilby_pipe_config(config, args, output_directories, **kwargs):
-    '''
-    Input:
-        config - INI configuration parser
-        args - Commandline arguments given to program
-        output_directories - Dictionary containing output directories for run
+    """Generates a bilby_pipe configuration dictionary
 
-        **kwargs:
-            injection_file - Location of file containing injection data
-            analysis_waveform_arguments - Analysis waveform arguments
-            injection_waveform_arguments - Injection waveform arguments
+    Parameters
+    ----------
+    config : configparser.ConfigParser
+        Object containing settings from INI file
+    args : argparse.Namespace
+        Object containing commandline arguments to the program
+    output_directories : dict
+        Contains the output directories for the run
+    injection_file : str, optional
+        Path of file containing injection data
+    analysis_waveform_arguments : dict, optional
+        Arguments dictionary to the analysis waveform generator
+    injection_waveform_arguments : dict, optional
+        Arguments dictionary for the injection waveform generator
 
-    Output:
-        bilby_pipe_config - Dictionary containing settings for bilby_pipe
-
-    Function generates a bilby_pipe configuration dictionary
-    '''
+    Returns
+    -------
+    bilby_pipe_config : dict
+        Contains the configuration settings for a bilby_pipe run
+    """
 
     additional_information = {"injection_file": None,
                               "analysis_waveform_arguments": None,
@@ -96,17 +121,25 @@ def create_bilby_pipe_config(config, args, output_directories, **kwargs):
     return bilby_pipe_config
 
 def create_final_dag(config, output_directories):
-    '''
-    Input:
-        config - INI configuration parser
-        output_directories - Dictionary containing output directories
+    """
+    Generate overall Gravelamps DAG.
 
-    Output:
-        final_dag - Final DAG fila containing the linked jobs for inference runs
+    This DAG will contain the jobs to be submitted to the HTCondor scheduler with correct parent
+    child linking. Lens generation jobs will be run first and may run with no linking to each
+    other. These jobs form the parents of the bilby_pipe inference runs using the lensed waveforms.
 
-    Function takes the submit files created by Gravelamps as well as the DAG file made by
-    bilby_pipe and links them together with the correct parent-child relations
-    '''
+    Parameters
+    ----------
+    config : configparser.ConfigParser
+        Object containing settings from INI file
+    output_directories : dict
+        Contains the output directories for the run
+
+    Returns
+    -------
+    final_dag : str
+        Path to the gravelamps DAG file
+    """
 
     label = config.get("output_settings", "label")
 
@@ -140,16 +173,19 @@ def create_final_dag(config, output_directories):
     return final_dag_file
 
 def create_injection_file(config):
-    '''
-    Input:
-        config - INI configuration parser
-        injection_args - Arguments passed to program
+    """
+    Generate bilby_pipe injection file.
 
-    Output:
-        injection_file - File containing injection data
+    Parameters
+    ----------
+    config : configparser.ConfigParser
+        Object containing settings from INI file
 
-    Function creates an injection file using bilby_pie_create_injection_file functions
-    '''
+    Returns
+    -------
+    injection_file : str
+        Path to the created bilby_pipe injection file
+    """
 
     injection_file = f"{config.get('output_settings', 'outdir')}/data/injection.dat"
     prior_dict = config.items("injection_parameters")
@@ -198,16 +234,24 @@ def create_injection_file(config):
     return injection_file
 
 def get_config(args):
-    '''
-    Input:
-        args - Commandline arguments given to program
+    """
+    Retrieves user INI configuration from arguments
 
-    Output:
-        config - INI configuration parser
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Object containing commandline arguments to program
 
-    Function retrieves the user defined INI file and loads it into a ConfigParser object.
-    Will raise errors if the user has not specified the file or the file cannot be read.
-    '''
+    Returns
+    -------
+    config : configparser.ConfigParser
+        Object containing settings from INI file
+
+    Raises
+    ------
+    IOError
+        Where the INI file is not specified within the arguments or cannot be read
+    """
 
     config = ConfigParser()
 
@@ -222,18 +266,29 @@ def get_config(args):
     return config
 
 def get_output_directories(config, from_config=True):
-    '''
-    Input:
-        config - INI configuration parser
-        from_config - Boolean value to indicate whether to use config value or assume being run
-                      the data subdirectory
+    """
+    Retrieves the output directories.
 
-    Output:
-        output_dir_dict - Dictionary containing output directories for run
+    The output directories specified are the top level output directory, followed by data and submit
+    subdirectories with the specified names, 'data', and 'submit'.
 
-    Function gets the output directory from the INI and the relevant subdirectories for the run
-    type i.e. local or not. Function will create directory structure if it does not already exist.
-    '''
+    The top level directory is typically specified within the user specified INI file. This will
+    fallback to the current working directory, or can be specified to directly run presuming such.
+    These folders will be created if they are not already extant.
+
+    Parameters
+    ----------
+    config : configparser.ConfigParser
+        Object containing settings from INI file
+    from_config : bool, optional
+        Flag to ignore the INI and set the top level directory to the current directory
+
+    Returns
+    -------
+    output_dir_dict : dict
+        Contains the `output` top level directory and `submit` and `data` subdirectories in
+        the specified keys.
+    """
 
     if from_config:
         outdir = config.get("output_settings", "outdir", fallback=".")
@@ -252,21 +307,31 @@ def get_output_directories(config, from_config=True):
     return output_dir_dict
 
 def retrieve_interpolator_files(config, args):
-    '''
-    Input:
-        config - INI configuration parser
-        args - Commandline arguments given to program
+    """
+    Retrieves files necessary for generation of the lens interpolator
 
-    Output:
-        file_dict - dictionary of files containing dimesnionlesss frequency and source position
-                    values over which to generate the interpolator, followed by the corresponding
-                    files containin the real and imaginary amplification factor values to use as
-                    the interpolating data
+    Will proceed if the file does not exist---specifying that it needs to be created. Will throw
+    exception if a file that does not exist is specified to exist.
 
-    Function retrieves from the INI the locations of the files containing the data necessary to
-    generate the interpolator, checking that these files exist throwing errors if not. Will proceed
-    normally if files are missing, leaving them omitted from the resulting dictionary.
-    '''
+    Parameters
+    ----------
+    config : configparser.ConfigParser
+        Object containing settings from INI file
+    args : argparse.Namespace
+        Object containing commandline arguments to program
+
+    Returns
+    -------
+    file_dict : dict
+        Contains `dimnesionless_frequency`, `source_position`, `amplification_factor_real`,
+        `amplification_factor_imag` keys. Each of these is a string path to file containing the
+        specified data for the lens interpolator generation.
+
+    Raises
+    ------
+    IOError
+        In case where a file is specified in the INI that does not exist
+    """
 
     if args.injection:
         lens_type = "injection"
@@ -293,25 +358,32 @@ def retrieve_interpolator_files(config, args):
     return file_dict
 
 def grid_file_handler(config, args, data_subdirectory, file_dict):
-    '''
-    Input:
-        config - INI configuration parser
-        args - Commandline arguments given to program
-        data_subdirectory - Subdirectory of run output directory containing data files
-        file_dict - Dictionary of files containing either location of files containing the
-                    dimensionless frequency and source position or Nones to indicate these
-                    files require generation
+    """
+    Handles the interpolator grid file generation and locations
 
-    Output:
-        lens_file_dict - Dictionary containing both grid files needed for the interpolator
-                         may be equivalent to file_dict if files exist already and the don't
-                         make copy option is selected in config
+    These files specify the dimensionless frequency and source position grid structure that is
+    interpolated over for the amplification factor data. These files may be directly specified
+    in the INI, or may be constructed if not. User will be warned if the amplification factor
+    files are defined without also defining the grid files, since the grid may not be accurate
+    if generated for pre-existing data.
 
-    Function handles the dimensionless frequency and source position value files - i.e. the grid
-    axis files for the interpolators. If the user has specified them and to copy, it will copy these
-    files to the default locations. It will then return the final location of the files in a
-    dictionary.
-    '''
+    Parameters
+    ----------
+    config : configparser.ConfigParser
+        Object containing settings from INI file
+    args : argparse.Namesapce
+        Òbject containing commandline arguments to program
+    data_subdirectory : str
+        Path to the subdirectory containing data files
+    file_dict : dict
+        Contains either location of grid files, or None indicating these files require generation
+
+    Returns
+    -------
+    lens_file_dict : dict
+        Contains locations of completed grid files. Equivalent to file_dict if these are specified
+        in the data_subdirectory.
+    """
 
     if args.injection:
         lens_type = "injection"
@@ -356,18 +428,32 @@ def grid_file_handler(config, args, data_subdirectory, file_dict):
 def data_file_handler(args,
                       data_subdirectory,
                       file_dict):
-    '''
-    Input:
-        args - Commandline arguments given to program
-        data_subdirectory - Subdirectory of run output directory containing data files
-        file_dict - Dictionary containing the list of file locations for constructing
-                    the interpolator before data file handling
+    """
+    Handles the interpolator data file generation and locations.
 
-    Output:
-        lens_file_dict - Dictionary containing the list of file locations for constructing
-                         the interpolator after data file handling
-        complete_files - Number of the data files that are complete
-    '''
+    These files specify the real and imaginary components of the amplification factor data that
+    forms the base of the interpolator objects. These files may be directly specified in the INI
+    or may not be, specifying that they need generation. This handler does not run the generation
+    itself due to the computational complexity, instead it specifies the number of files that are
+    complete.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Object containing commandline arguments to program
+    data_subdirectory : str
+        Path to the subdirectory containing the data files
+    file_dict : dict
+        Contains either the path to the files, or None to indicate they require generation
+
+    Returns
+    -------
+    lens_file_dict : dict
+        Contains the path to the files for construction of lens interpolator. Equivalent to
+        `file_dict` if these files are specified in `data_subdirectory`
+    complete_files : int
+        Number of data files that are complete
+    """
 
     if args.injection:
         lens_type = "injection"
