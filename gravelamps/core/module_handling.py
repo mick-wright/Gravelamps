@@ -1,28 +1,45 @@
-'''
-Gravelamps Utility Functions
+"""Gravelamps Module Handling
 
-Functions within are utility functions for the operation of Gravelamps. They are unliekely to be
-necessary for any use by a user.
+Following are functions that handle modules used within Gravelamps. This is largely an interface
+used for handling the module that will contain the lensing functions in an agnostic fashion
 
 Written by Mick Wright 2022
-'''
+
+Routines
+--------
+get_lens_module
+    Retrieves module to be used for lensing functions
+check_module
+    Ascertains the existence of given module
+get_interpolator_model
+    Retrieves module to be used for interpolator functions
+
+"""
 
 import importlib
 
 from gravelamps.core.gravelog import gravelogger
 
 def get_lens_module(config, args):
-    '''
-    Input:
-        config - INI configuration parser
-        args - Commandline arguments given to program
+    """
+    Retrieves module to be used for lensing functions
 
-    Output:
-        lens_module - Name of the Module containing the lensing functions
+    The module is specified by the user either as a full python path or as a submodule of
+    `gravelamps.lensing`. If the module is not supplied at all, it defaults to
+    `gravelamps.lensing.interpolator`.
 
-    Function checks the user configuraiton for the lensing module, defaulting to
-    gravelamps.lensing.interpolator and verifies that the module can be loaded.
-    '''
+    Parameters
+    ----------
+    config : configparser.ConfigParser
+        Object containing settings from INI file
+    args : argparse.Namespace
+        Object containing commandline arguments to program
+
+    Returns
+    -------
+    lens_module : ModuleType
+        Module containing the lensing functions
+    """
 
     if args.injection:
         lens_type = "injection"
@@ -48,12 +65,19 @@ def get_lens_module(config, args):
     return lens_module
 
 def check_module(module_name):
-    '''
-    Input:
-        module_name - Name of model to check existence of
+    """
+    Ascertains the existence of a given module
 
-    Function checks existence of module given, returning a boolean based on that
-    '''
+    Parameters
+    ----------
+    module_name : str
+        full python path of the module to be checked
+
+    Returns
+    -------
+    bool
+        Flag of whether the module exists or not
+    """
 
     module_spec = importlib.util.find_spec(module_name)
     if module_spec is None:
@@ -61,17 +85,29 @@ def check_module(module_name):
     return True
 
 def get_interpolator_model(config, args):
-    '''
-    Input:
-        config - INI configuration parser
-        args - Commandline arguments given to program
+    """
+    Retrieves module to be used for interpolator functions
 
-    Output:
-        interpolator_model - Model specified by user defaulting to None
+    The model for the interpolator should be specified in the INI as either a complete python path
+    or one of the submodules of `gravelamps.lensing`. Will return None if no module is specified
 
-    Function will retrieve the interpolator model from the INI and will check that either it is a
-    module in it's own right or is a submodule of gravelamps.lensing. If neither will return None
-    '''
+    Parameters
+    ----------
+    config : configparser.ConfigParser
+        Object containing settings from the INI file
+    args : argparse.Namespace
+        Object containing commandline arguments to the program
+
+    Returns
+    -------
+    interpolator_model : str
+        Full python path to the interpolator model module
+
+    Raises
+    ------
+    ModuleNotFoundError
+        If the full python path as determined by the function cannot be loaded as a module
+    """
 
     if args.injection:
         lens_type = "injection"
