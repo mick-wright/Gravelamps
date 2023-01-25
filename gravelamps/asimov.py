@@ -35,7 +35,7 @@ class Gravelamps(Pipeline):
     detect_completion
         Assess if job has completed
     before_submit
-        Presubmission hook
+        Pre submission hook
     build_dag
         Build Gravelamps DAG
     submit_dag
@@ -65,9 +65,18 @@ class Gravelamps(Pipeline):
             raise PipelineException
 
     def detect_completion(self):
-        '''
-        Check for the production of the bilby posterior file to signal that the job has completed
-        '''
+        """
+        Assess if job has completed.
+
+        The Gravelamps DAG's final job is always the bilby_pipe DAG. To assess if the DAG has
+        completed therefore, the function checks for the existance of the final result file in the
+        ouput directory to assert the completion of the job.
+
+        Returns
+        -------
+        bool
+            Job completion status---true if complete, false otherwise.
+        """
 
         self.logger.info("Checking if the bilby parameter estimation has completed")
         results_dir = glob.glob(f"{self.production.rundir}/result")
@@ -88,9 +97,18 @@ class Gravelamps(Pipeline):
         return False
 
     def before_submit(self):
-        '''
-        Pre-submission hook, preserves relative paths
-        '''
+        """
+        Pre submission hook.
+
+        The hook at present adds the preserve relative file path argument to the condor submission
+        file.
+
+        Notes
+        -----
+        The hook currently adds the results directory from bilby_pipe to the individual submission
+        files that transfer input files. This is to deal with a current ongoing issue in bilby_pipe
+        that is due to be fixed in the next release, and will be modified after this occurs.
+        """
 
         self.logger.info("Running pre-submit hook")
 
@@ -113,9 +131,9 @@ class Gravelamps(Pipeline):
                 file.write("preserve_relative_paths = True\n" + ''.join(original))
 
     def _determine_prior(self):
-        '''
+        """
         Determines the correct choice of prior file for this production
-        '''
+        """
 
         self.logger.info("Determining production prior file")
 
@@ -176,7 +194,9 @@ class Gravelamps(Pipeline):
                             prior_name)
 
     def build_dag(self, psds=None, user=None, clobber_psd=None, dryrun=False):
-        '''
+        """
+        Build Gravelamps DAG.
+
         Construct a DAG file in order to submit a production to the condor scheduler
         using gravelamps_inference.
 
@@ -197,7 +217,7 @@ class Gravelamps(Pipeline):
         ------
         PipelineException
             Raised if the construction of the DAG fails
-        '''
+        """
 
         cwd = os.getcwd()
         self.logger.info(f"Working in {cwd}")
@@ -250,7 +270,7 @@ class Gravelamps(Pipeline):
                 return PipelineLogger(message=out, production=self.production.name)
 
     def submit_dag(self, dryrun=False):
-        '''
+        """
         Submits DAG file to the condor cluster
 
         Parameters
@@ -270,7 +290,7 @@ class Gravelamps(Pipeline):
         ------
         PipelineException
             This will be raised if the pipeline fails to submit the job
-        '''
+        """
 
         cwd = os.getcwd()
         self.logger.info(f"Working in {cwd}")
