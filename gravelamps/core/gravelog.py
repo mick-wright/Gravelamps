@@ -1,24 +1,42 @@
-'''
-Gravelamps Logging
+"""Gravelamps Logging
 
-Functions within control the use of the logger used within Gravelamps utilising the python builtin
-logging module
+Functions within control the use and generation of the gravelogger---implementation of the logging
+module in use within gravelamps.
+
+Routines
+--------
+setup_logger
+    Generates/modifies the gravelogger used throughout Gravelamps functions
+
+Notes
+-----
+Importing the module generates a blank, default gravelogger which is then modified whenever
+`setup_logger` is called. By default, this will not add text logging to avoid spam of grave.log
+output files. 
 
 Written by Mick Wright 2022
-'''
+"""
 
 import logging
 import os
 
 def setup_logger(outdir=None, log_level="INFO", args=None):
-    '''
-    Input:
-        outdir - top level directory containing run output
-        log_level - string containing either the text or numerical logging level
-        args - command line arguments given to program
+    """
+    Generates/modifies the gravelogger used throughout Gravelamps functions
 
-    Function generates the logger to be used throughout Gravelamps
-    '''
+    By default, the logger will simply output to the interpreter. If an output directory is
+    specified, the logger will also save output to grave.log within that directory. Logging
+    levels may be specified.
+
+    Parameters
+    ----------
+    outdir : str, optional
+        Path in which to generate a grave.log output saving the messages logged
+    log_level: str, optional, default='INFO'
+        Level of logging, can be `INFO`, `WARNING`, `ERROR`, `DEBUG`
+    args : argparse.Namespace, optional
+        Object containing commandline arguments to program
+    """
 
     #Logging level is overridden with highest possible if verbose output is requested
     if args is not None:

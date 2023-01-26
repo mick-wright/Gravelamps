@@ -1,8 +1,21 @@
-'''
-Gravelamps Installation Procedure
+"""Gravelamps Installation Procedures.
 
-Mick Wright 2021
-'''
+Following code is the installation procedure for Gravelamps. It is largely a standard setuptools
+style installation, with a single exception. That being that the C++ libraries that form the basis
+of the lens generation codes will be compiled during installation from a makefile procedure. This
+makefile is located in gravelamps/models/Makefile.
+
+Notes
+-----
+
+This procedure is able to fetch all python dependencies, but is unable to ascertain if the C++
+dependencies are satisfied and will fail if they are not due to the failure of the Makefile. Please
+make sure that these dependencies are fulfilled. A list of them can be found in the README
+associated with the repository.
+
+Written by Mick Wright 2021.
+
+"""
 
 import subprocess
 import os
@@ -12,18 +25,37 @@ import setuptools
 from setuptools.command.build_ext import build_ext
 
 class Build(build_ext):
-    '''Customised version of the build - additionally runs the makefile in the lensing subfolder'''
+    """
+    Build procedure.
+
+    The standard build procedure has been modified so as to run the Makefile for the C++ libraries
+    that form the basis of the lens generation code.
+
+    Methods
+    -------
+    run
+        Executes Makefile and runs standard build procedure
+
+    """
+
     def run(self):
-        #Get the current directory, from which find the lensing subdirectory
+        """
+        Executes Makefile and runs standard build procedure.
+
+        The Makefile for the C++ libraries is located in the repository's `gravelamps/model`
+        folder. This Makefile generates the C++ libraries for each of the models within. This
+        procedure is unable to ascertain whether the C++ dependencies are satisfied so this must
+        be done before hand otherwise installation will fail.
+
+        """
+
         current_directory = os.getcwd()
         model_subfolder = f"{current_directory}/gravelamps/model"
 
-        #Change to the subdirectory, run the makefile, return to present
         os.chdir(model_subfolder)
         subprocess.run(['make'], check=True)
         os.chdir(current_directory)
 
-        #Run the remaining build process
         build_ext.run(self)
 
 with open("README.md", "r", encoding="utf-8") as readme_contents:

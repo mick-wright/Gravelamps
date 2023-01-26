@@ -1,11 +1,28 @@
-'''
-Singular Isothermal Sphere (SIS) Lensing Functions
+"""Singular Isothermal Sphere (SIS) Lensing Functions
 
-These functions perform calculations for the singular isothermal sphere lensing model.
-Module also specifies that the C++ backend exectuable is sislens.
+Following are functions performing calculations for the singular isothermal sphere lens mass
+density profile model. The module backend is based in libsis.
 
 Written by Mick Wright 2022
-'''
+
+Globals
+-------
+_cdll : ctypes.CDLL
+    Library of C++ functions necessary for calculations
+_additional_arguments : list of str
+    Additional arguments required to construct interpolator data
+_additional_argument_types : list of types
+    Types of the argumnets that are given above
+_lens_parameters : list of str
+    Parameters used for the model
+
+Routines
+--------
+amplification_factor
+    Calculates geometric optics amplification factor
+generate_interpolator_data
+    Generates the amplification factor data files for use in interpolator generation
+"""
 
 import ctypes
 import os
@@ -43,20 +60,25 @@ _additional_argument_types = [int, int, int]
 _lens_parameters = ["lens_mass", "lens_fractional_distance", "source_position"]
 
 def amplification_factor(dimensionless_frequency_array, source_position):
-    '''
-    Input:
-        dimensionless_frequency_array - values of dimensionless frequency over which to generate
-                                        the amplification factor
-        source_position - dimensionless displacement from the optical axis
+    """
+    Calculates geometric optics amplification factor.
 
-    Output:
-        amplification_array - complex values of the amplification factor for each dimensionless
-                              frequency
+    This calculation is done using C++ function `PyAmplificationFactorGeometric` within `libsis`
+    for the given dimensionless frequency and source position.
 
-    Function uses the C++ functions within libsis to calculate the amplification factor in the
-    geometric optics approximation for the singular isothermal sphere model for the given
-    dimensionlss frequencies and source position.
-    '''
+    Parameters
+    ----------
+    dimensionless_frequency_array : Array of floats
+        Dimensionless form of the frequencies of interest
+    source_position : float
+        Dimensionless displacement from the optical axis
+
+    Returns
+    -------
+    amplification_array : Array of complex
+        Amplification factor to the signal
+
+    """
 
     amplification_array = np.empty(len(dimensionless_frequency_array), dtype=complex)
 
@@ -71,18 +93,23 @@ def amplification_factor(dimensionless_frequency_array, source_position):
 def generate_interpolator_data(config,
                                args,
                                file_dict):
-    '''
-    Input:
-        config - INI configuration parser
-        args - Commandline arguments passed to the program
-        file_dict - dictionary of files containing dimensionless frequency and source position
-                    values over which to generate the interpolator, followed by the corresponding
-                    files containing the real and imaginary amplification factor values to use as
-                    the interpolating data
+    """
+    Generates the amplification factor data files for use in interpolator generation.
 
-    Function uses the C++ backend function within libsis to generate the amplification factor
-    data files from the input dimensionless frequency and source position files
-    '''
+    This is done via the C++ `GenerateLensData` function within `libsis`. It will read in the
+    specified grid files and fill the data files with the appropriate values of the amplification
+    factor. This can be done in wave and geometric optics.
+
+    Parameters
+    ----------
+    config : configparser.ConfigParser
+        Object containing settings from user INI file
+    args : argparse.Namespace
+        Object containing commandline arguments to program
+    file_dict : dict
+        Contains paths to the interpolator grid and data files to fill
+
+    """
 
     additional_arguments = get_additional_arguments(config, args,
                                                     _additional_arguments,

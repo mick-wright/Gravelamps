@@ -1,13 +1,13 @@
-'''
-Gravelamps-Asimov Pipeline Integration
+"""Asimov Pipeline Integration
 
-The following is based upon the generic work performed by Daniel Williams as well as Asimov
-documentation to create a setup for Gravelamps as a workable pipeline within the Asimov
-automation framework, allowing event handling to be automated
+Following is the implementation of Gravelamps as an Asimov pipeline based on the generic
+instructions provided by Daniel Williams within the Asimov documentation. This sets up the
+configuration required to automate Gravelamps running within the Asimov framework, allowing event
+handling to be automated.
 
-Written by Daniel Williams
-           Mick Wright
-'''
+Written by Daniel Williams,
+           Mick Wright.
+"""
 
 import configparser
 import glob
@@ -24,9 +24,38 @@ from asimov.pipeline import Pipeline, PipelineException, PipelineLogger, PESumma
 from asimov.utils import update
 
 class Gravelamps(Pipeline):
-    '''
-    Gravelamps Pipeline Integration --- based primarily on the bilby Pipeline
-    '''
+    """
+    Gravelamps specific Pipeline configuration.
+
+    Based primarily upon Asimov's built-in Bilby Pipeline class. This handles building and
+    submtiting individual event runs from a properly configured ledger.
+
+    Methods
+    -------
+    detect_completion
+        Assess if job has completed
+    before_submit
+        Pre submission hook
+    build_dag
+        Build Gravelamps DAG
+    submit_dag
+        Submits Gravelamps DAG to HTCondor
+    collect_assets
+        Collect result assets
+    samples
+        Collect result sample files for PESummary
+    after_completion
+        Post completion hook to run PESummary
+    collect_logs
+        Collect logs into dictionary
+    check_progress
+        Checks job progress
+
+    See Also
+    --------
+    Asimov Documentation: for greater explanation of the concepts behind the class
+    construction.
+    """
 
     def __init__(self, production, category=None):
         super(Gravelamps, self).__init__(production, category)
@@ -36,9 +65,18 @@ class Gravelamps(Pipeline):
             raise PipelineException
 
     def detect_completion(self):
-        '''
-        Check for the production of the bilby posterior file to signal that the job has completed
-        '''
+        """
+        Assess if job has completed.
+
+        The Gravelamps DAG's final job is always the bilby_pipe DAG. To assess if the DAG has
+        completed therefore, the function checks for the existance of the final result file in the
+        ouput directory to assert the completion of the job.
+
+        Returns
+        -------
+        bool
+            Job completion status---true if complete, false otherwise.
+        """
 
         self.logger.info("Checking if the bilby parameter estimation has completed")
         results_dir = glob.glob(f"{self.production.rundir}/result")
@@ -59,9 +97,18 @@ class Gravelamps(Pipeline):
         return False
 
     def before_submit(self):
-        '''
-        Pre-submission hook, preserves relative paths
-        '''
+        """
+        Pre submission hook.
+
+        The hook at present adds the preserve relative file path argument to the condor submission
+        file.
+
+        Notes
+        -----
+        The hook currently adds the results directory from bilby_pipe to the individual submission
+        files that transfer input files. This is to deal with a current ongoing issue in bilby_pipe
+        that is due to be fixed in the next release, and will be modified after this occurs.
+        """
 
         self.logger.info("Running pre-submit hook")
 
@@ -84,9 +131,9 @@ class Gravelamps(Pipeline):
                 file.write("preserve_relative_paths = True\n" + ''.join(original))
 
     def _determine_prior(self):
-        '''
+        """
         Determines the correct choice of prior file for this production
-        '''
+        """
 
         self.logger.info("Determining production prior file")
 
@@ -147,7 +194,9 @@ class Gravelamps(Pipeline):
                             prior_name)
 
     def build_dag(self, psds=None, user=None, clobber_psd=None, dryrun=False):
-        '''
+        """
+        Build Gravelamps DAG.
+
         Construct a DAG file in order to submit a production to the condor scheduler
         using gravelamps_inference.
 
@@ -168,7 +217,7 @@ class Gravelamps(Pipeline):
         ------
         PipelineException
             Raised if the construction of the DAG fails
-        '''
+        """
 
         cwd = os.getcwd()
         self.logger.info(f"Working in {cwd}")
@@ -221,7 +270,7 @@ class Gravelamps(Pipeline):
                 return PipelineLogger(message=out, production=self.production.name)
 
     def submit_dag(self, dryrun=False):
-        '''
+        """
         Submits DAG file to the condor cluster
 
         Parameters
@@ -241,7 +290,7 @@ class Gravelamps(Pipeline):
         ------
         PipelineException
             This will be raised if the pipeline fails to submit the job
-        '''
+        """
 
         cwd = os.getcwd()
         self.logger.info(f"Working in {cwd}")
@@ -289,16 +338,29 @@ class Gravelamps(Pipeline):
                                     from error
 
     def collect_assets(self):
-        '''
-        Gather all of the result assets for this job
-        '''
+        """
+        Collect result assets.
 
-        return {"samples", self.samples()}
+        The current result assests are deemed to be the samples produced by the nested sampling
+        run.
+        """
+
+        return {"samples": self.samples()}
 
     def samples(self, absolute=False):
-        '''
+        """
         Collect the combined samples file for PESummary
-        '''
+
+        Parameters
+        ----------
+        absolute : bool
+            Flag to return the absolute or relative filepath
+
+        Returns
+        -------
+        sample_files : str
+            Path to the combined sample file
+        """
 
         if absolute:
             rundir = os.path.abspath(self.production.rundir)
@@ -312,6 +374,11 @@ class Gravelamps(Pipeline):
         return sample_files
 
     def after_completion(self):
+        """
+        Post pipeline completion hook to run PESummary.
+
+        The hook runs the PESummary pipeline to produce post-completion output.
+        """
         post_pipeline = PESummaryPipeline(production=self.production)
         self.logger.info("Job has completed. Running PESummary")
         cluster = post_pipeline.submit_dag()
@@ -320,10 +387,16 @@ class Gravelamps(Pipeline):
         self.production.event.update_data()
 
     def collect_logs(self):
-        '''
+        """
         Collect all of the log files which have been produced by this production and return
         their contents as a dictionary
-        '''
+
+        Returns
+        -------
+        messages : dict
+            Dictionary containing the log file content or notification that the file could not
+            be opened
+        """
 
         logs = glob.glob(f"{self.production.rundir}/submit/*.err")\
                + glob.glob(f"{self.production.rundir}/log*/*.err")\
@@ -344,9 +417,20 @@ class Gravelamps(Pipeline):
         return messages
 
     def check_progress(self):
-        '''
-        Check the convergence progress of a job
-        '''
+        """
+        Checks job progress.
+
+        The job progress is checked up on by finding the number of iterations and the current value
+        of the dlogz for the sampling runs. This combined information can be used to obtain a rough
+        estimate of how far through the job the run is. This is returned in dictionary format.
+
+        Returns
+        -------
+        messages : dict
+            Dictionary containing job progress in the form of the number of iterations and current
+            dlogz value. Will contain a message noting if the log file for the job could not be
+            opened.
+        """
 
         logs = glob.glob(f"{self.production.rundir}/log_data_analysis/*.out")
 
@@ -370,11 +454,17 @@ class Gravelamps(Pipeline):
 
     @classmethod
     def read_ini(cls, filepath):
-        '''
+        """
         Read and parse Gravelamps configuration file.
+
         Gravelamps configuration files are INI compliant, with dedicated and important sections
         Individual options can be repeated between sections.
-        '''
+
+        Returns
+        -------
+        config_parser : ConfigParser
+            Object containing Gravelamps configuration settings based on the INI structure.
+        """
 
         config_parser = configparser.ConfigParser()
         config_parser.read(filepath)
@@ -386,9 +476,12 @@ class Gravelamps(Pipeline):
         return out
 
     def resurrect(self):
-        '''
+        """
         Attempt to ressurect a failed job.
-        '''
+
+        A failed job will be resurrected a maximum of five times assuming that a rescue DAG
+        has been produced. 
+        """
 
         try:
             count = self.production.meta["resurrections"]

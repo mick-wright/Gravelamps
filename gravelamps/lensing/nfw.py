@@ -1,11 +1,60 @@
-'''
-Navarro Frenk White (NFW) Lensing Functions
+"""Navarro, Frenk, White (NFW) Lensing Functions
 
-These functions perform calculations for the Navarro, Frenk, White lensing model.
-Module also specifies that the C++ backend executable is nfwlens.
+Following are functions performing calculations for a Navarro, Frenk, White lens mass density
+profile model. The module backend is based in libnfw.
 
 Written by Mick Wright 2022
-'''
+
+Globals
+-------
+_cdll : ctypes.CDLL
+    Library of C++ functions necessary for calculations
+_additional_arguments : list of str
+    Additional arguments required to construct interpolator data
+_additional_argument_types : list of types
+    Types of the arguments that are given above
+_lens_parameters : list of str
+    Parameters used for the model
+
+_SCALING : float
+    Scaling constant used in the NFW profile
+_CRITICAL_VALUE : float
+    Critical value of source position for scale.
+
+_phase_interpolator : Callable[[float], ArrayLike]
+    Interpolating function to calculate morse phase for source position
+_image_position_interpolator : Callable[[float], ArrayLike]
+    Interpolating function to calculate the image position for source position
+_amplification_factor_interpolator : Callable[[float], ArrayLike]
+    Interpolating function for the region of amplification factor that is a single value i.e. above
+    the critical value of source position
+
+Routines
+--------
+__calculate_critical_value__
+    Calculates critical value of source position
+__generate_phase_interpolator__
+    Generate interpolator for phase required for zero minimum time delay
+__genrate_image_position_interpolator__
+    Generate interpolator for the image value. Valid only below the critical value
+__generate_amplification_factor_interpolator__
+    Generate interpolator for the amplification factor in the single value regime. Valid only
+    above the critical value of the source position.
+set_scaling
+    Set the value of _SCALING and regenerate the critical value and the interpolator functions
+find_image_positions
+    Calculates the position of the lensed images
+min_time_delay_phase
+    Calculats the value of the phase required for zero minimum time delay
+complete_amplification_factor
+    Calculates geometric optics amplification factor with no additional information
+amplification_factor
+    Calculates geometric optics amplification factor using the pregenerated interpolators where
+    possible
+generate_interpolator_data
+    Generates the amplification factor data files for use in interpolator generation
+
+"""
 
 from collections.abc import Callable
 
@@ -72,11 +121,13 @@ _image_position_interpolator : Callable[[float], ArrayLike]
 _amplification_factor_interpolator : Callable[[float], ArrayLike]
 
 def __calculate_critical_value__():
-    '''
-    For a given scaling of the NFW profile, the function will calculate the critical value of the
-    source position. It does this by checking over a range of source positions for where the last
-    occurance of three images is.
-    '''
+    """
+    Calculates critical value of source position.
+
+    This calculation is done for the scaling of the NFW profile given in _SCALING. It is done by
+    checking over a range of source positions for where the last occurance of three images is.
+    occurance of three images is. It places the resultant value in _CRITICAL_VALUE.
+    """
 
     source_position_space = np.linspace(0, 3.0, 1000)
 
@@ -90,12 +141,13 @@ def __calculate_critical_value__():
             break
 
 def __generate_phase_interpolator__():
-    '''
-    For a given scaling of the NFW profile, the function will generate an interpolator that will
-    return the phase required for the minimum time delay to be zero for given source positions.
-    This interpolator is valid in the source position space below the critical value of the source
-    psoition.
-    '''
+    """
+    Generate interpolator for phase required for zero minimum time delay
+
+    This calculation is done for the scaling of the NFW profile given in _SCALING. The interpolator
+    generated is valid in the source position space below the critival value of the source position
+    given in _CRITICAL_VALUE. The produced function is placed in _phase_interpolator.
+    """
 
     source_position_space = np.linspace(0, _CRITICAL_VALUE, 1000)
     phase_space = np.empty(len(source_position_space))
@@ -107,11 +159,16 @@ def __generate_phase_interpolator__():
     _phase_interpolator = interp1d(source_position_space, phase_space)
 
 def __generate_image_position_interpolator__():
-    '''
-    For a given scaling of the NFW profile, the function will generate an inteprolator that will
-    return the image positions for the given value of source position. This interpolator is valid
-    in the space below the critical value where three such positions will be generated.
-    '''
+    """
+    Generate interpolator for the image value. Valid only below the critical value.
+
+    This calculation is done for the scaling of the NFW profile given in _SCALING. The interpolator
+    returns the three image positions for the given source position, making this interpolator valid
+    only in the source position space below the critical value defined in _CRITICAL_VALUE where
+    three images will be produced by the lensing. The produced function is placed in
+    `_image_position_interpolator`.
+
+    """
 
     source_position_space = np.linspace(0, _CRITICAL_VALUE, 1000)
     image_one = np.empty(len(source_position_space))
@@ -138,12 +195,16 @@ def __generate_image_position_interpolator__():
     _image_position_interpolator = image_position_interpolator
 
 def __generate_amplification_factor_interpolator__():
-    '''
-    For a given scaling of the NFW profile, the functin will generate an interpolator that will
-    return for the amplification factor for the profile in the geometric optics regime.
-    This interpolator is valid in the source position space above the critical value where only
-    a single image is generated and the amplification is a constant value for that source position
-    '''
+    """
+    Generate interpolator for the amplification factor in the single value regime. Valid only above
+    the critical value of source position.
+
+    This calculation is done for the scaling of the NFW profile given in _SCALING. The interpolator
+    will return a single value of amplification factor for any dimensionless frequency for a given
+    source position i.e. this is valid in the regime where the amplification factor is flat. This
+    is the case only above the critical value of source position defined in _CRITICAL_VALUE. The
+    produced function is placed in _amplification_factor_interpolator
+    """
 
     source_position_space = np.linspace(_CRITICAL_VALUE, 3.0, 1000)
     fiducial_dimensionless_frequency = 1000
@@ -167,13 +228,14 @@ def __generate_amplification_factor_interpolator__():
     _amplification_factor_interpolator = amplification_factor_interpolator
 
 def set_scaling(scaling_constant : float):
-    '''
-    Input:
-        scaling_constant - characteristic scale length for the NFW profile
+    """
+    Set the value of _SCALING and regenerate the critical value and interpolator functions.
 
-    For the specified scaling constant, the function sets the value of _SCALING and runs each
-    of the subsequent functions that rely on the scaling constant value
-    '''
+    Parameters
+    ----------
+    scaling_constant : float
+        Value to set the scaling constant to
+    """
 
     global _SCALING
 
@@ -193,18 +255,22 @@ def set_scaling(scaling_constant : float):
     gravelogger.info("NFW Above Critical Amplification Factor Interpolator Generated")
 
 def find_image_positions(source_position):
-    '''
-    Input:
-        source_position - dimensionless displacement from the optical axis
+    """
+    Calculates the position of the lensed images
 
-    Output:
-        position_array - array containing the positions of the images resulting from the lens
-                         equation
+    This calculation is done using the C++ function ImagePositionArray within libnfw. That function
+    solves the lens equation to yield the positions of the lensed images.
 
-    For the given source position and scaling constant, the function uses the C++ function
-    ImagePositionArray to solve the lens equation and yield the positions of the lensed image. It
-    then converts that to a numpy array for ease of python use.
-    '''
+    Parameters
+    ----------
+    source_position : float
+        Dimensionless displacement from the optical axis
+
+    Returns
+    -------
+    position_array : Array of floats
+        Positions of the images resulting from the lens equation
+    """
 
     c_position_array = _cdll.PyImagePositions(ctypes.c_double(source_position),
                                               ctypes.c_double(_SCALING))
@@ -217,18 +283,23 @@ def find_image_positions(source_position):
     return position_array
 
 def min_time_delay_phase(source_position):
-    '''
-    Input:
-        source_position - dimensionless displacement from the optical axis
-        scaling_constant - characteristic scale length for the NFW profile
+    """
+    Calculates the value of the phase required for zero minimum time delay
 
-    Output:
-        phase - value of the phase required for a minimum time delay of zero
+    This calculation is done using the C++ function MinTimeDelayPhaseReal within libnfw which
+    calculates the real value of the phase required for a minimum time delay of zero for the given
+    scaling.
 
-    Function call the C++ backend function MinTimeDelayPhaseReal which calculates the value of the
-    phase required for a minimum time delay of zero for the NFW profile at the given scale at the
-    given source position.
-    '''
+    Parameters
+    ----------
+    source_position : float
+        Dimensionless displacement from the optical axis
+
+    Returns
+    -------
+    phase : float
+        Phase required for zero minimum time delay
+    """
 
     phase = float(_cdll.PyPhase(ctypes.c_double(source_position),
                                 ctypes.c_double(_SCALING)))
@@ -237,20 +308,26 @@ def min_time_delay_phase(source_position):
 
 def complete_amplification_factor(dimensionless_frequency,
                                   source_position):
-    '''
-    Input:
-        dimensionless_frequency - dimensionless form of the frequency of the gravitational wave data
-        source_position - dimensionless displacement from the optical axis
+    """
+    Calculates geometric optics amplification factor with no additional information
 
-    Output:
-        amplification_value - complex value of the amplification factor
+    The calculation is done using the C++ function AFGRealOnly within libnfw. This calculation
+    does not require additional information beyond of a value of _SCALING. As a consequence it is
+    always complete, but is not as computationally efficient compared to `amplification_factor`.
 
-    Function uses the C++ backend function AFGRealOnly to compute the amplification factor for the
-    NFW profile with the given input in the geometric optics regime. This version of the function
-    requires no additional information, instead calculating the image positions and phase values
-    directly in the function which makes it more complete but will make it more computationally
-    expensive than the simpler version contained within SimpleAmpFac.
-    '''
+    Parameters
+    ----------
+    dimensionless_frquency : float
+        Dimensionless form of the frequency of interest
+    source_position : float
+        Dimensionless displacement from the optical axis
+
+    Returns
+    -------
+    amplification_value : complex
+        Amplification of signal produced by lensing
+
+    """
 
     c_result = _cdll.PyAmplificationFactorGeometric(ctypes.c_double(dimensionless_frequency),
                                                     ctypes.c_double(source_position),
@@ -266,23 +343,28 @@ def complete_amplification_factor(dimensionless_frequency,
 
 def amplification_factor(dimensionless_frequency_array,
                          source_position):
-    '''
-    Input:
-        dimensionless_frequency_array - array containing the dimensionless form of the frequency
-                                        of the gravitational wave data
-        source_position - dimensionless displacement from the optical axis
+    """
+    Calculates geometric optics amplification factor using the pregenerated information where
+    possible.
 
-    Output:
-        amplification_array - complex values of the amplification factor for each dimensionless
-                              frequency
+    This calculation has been designed to be more efficient than `complete_amplification_factor` by
+    using the pregnenerated interpolating functions. Above a source position of `_CRITICAL_VALUE`
+    it will use the single value `_amplification_factor_interpolator`. Below, it will use the C++
+    function `SimpleAmpFac` which will take in the image positions and phase computed from the
+    relevant interpolators.
 
-    Function calculates the value of the amplification factor for the NFW profile in the geometric
-    optics regime. To make this as efficient as possible, if the source position is above
-    _CRITICAL_VALUE it will use the amplification factor interpolator that was precomputed when
-    the scaling was set. If it is below that value, it will get the image positions and phase
-    from the pregenerated interpolators to then feed into the C++ function SimpleAmpFac which
-    allows for speedier computation of the value than the complete method outlined above.
-    '''
+    Parameters
+    ----------
+    dimensionless_frquency_array : Array of floats
+        Dimensionless form of the frequencies of interest
+    source_position : float
+        Dimensionless displacement from the optical axis
+
+    Returns
+    -------
+    amplification_array : Array of complex
+        Amplification of signal produced by lensing over specified grid
+    """
 
     amplification_array = np.empty(len(dimensionless_frequency_array), dtype=complex)
 
@@ -309,18 +391,22 @@ def amplification_factor(dimensionless_frequency_array,
     return amplification_array
 
 def generate_interpolator_data(config, args, file_dict):
-    '''
-    Input:
-        config - INI configuration parser
-        args - Commandline arguments passed to the program
-        file_dict - dictionary of files containing dimensionless frequency and source poisition
-                    values over which to generate the interpolator, followed by the corresponding
-                    files containing the real and imaginary amplification factor values to use as
-                    the interpolating data
+    """
+    Generates the amplification factor data files for use in interpolator generation
 
-    Function uses the C++ backend function within libnfw to generate the amplification factor data
-    files from the input dimensionless frequency and source position files
-    '''
+    This is done via the C++ `GenerateLensData` function within `libnfw`. It will read in the
+    specified grid files and fill the data files with the appropraite values of amplification
+    factor. This can be done in wave and geometric optics.
+
+    Parameters
+    ----------
+    config : configparser.ConfigParser
+        Object containing settings from user INI file
+    args : argparse.Namespace
+        Object containing commandline arguments to program
+    file_dict : dict
+        Contains paths to the interpolator grid and data files to fill
+    """
 
     additional_arguments = get_additional_arguments(config, args,
                                                     _additional_arguments,

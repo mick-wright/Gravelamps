@@ -1,11 +1,11 @@
-'''
-Gravelamps Lens Data Generation
+"""Lens Data Generation
 
-Functions within control generating lensing data.
-The main function will generate lensing data for the interpolaor methods.
+The following are the function which control generation of lens data. The main function which is
+accessed via `gravelamps_generate_lens` generates a grid of lens amplification factor data for the
+specified model, allowing construction of interpolators for application within waveform generation.
 
 Written by Mick Wright 2022
-'''
+"""
 
 import os
 
@@ -22,18 +22,33 @@ from gravelamps.lensing.generic import (generate_interpolator_data,
                                         get_condor_config)
 
 def main(_config=None, _args=None, _injection=False):
-    '''
-    Optional Input:
-        _config - INI configuration parser
-        _args - Commandline arguments from program
-        _injection - Flag to set args.injection
+    """Generate lens data for specified configuration
 
-    Ouptut:
-        interpolator_files - Dictionary of files containing interpolator data
+    The configuration should be specified witin the provided INI file. The function will then
+    proceed to generate the data required---both the grid of dimensionless frequency and source
+    position as well as the amplification factor data itself. If user has specified that they wish
+    to run on an HTCondor scheduler, the program will construct the DAG necessary for data
+    generation to run within the scheduler.
 
-    Function will use input parameters from the user defined INI to generate lensing data
-    for use with the interpolator methods
-    '''
+    Parameters
+    ----------
+        _config : configparser.ConfigParser, optional
+            INI configuration parser to use for settings
+        _args : argparse.Namespace, optional
+            Commandline arguments passed to program calling main function
+        _injection : bool, optional
+            Flag to set to run as injection or analysis
+
+    Returns
+    -------
+        interpolator_files : dict
+            Contains the paths to the grid and data file outputs.
+
+    Notes
+    -----
+    User should interact on a commandline level, the arguments to the function are provided for
+    internal use when running as part of the larger inference constructions.
+    """
 
     if _config is None:
         graveparser = create_graveparser()

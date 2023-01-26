@@ -1,11 +1,11 @@
-'''
-Gravelamps Inference Run
+"""Inference configuration and running
 
-Functions within control creating an inference run using bilby
-The main function will get settings from the INI and will perform the run
+The following are the functions which control the setup and running of a nested sampling inference
+run for lensed gravitational waveforms, including the production of lensed data and the actual
+nested sampling run. The main function is accessed via `gravelamps_inference`.
 
 Written by Mick Wright 2022
-'''
+"""
 
 from argparse import Namespace
 import importlib
@@ -28,20 +28,31 @@ from gravelamps.core.module_handling import get_lens_module
 from gravelamps.generate_lens import main as generate_lens
 
 def generate_files(config, lens_module, lens_package, lens_generation_args, injection):
-    '''
-    Input:
-        lens_module - Name of module containing lensing functions
-        lens_package - Module containing lensing functions
-        config - INI configuration parser
-        lens_generation_args - Commandline arguments passed to program
-        injection - Boolean flag to indicate whether to use injection or analysis arguments
+    """Generate required interpolator files, if necessary
 
-    Output:
-        interpolator_files - Dictionary of files for interpolator modules, None otherwise
+    Will generate a dictionary containing the needed files for the interpolator. Primarily this is
+    done via `gravelamps.generate_lens.main`, however,  if the specified module is capable of
+    producing interpolator data directly via a function `generate_interpolator_files`, this will be
+    used instead. None will be returned if no files are necessary.
 
-    Function generates files necessary for interpolator if the module requires it, returning None
-    otherwise
-    '''
+    Parameters
+    ----------
+    config : configparser.ConfigParser
+        INI Configuration Parser containing lens generation settings
+    lens_module : str
+        Name of the module being used for lensing functions
+    lens_package : ModuleType
+        Module containing the lensing function
+    lens_generation_args : Namespace
+        Namespace containing commandline arguments to main function
+    injection : bool
+        Flag to determine if run is injection or analysis
+
+    Returns
+    -------
+    interpolator_files : dict/None
+        Contains the paths to the files needed for interpolator generation if files are needed
+    """
 
     if lens_module == "gravelamps.lensing.interpolator":
         interpolator_files = generate_lens(_config=config,
@@ -57,14 +68,20 @@ def generate_files(config, lens_module, lens_package, lens_generation_args, inje
     return interpolator_files
 
 def generate_waveform_arguments(config, args):
-    '''
-    Input:
-        config - INI configuration parser
-        args - Commandline arguments passed to the program
+    """Generate waveform arguments dictionary
 
-    Ouput:
-        waveform_arguments - Dictionary of arguments for the waveform
-    '''
+    Parameters
+    ----------
+    config : configparser.ConfigParser
+        INI Configuration Parser containing waveform settings
+    args : argparse.Namespace
+        Namespace containing commandline arguments to main function
+
+    Returns
+    -------
+    waveform_arguments : dict
+        Arguments for the waveform generation
+    """
 
     lens_module = get_lens_module(config, args)
     lens_package = importlib.import_module(lens_module)
@@ -113,17 +130,23 @@ def generate_waveform_arguments(config, args):
     return waveform_arguments
 
 def generate_inference_args(args, injection=False):
-    '''
-    Input:
-        args - Commandline arguments to the program
-        injection - Boolean flag to set args.injection
+    """Generate additional argument set for main function
 
-    Output:
-        inference_args - Modified version of submitted arguments
+    Creates an additional copy of the commandline arguments provided to inference in order to
+    run simultaneously an injection and analysis run of lens generation.
 
-    Function creates a version of the arguments provided to inference to be used as part of the
-    inference script
-    '''
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Commandline arguments passed to main inference program
+    injection : bool, optional, default=False
+        Flag to determine whether result should be an injection or analysis configuration
+
+    Returns
+    -------
+    inference_args : argparse.Namespace
+        Commandline argument copy with specified settings
+    """
 
     inference_args = Namespace(**vars(args))
 
@@ -135,12 +158,16 @@ def generate_inference_args(args, injection=False):
     return inference_args
 
 def run_bilby_pipe_functions(bilby_pipe_config):
-    '''
-    Input:
-        bilby_pipe_config - Dictionary containing options for the running of bilby_pipe functions
+    """Execute bilby_pipe DAG generation functions
 
-    Function runs bilby_pipe functions to generate data generation and analysis jobs.
-    '''
+    Creates the DAG necessary to run the bilby_pipe aspects of the job which handle the waveform
+    construction and nested sampling of the data.
+
+    Parameters
+    ----------
+    bilby_pipe_config : dict
+        Contains configuration options for running of bilby_pipe functions
+    """
 
     bilby_pipe_parser, bilby_pipe_args, bilby_pipe_unknown_args =\
         get_bilbypipe_args(bilby_pipe_config)
@@ -150,10 +177,14 @@ def run_bilby_pipe_functions(bilby_pipe_config):
     generate_dag(bilby_pipe_input)
 
 def main():
-    '''
-    Function will read in the commandline arguments and configuration INI and use this to create a
-    lensed inference run using bilby.
-    '''
+    """Generate lensed infernece run
+
+    Configuration should be specified within provided INI file. THe function will then produce
+    a complete configuration for the generation of necessary lensed interpolator data, and
+    inference of signal data using the lensed waveforms. If the user specifies, this will be run
+    directly, or a DAG will be generated for submission to HTCondor. If the user specifies, the
+    DAG will be directly submitted to the scheduler.
+    """
 
     graveparser = create_graveparser()
     args = graveparser.parse_args()

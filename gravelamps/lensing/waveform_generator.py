@@ -1,12 +1,16 @@
-'''
-Gravelamps Waveform Generators
+"""Gravelamps Waveform Generators
 
-Module contains the class definitions for the Gravelamps waveform generator - a child class of the
-WaveformGenerator class provided by bilby.
+Following contains class definitions for Gravelamps waveform generators. These are child classes of
+the standard bilby WaveformGenerator class.
 
-Written by Mick Wright,
+Written by Mick Wright
            Isaac C. F. Wong 2022
-'''
+
+Classes
+-------
+LensedWaveformGenerator
+    Standard total lensed waveform generator used throughout Gravelamps
+"""
 
 import importlib
 
@@ -20,13 +24,25 @@ from gravelamps.core.conversion import (frequency_to_dimensionless_frequency,
 from gravelamps.core.gravelog import gravelogger
 
 class LensedWaveformGenerator(WaveformGenerator):
-    '''
-    Lensed Waveform Generator Class
+    """
+    Standard total lensed waveform generator used throughout Gravelamps
 
-    Based upon the general bilby Waveform Generator class, this waveform generator will seek a
-    lensing module from the waveform arguments from which to extract the amplification factor
-    calculation function it will then perform this calculation when creating the strain
-    '''
+    This waveform generator will seek a lensing module from the waveform arguments from which to
+    extract the amplification factor calculation function it will then use during calculation of
+    the strain data.
+
+    Attributes
+    ----------
+    lens_module : ModuleType
+        The module used to extract lensing amplification factor function from
+    lens_parameters : dict
+        Additional lens model parameters and their values
+
+    See Also
+    --------
+    bilby.gw.waveform_generator.WaveformGenerator
+        Parent class from which most methods are inhereted
+    """
 
     def __init__(self, duration=None, sampling_frequency=None, start_time=0,
                  frequency_domain_source_model=None, time_domain_source_model=None,
@@ -100,9 +116,18 @@ class LensedWaveformGenerator(WaveformGenerator):
 
     @property
     def lens_parameters(self):
-        '''
-        Lens Parameters to Infer
-        '''
+        """
+        Additional lens model parameters and their value
+
+        Returns
+        -------
+        dict
+            Contains the parameters as keys and the associated values
+
+        See Also
+        --------
+        Each model should contain instructions on the parameters required.
+        """
 
         return self._lens_parameters
 

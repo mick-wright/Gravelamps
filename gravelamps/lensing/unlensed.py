@@ -1,11 +1,11 @@
-'''
-Unlensed Functions
+"""Unlensed Functions
 
-Largely a dummy space to specify unlensed model.
-This will be empty aside from any functions that become necessary to perform unlensed runs
+This is largely a dummy space to specify the unlensed model, which should do nothing to the main
+frequency domain source model. This will be empty aside from anything needed to perform unlensed
+runs. Any provided globals are empty dummy variables for smooth operation.
 
 Written by Mick Wright 2022
-'''
+"""
 
 _additional_arguments = []
 _additional_argument_types = []

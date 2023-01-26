@@ -1,4 +1,4 @@
-'''
+"""
 Gravelamps
 ----------
 Gravelamps: Gravitational Wave Lensing Mass Profile Model Selection
@@ -23,7 +23,7 @@ Contributors: Martin Hendry,
               Ania Liu,
               Isaac C. F. Wong,
               Eungwang Seo
-'''
+"""
 
 from pkg_resources import get_distribution, DistributionNotFound
 
@@ -37,4 +37,3 @@ try:
     __version__ = get_distribution(__name__).version
 except DistributionNotFound:
     __version__ = "Development"
-    pass
