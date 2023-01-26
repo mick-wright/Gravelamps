@@ -1,27 +1,46 @@
-'''
-Millilensing Model Agnostic Functions
+"""Millilensing Model Agnostic Functions
 
-These functions perform calculations for a millilensing system using a phenomenological approach
-that is lens model agnostic and reliant only on the lensing observables.
+Following are functions performing calculations for a mililensing system using a phenomenological
+model-agnostic approach reliant only on the lensing observables.
 
 Written by Ania Liu 2022
-'''
+
+Routines
+--------
+gather_parameter_lists
+    Gathers lens parameters into lists
+get_lens_parameters
+    Generates required parameters based on waveform arguments
+frequency_to_dimensionless_frequency
+    Conversion from frequencies to dimensionless frequencies in model agnostic fashion
+amplification_factor
+    Computs the amplification factor for the given parameters
+"""
 
 import numpy as np
 
 def gather_parameter_lists(lens_parameters, parameters):
-    '''
-    Input:
-        lens_parameters - List of ther lens parameters needed for the model
-        parameters - Dictionary containing each parameter value
+    """Gathers lens parameters into lists
 
-    Output:
-        image_times - List of image time delay values
-        luminosity_distances - List of luminosity distances to the millisignals
-        phases - List of phases of the images.
+    This gathers the image times, lumionsity distances, and morse phases of the individual
+    millisignals into lists of each of these for management. This is done in time ordering
 
-    Function gathers the lens parameters into the lists for the amplification factor function.
-    '''
+    Parameters
+    ----------
+    lens_parameters : list of strings
+        Every lensing observable that is needed for the total millilensing signal
+    parameters : dict
+        Contains values for each of the specified parameters above
+
+    Returns
+    -------
+    image_times : list of floats
+        Image time delay values as compared to first image
+    luminosity_distances : list of floats
+        Luminosity distances to millisignals
+    phases : list of floats
+        Phases of each millisignal
+    """
 
     luminosity_distances = [parameters["luminosity_distance"]]
     image_times = []
@@ -38,16 +57,24 @@ def gather_parameter_lists(lens_parameters, parameters):
     return image_times, luminosity_distances, phases
 
 def get_lens_parameters(waveform_arguments):
-    '''
-    Input:
-        waveform_arguments - Dictionary of arguments to the waveform
+    """
+    Generates required parameters based on waveform arguments
 
-    Output:
-        lens_parameters - List of the lens parameters needed for this model
+    The waveform arguments specify a number of signals, this will generate the required
+    parameter names for each millisignal --- each needs a luminosty distance, time delay,
+    and phase. The first signal requires only the phase. It's luminosity distance is in the
+    main parameter list, and time delays are measured relative to the first image.
 
-    Function generates a list of the lens parameters that will be needed based on the waveform
-    arguments
-    '''
+    Parameters
+    ----------
+    waveform_arugments : dict
+        Contains arguments for the waveform generation
+
+    Returns
+    -------
+    lens_parameters : list of strings
+        Every lensing observable that is needed for the total millilensing signal
+    """
 
     max_number_of_images = waveform_arguments["millilensing_kmax"]
 
@@ -64,15 +91,19 @@ def get_lens_parameters(waveform_arguments):
     return lens_parameters
 
 def frequency_to_dimensionless_frequency(frequency_array):
-    '''
-    Input:
-        frequency_array - array of frequencies over which to generate amplification factor
+    """
+    Conversion of frequencies to dimensionless frequencies in model agnostic fashion
 
-    Output:
-        dimensionless_frequency_array - Corresponding dimensionless frequency array
+    Parameters
+    ----------
+    frequency_array : Array of floats
+        Frequencies of interest
 
-    Function converts an array of frequencies to the dimensionless equivalent geometrically.
-    '''
+    Returns
+    -------
+    dimensionless_frequency_array : Array of floats
+        Dimensionless form of the input frequencies from model agnostic conversion
+    """
 
     dimensionless_frequency_array = 1j * 2 * np.pi * frequency_array
 
@@ -83,19 +114,32 @@ def amplification_factor(frequency_array,
                          image_times,
                          luminosity_distances,
                          morse_phases):
-    '''
-    Inputs:
-        frequency_array - array of frequencies over which to generate amplification factor
-        number_of_images - integer number of millilensing images
-        image_times - Array of the time delays between millisignals
-        luminosity_distances - Array containing luminosity distance, followed by the distances to
-                               the next millisignal from the previous
-        morse_phases - morse factor of each millisignal
+    """
+    Computes the amplification factor for the given parameters.
 
-    Outputs:
-        amplification_factor_array - array of values for the amplification factor over the
-                                     frequencies specified
-    '''
+    The total amplification of a millilensing signal is given as the individual amplifications
+    from each image (or millisignal) contributing. The number of these must be specified and
+    lensing observables given for each of the images in question.
+
+    Parameters
+    ----------
+    frequency_array : Array of floats
+        Frequencies to be amplified
+    number_of_images : float
+        The total number of millisignals that comprise the total amplification
+    image_times : Array of floats
+        Time delays between millisignals relative to the first image
+    luminosity_distances : Array of floats
+        Luminosity distance of the first image, followed by the distance to the next millisignal
+        from the previous
+    morse_phases : Array of floats
+        Morse factor of each millisignal
+
+    Returns
+    -------
+    amplification_factor_array : Array of floats
+        Values of the amplification factor over the specified frequencies
+    """
 
     amplification_factor_value = np.exp(-1j * morse_phases[0] * np.pi)
     amplification_factor_array = np.full(len(frequency_array),
