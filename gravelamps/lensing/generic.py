@@ -1,11 +1,23 @@
-'''
-Generic Lensing Functions
+"""Generic Lensing Functions
 
-These functions are generic non-model-specific functions that assist in the running of the model
-specific code.
+Following are functions that are model agnostic and used to interface the specific model forms with
+the rest of the architecture. Also included is a main running script which forms the minimal program
+`gravelamps_generate_interpolator_data` which is included for HTCondor scheduling of lens data
+generation. This is not generally intended to be run by the user.
 
 Written by Mick Wright 2022
-'''
+
+Routines
+--------
+get_additional_arguments
+    Retrieves required additional arguments for model specific lens generation
+get_condor_config
+    Generates condor settings from the user INI
+generate_interpolator_condor
+    Builds and, if specified, submits a lens generation run for the HTCondor scheduler
+generate_inerpolator_data
+    Performs lens generation for the specified model in the format needed
+"""
 
 import ast
 import importlib
@@ -20,16 +32,25 @@ from gravelamps.core.gravelog import gravelogger, setup_logger
 from gravelamps.core.graveparser import create_graveparser
 
 def get_additional_arguments(config, args, argument_list, type_list):
-    '''
-    Input:
-        config - INI configuration parser
-        args - Commandline arguments passed to the program
-        argument_list - list of the model specific arguments to retrieve from  the config file
-        type_list - list of the types of the arguments above
+    """
+    Retrieves required additional arguments for model specific lens generation
 
-    Output:
-        value_list - list of the argument values as the types specified
-    '''
+    Parameters
+    ----------
+    config : configparser.ConfigParser
+        Object containing settings for user INI file
+    args : argparse.Namespace
+        Object containing commmandline arguments to program
+    argument_list : List of str
+        Model specific arguments to retrieve from config file
+    type_list : List of type funcs
+        Types of the arguments given in `argument_list`
+
+    Returns
+    -------
+    value_list : List of objects
+        Values of the arguments specified in `argument_list`
+    """
 
     gravelogger.info("Retrieving additional arguments")
 
@@ -51,20 +72,27 @@ def get_additional_arguments(config, args, argument_list, type_list):
     return value_list
 
 def get_condor_config(config, args, output_directories, model, file_dict):
-    '''
-    Input:
-        config - INI configuration parser
-        args - Commandline arguments passed to the program
-        output_directories - dictionary containing paths to the folders for output
-        model - String containing the python path to the model
-        file_dict - dictionary of files containing the paths for the interpolator grid and data
+    """
+    Generates HTCondor configuration from user settings in INI
 
-    Output:
-        condor_settings - Dictionary containing condor settings to use
+    Parameters
+    ----------
+    config : configparser.ConfigParser
+        Object containing settings from user INI file
+    args : argparse.Namespace
+        Object containing commandline arguments to program
+    output_directories : dict
+        Contains paths to the folders for output
+    model : str
+        Full python path to the lens model
+    file_dict : dict
+        Contains the paths for the interpolator grid and data files
 
-    Function generates the settings for the HTCondor Job based upon a set of defaults replaced by
-    any user specified settings.
-    '''
+    Returns
+    -------
+    condor_settings : dict
+        Contains settings used by HTCondor
+    """
 
     if args.injection:
         lens_type = "injection"
@@ -108,13 +136,20 @@ def get_condor_config(config, args, output_directories, model, file_dict):
     return condor_settings
 
 def generate_interpolator_condor(args, output_directories, condor_settings):
-    '''
-    Input:
-        args - Commandline arguments passed to the program
-        output_directories - dictionary containing paths to the folders for output
-        file_dict - Files containing interpolator data grid and value files
-        condor_settings - dictionary containing settings for the HTCondor job
-    '''
+    """
+    Builds and, if specified, submits a lens generation run for the HTCondor Scheduler.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Object containing commandline arguments to program
+    output_directories : dict
+        Contains paths to the folders for output
+    file_dict : dict
+        Contains paths for interpolator grid and data files
+    condor_settings : dict
+        Contains the settings for HTCondor to use
+    """
 
     if args.injection:
         lens_type = "injection"
@@ -138,16 +173,31 @@ def generate_interpolator_condor(args, output_directories, condor_settings):
         schedd.submit(condor_submit_object)
 
 def generate_interpolator_data(config, args, model, file_dict):
-    '''
-    Input:
-        config - INI configuration parser
-        args - Commandline arguments passed to the program
-        model - String containing the python path to the lensing module
-        file_dict - dictionary of files containing the paths for the interpolator grid and data
+    """
+    Performs lens generation for the specified model in the format needed.
 
-    Function generates interpolator data using the specified model and saving the data to the given
-    files.
-    '''
+    Lens generation can be done in one of three ways --- it can be done locally from the
+    `generate_interpolator_data` function for the model if it has it, it can be done locally
+    from the `amplification_factor` function directly if the model is sufficiently speedy to not
+    need a specific interpolator generation function, or it can generate an HTCondor DAG file to
+    run one of these should scheduling be required.
+
+    Parameters
+    ----------
+    config : configparser.ConfigParser
+        Object containing settings from user INI file
+    args : argparse.Namespace
+        Object containing commandline arguments to program
+    model : str
+        Full python path to the lensing model
+    file_dict : dict
+        Contains paths for interpolator grid and data files
+
+    Raises
+    ------
+    AttributeError
+        Occurs when no data generation functions exist within model module
+    """
     interpolator_module = importlib.import_module(model)
 
     if hasattr(interpolator_module, "generate_interpolator_data"):
@@ -172,9 +222,14 @@ def generate_interpolator_data(config, args, model, file_dict):
         raise AttributeError(f"No data generating functions found in {model}")
 
 def main():
-    '''
-    Runs generate_interolator_data with the specified model and file dictionary
-    '''
+    """
+    Forms the program `gravelamps_generate_interpolator_data`.
+
+    This program is not intended to be run directly by the user, instead it is a minimal function
+    that will be called by the HTCondor scheduler when it is being used. Users should use the more
+    full features `gravelamps_generate_lens` program. If run, however, it will use the specified
+    file dictionary and output to generate lens data directly.
+    """
 
     graveparser = create_graveparser()
     args = graveparser.parse_args()
