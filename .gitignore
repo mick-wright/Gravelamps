@@ -1,1 +1,8 @@
-__pycache__
+build
+*.egg.info
+
+__pycache__/
+*/__pycache__*
+
+docs/_template
+docs/_static _
