@@ -1,6 +1,6 @@
-====================================
-Welcome to Gravelamps' Documentation
-====================================
+===================
+Gravelamps Overview
+===================
 
         **Note**
 
@@ -37,3 +37,18 @@ The source code of Gravelamps is provided under the MIT License. If the software
 	}
 
 In addition, due to the dependency of Gravelamps upon in particular, ``bilby``, ``bilby_pipe``, and ``arb``, but all of the mentioned components, please follow their citation practices.
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Contents
+
+   generate-lens
+   inference
+   ini
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Indices
+
+   API Reference <autoapi/gravelamps/index>
+
