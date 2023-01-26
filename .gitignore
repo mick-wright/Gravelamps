@@ -4,5 +4,6 @@ build
 __pycache__/
 */__pycache__*
 
+docs/_build
 docs/_template
-docs/_static _
+docs/_static
