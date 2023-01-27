@@ -99,7 +99,6 @@ setuptools.setup(
     classifiers = [
         "Programming Language :: Python :: 3",
         "Programming Language :: C++",
-        "Operating System :: POSIX :: Linux",
         "License :: OSI Approved :: MIT License",
         ],
     python_requires = ">=3.8",
