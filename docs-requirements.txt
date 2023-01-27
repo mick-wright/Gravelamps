@@ -1,0 +1,4 @@
+sphinx
+renku-sphinx-theme
+sphinx-autoapi
+sphinx-numpydoc

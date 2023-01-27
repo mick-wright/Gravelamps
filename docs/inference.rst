@@ -6,7 +6,7 @@ The Gravelamps Inference program (``gravelamps_inference``) is the main program 
 
         **Scope of this document**
 
-        This document covers the usage and running of the Inference program, the INI documentation is covered in its own `document <INI_documentation.rst>`_. 
+        This document covers the usage and running of the Inference program. For INI documentation, see :doc:`ini`.
 
 Usage of the Program
 ====================
