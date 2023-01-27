@@ -101,8 +101,6 @@ setuptools.setup(
         "Programming Language :: C++",
         "Operating System :: POSIX :: Linux",
         "License :: OSI Approved :: MIT License",
-        "Intended Audience :: GW Lensing Community",
-        "Topic :: GW Lensing :: Lens Mass Profile Model Selection"
         ],
     python_requires = ">=3.8",
 )
