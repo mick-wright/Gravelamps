@@ -4,7 +4,9 @@
 
 Gravelamps is a python package built upon the [`bilby`](https://git.ligo.org/lscsoft/bilby) framework designed to perform template based analysis of both simulated and real gravitationally lensed gravitational wave signals to determine the mass density profile of the lensing object. In so doing, it will also give estimates of the lens and source parameters for each of the mass density profiles that is tested. 
 
-It is able to do this in both the wave optics only regime as well as in a hybrid environment crossing into the geometric optics regime at a specified threshold allowing a great deal of flexibility in the mass spectrum of the lensing object. The particularly complex calculations required to compute the wave optics case are done using the C arbitrary precision library [`arb`](https://github.com/fredrik-johansson/arb/) with the C++ libraries that have been written to implement these computations are contained within `gravelamps.model`. 
+It is able to do this in both the wave optics only regime as well as in a hybrid environment crossing into the geometric optics regime at a specified threshold allowing a great deal of flexibility in the mass spectrum of the lensing object. The particularly complex calculations required to compute the wave optics case are done using the C arbitrary precision library [`arb`](https://github.com/fredrik-johansson/arb/) with the C++ libraries that have been written to implement these computations are contained within `gravelamps.model`.
+
+Further [documentation](https://mick.wright.docs.ligo.org/Gravelamps) explains the usage of the package in more detail. 
 
 ## How Does It Work?
 
@@ -35,7 +37,11 @@ Should you only desire to have Gravelamps perform the generation of data for a l
 
 ## Installation Instructions
 
-The process of installation has designed to be as simple as possible. Assuming all necessary dependencies are met, simply follow this procedure:
+Gravelamps is available from pip and can be installed simply with
+
+	`pip install Gravelamps`
+
+Should you wish to build from the source. The process of installation has designed to be as simple as possible. Assuming all necessary dependencies are met, simply follow this procedure:
 
 1. Clone the repository
 2. In a terminal, navigate to the repository directory
@@ -47,7 +53,7 @@ This can be done either in default python environment or in a conda environment 
 
 #### C++ Dependencies
 
-The following are required for the compilation and running of the C++ subprograms for lens generation:
+The following are required for the compilation and running of the C++ subprograms for lens generation, needed for building from source:
 + `arb`
 + `openMP`
 + `g++`
