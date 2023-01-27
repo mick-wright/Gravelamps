@@ -25,7 +25,7 @@ endif
 HEADER_FILES = $(filter-out src/utils.h, $(wildcard src/*.h))
 MODELS = $(HEADER_FILES:src/%.h=lib%)
 LIBRARY_NAMES = $(MODELS:%=%.so)
-LIBRARY_DIRECTORY = $(HOME)/.local/lib
+LIBRARY_DIRECTORY = lib
 LIBRARY_TARGETS = $(LIBRARY_NAMES:%=$(LIBRARY_DIRECTORY)/%) 
 
 # Rules for creating libraries
