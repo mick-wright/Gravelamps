@@ -27,6 +27,8 @@ generate_interpolator_data
 import ctypes
 import os
 
+from importlib.resources import files
+
 import numpy as np
 
 from gravelamps.core.gravelog import gravelogger
@@ -35,7 +37,7 @@ from .generic import get_additional_arguments
 #The following loads in the DLL containing the C++ functions for the direct implementations for
 #geometric optics runs. It then sets the argument and result types accordingly
 
-_cdll = ctypes.CDLL(f"{os.path.expanduser('~')}/.local/lib/libsis.so")
+_cdll = ctypes.CDLL(files('gravelamps.model.lib').joinpath('libsis.so'))
 
 _cdll.PyAmplificationFactorGeometric.argtypes = (ctypes.c_double, ctypes.c_double)
 _cdll.PyAmplificationFactorGeometric.restype = ctypes.POINTER(ctypes.c_double)
