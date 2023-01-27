@@ -38,10 +38,6 @@ class LensedWaveformGenerator(WaveformGenerator):
     lens_parameters : dict
         Additional lens model parameters and their values
 
-    See Also
-    --------
-    bilby.gw.waveform_generator.WaveformGenerator
-        Parent class from which most methods are inhereted
     """
 
     def __init__(self, duration=None, sampling_frequency=None, start_time=0,

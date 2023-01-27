@@ -51,10 +51,6 @@ class Gravelamps(Pipeline):
     check_progress
         Checks job progress
 
-    See Also
-    --------
-    Asimov Documentation: for greater explanation of the concepts behind the class
-    construction.
     """
 
     def __init__(self, production, category=None):

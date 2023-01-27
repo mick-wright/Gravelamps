@@ -38,9 +38,6 @@ def create_bilbypipe_parser():
     bilbypipe_parser : argparse.ArgumentParser
         parser for the bilby_pipe program
 
-    See Also
-    --------
-    bilby_pipe documentation: for a complete list of arguments that can be parsed by this parser
     """
 
     bilbypipe_parser = create_parser()
