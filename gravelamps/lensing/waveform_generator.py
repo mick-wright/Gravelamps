@@ -120,9 +120,6 @@ class LensedWaveformGenerator(WaveformGenerator):
         dict
             Contains the parameters as keys and the associated values
 
-        See Also
-        --------
-        Each model should contain instructions on the parameters required.
         """
 
         return self._lens_parameters
