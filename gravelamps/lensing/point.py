@@ -38,7 +38,7 @@ from .generic import get_additional_arguments
 
 #The following loads the DLL containing the C++ functions for the direct implementations for
 #geometric optics runs. It then sets the argument and result types accordingly
-_cdll = ctypes.CDLL(files('gravelamps.model.lib').joinpath('libpoint.so'))
+_cdll = ctypes.CDLL(files('gravelamps').joinpath('model/lib/libpoint.so'))
 
 _cdll.PyAmplificationFactorGeometric.argtypes = (ctypes.c_double, ctypes.c_double)
 _cdll.PyAmplificationFactorGeometric.restype = ctypes.POINTER(ctypes.c_double)

@@ -73,7 +73,7 @@ from gravelamps.lensing.generic import get_additional_arguments
 #The following loads in the DLL containing the C++ functions for the direct implementations for
 #goemetric optics runs. It then sets the argument and result types accordingly
 
-_cdll = ctypes.CDLL(importlib.resources.files('gravelamps.model.lib').joinpath('libnfw.so'))
+_cdll = ctypes.CDLL(importlib.resources.files('gravelamps').joinpath('model/lib/libnfw.so'))
 
 _cdll.PyPhase.argtypes = (ctypes.c_double, ctypes.c_double)
 _cdll.PyPhase.restype = ctypes.c_double
