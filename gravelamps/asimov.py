@@ -108,7 +108,7 @@ class Gravelamps(Pipeline):
 
         self.logger.info("Running pre-submit hook")
 
-        submission_files = glob.glob(f"{self.event.name}/{self.production.rundir}/submit/*.submit")
+        submission_files = glob.glob(f"{self.production.rundir}/submit/*.submit")
         result_dir = f"{self.production.rundir}/result"
 
         for sub_file in submission_files:
