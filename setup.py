@@ -82,7 +82,8 @@ setuptools.setup(
     packages = [
         "gravelamps",
         "gravelamps.core",
-        "gravelamps.lensing"
+        "gravelamps.lensing",
+        "gravelamps.prior"
     ],
     package_data = {'gravelamps': ['model/lib/*.so']},
     has_ext_modules = lambda: True,
