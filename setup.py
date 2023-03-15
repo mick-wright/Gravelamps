@@ -53,7 +53,7 @@ class Build(build_ext):
         model_subfolder = f"{current_directory}/gravelamps/model"
 
         os.chdir(model_subfolder)
-        subprocess.run(['make'], check=True)
+        subprocess.run(['make', '-B'], check=True)
         os.chdir(current_directory)
 
         build_ext.run(self)
