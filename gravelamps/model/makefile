@@ -7,7 +7,7 @@
 # Makefile written by Mick Wright 2022
 
 # Compiler checking - if GXX is set use, otherwise set to g++
-ifeq ($(strip $(GXX)),)
+ifndef GXX
 	GXX = g++
 endif
 
@@ -21,7 +21,7 @@ else ifndef PREFIX
 		    -O3 -fopenmp -g
 else 
 	GXX_FLAGS = -isystem $(PREFIX)/include -L $(PREFIX)/lib -larb -lflint -O3\
-		     -fopenmp -g
+		     -fopenmp -g -Wl,-rpath,$(PREFIX)/lib -Wl,-rpath-link,$(PREFIX)/lib
 endif
 
 # Libraries to create are determined by the headers in the src directory
