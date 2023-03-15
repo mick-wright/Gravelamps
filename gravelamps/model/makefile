@@ -14,10 +14,10 @@ endif
 # The default list of flags to set, adjusted depending on whether the makefile is run with or
 # outwith a conda environment. Flags set are the inclusion of the flint and arb libraries,
 # as many optimisations as possible, and multiprocessing via OpenMP
-ifndef $CONDA_DEFAULT_ENV
+ifndef CONDA_PREFIX
 	GXX_FLAGS = -larb -lflint -O3 -fopenmp -g
-else ifndef $PREFIX
-	GXX_FLAGS = -isystem $(CONDA_PREFIX)/include -L $(CONDA_PREFIX)/lib -larb -lflint
+else ifndef PREFIX
+	GXX_FLAGS = -isystem $(CONDA_PREFIX)/include -L $(CONDA_PREFIX)/lib -larb -lflint\
 		    -O3 -fopenmp -g
 else 
 	GXX_FLAGS = -isystem $(PREFIX)/include -L $(PREFIX)/lib -larb -lflint -O3\
@@ -43,7 +43,6 @@ $(LIBRARY_DIRECTORY)/%.so :
 	@echo '**********************'
 
 all: $(LIBRARY_TARGETS)
-.PHONY: all
 
 # Debugging, print all variables
 variables:
@@ -52,6 +51,7 @@ variables:
 	@echo LIBRARY_NAMES: $(LIBRARY_NAMES)
 	@echo LIBRARY_DIRECTORY: $(LIBRARY_DIRECTORY)
 	@echo $(LIBRARY_DIRECTORY)/$(LIBRARY_NAMES)
+	@echo $(GXX_FLAGS)
 
 #CLEAN TARGET
 .PHONY: clean
