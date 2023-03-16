@@ -21,7 +21,7 @@ else ifndef PREFIX
 		    -O3 -fopenmp -g
 else 
 	GXX_FLAGS = $(CXX_FLAGS) -isystem $(PREFIX)/include -L $(PREFIX)/lib -larb -lflint -O3\
-		     -fopenmp -g -Wl,-rpath,$(PREFIX)/lib -Wl,-rpath-link,$(PREFIX)/lib
+		     -fopenmp -g
 endif
 
 # Libraries to create are determined by the headers in the src directory
