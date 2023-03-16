@@ -23,8 +23,16 @@ import os
 import setuptools
 
 from setuptools.command.build_ext import build_ext
+from setuptools.command.build import build
 
-class Build(build_ext):
+class Build_Reorder(build):
+    sub_commands = [('build_clib', build.has_c_libraries),
+                    ('build_ext', build.has_ext_modules),
+                    ('build_py', build.has_pure_modules),
+                    ('build_scripts', build.has_scripts),
+                    ]
+
+class Build_Clibraries(build_ext):
     """
     Build procedure.
 
@@ -96,7 +104,8 @@ setuptools.setup(
     has_ext_modules = lambda: True,
     install_requires = requirements,
     cmdclass = {
-        "build_ext": Build,
+        "build": Build_Reorder,
+        "build_ext": Build_Clibraries,
     },
     entry_points = {
         "console_scripts": [
