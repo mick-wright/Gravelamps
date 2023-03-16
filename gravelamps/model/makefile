@@ -15,12 +15,12 @@ endif
 # outwith a conda environment. Flags set are the inclusion of the flint and arb libraries,
 # as many optimisations as possible, and multiprocessing via OpenMP
 ifndef CONDA_PREFIX
-	GXX_FLAGS = -larb -lflint -O3 -fopenmp -g
+	GXX_FLAGS = $(CXX_FLAGS) -larb -lflint -O3 -fopenmp -g
 else ifndef PREFIX
-	GXX_FLAGS = -isystem $(CONDA_PREFIX)/include -L $(CONDA_PREFIX)/lib -larb -lflint\
+	GXX_FLAGS = $(CXX_FLAGS) -isystem $(CONDA_PREFIX)/include -L $(CONDA_PREFIX)/lib -larb -lflint\
 		    -O3 -fopenmp -g
 else 
-	GXX_FLAGS = -isystem $(PREFIX)/include -L $(PREFIX)/lib -larb -lflint -O3\
+	GXX_FLAGS = $(CXX_FLAGS) -isystem $(PREFIX)/include -L $(PREFIX)/lib -larb -lflint -O3\
 		     -fopenmp -g -Wl,-rpath,$(PREFIX)/lib -Wl,-rpath-link,$(PREFIX)/lib
 endif
 
