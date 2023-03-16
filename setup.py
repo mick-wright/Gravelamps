@@ -53,6 +53,8 @@ class Build(build_ext):
         model_subfolder = f"{current_directory}/gravelamps/model"
 
         os.chdir(model_subfolder)
+        if not os.path.isdir("lib"):
+            os.mkdir("lib")
         subprocess.run(['make', '-B'], check=True)
         os.chdir(current_directory)
 
