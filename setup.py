@@ -56,6 +56,9 @@ class Build(build_ext):
         if not os.path.isdir("lib"):
             os.mkdir("lib")
         subprocess.run(['make', '-B'], check=True)
+
+        if not os.listdir("lib"):
+            raise FileNotFoundError
         os.chdir(current_directory)
 
         build_ext.run(self)
