@@ -39,7 +39,7 @@ $(LIBRARY_DIRECTORY)/%.so :
 	$(eval SOURCE_FILES = $(wildcard $(LIBRARY_NAME)_*.cxx)) 
 	@echo SOURCE_FILES : $(SOURCE_FILES)
 	$(GXX) -o $@ $(SOURCE_FILES) utils.cxx $(GXX_FLAGS) -fPIC -shared
-	@echo $(LIBRARY_NAME) BUILT 
+	@echo $(LIBRARY_NAME) BUILT TO $@
 	@echo '**********************'
 
 all: $(LIBRARY_TARGETS)
