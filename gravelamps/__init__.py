@@ -32,6 +32,7 @@ import asimov
 from .core import conversion, file_handling, gravelog, graveparser, module_handling
 from . import lensing
 from . import inference
+from . import prior
 
 try:
     __version__ = get_distribution(__name__).version
