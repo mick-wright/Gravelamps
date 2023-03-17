@@ -35,7 +35,7 @@ class UniformMorse(Categorical):
     """
 
     def __init__(self, name="morse_phase", latex_label="$n$", unit=None):
-        super().__init__(name, 3, latex_label)
+        super().__init__(3, name=name, latex_label=latex_label)
         self.categories = [0, 0.5, 1]
 
     def rescale(self, val):
