@@ -13,6 +13,32 @@ import numpy as np
 
 from bilby.core.prior import Categorical
 
+class ImageNumber(Categorical):
+    """
+    Discrete Uniform Prior for handling the number of millilensing image signals.
+
+    Lightly modified such that the minimum must be 1
+
+    Attributes
+    ---------
+    ncategories : int
+        Number of potential images
+    name : str
+        Name of the parameter used, defaults to 'num_images'
+    latex_label : str
+        The latex compatible output to be used on plots, etc. Defaults to '$n_{\mathrm{signals}}$'.
+    unit : str
+        Unit of the parameter
+    """ 
+
+    def __init__(self, ncategories name="num_images", 
+                 latex_label="$n_{\mathrm{signals}}$", unit=None):
+        super().__init__(ncategories, name=name, latex_label=latex_label, unit=unit)
+        maximum = ncategories
+        minimum = 1
+        self.categories = np.arange(self.minimum, self.maximum+1)
+
+
 class UniformMorse(Categorical):
     """
     Discrete Uniform Prior for handling the Morse phase. 
