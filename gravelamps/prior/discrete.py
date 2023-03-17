@@ -31,7 +31,7 @@ class ImageNumber(Categorical):
         Unit of the parameter
     """ 
 
-    def __init__(self, ncategories name="num_images", 
+    def __init__(self, ncategories, name="num_images", 
                  latex_label="$n_{\mathrm{signals}}$", unit=None):
         super().__init__(ncategories, name=name, latex_label=latex_label, unit=unit)
         maximum = ncategories
