@@ -7,3 +7,5 @@ __pycache__/
 docs/_build
 docs/_templates
 docs/_static
+
+gravelamps/model/lib
