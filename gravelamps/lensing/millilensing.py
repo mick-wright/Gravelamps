@@ -79,7 +79,7 @@ def get_lens_parameters(waveform_arguments):
     max_number_of_images = waveform_arguments["millilensing_kmax"]
 
     luminosity_distance_list = np.array(range(1, max_number_of_images)).astype(str)
-    time_delay_list = np.array(range(1, max_number_of_images-1)).astype(str)
+    time_delay_list = np.array(range(1, max_number_of_images)).astype(str)
     phase_list = np.array(range(max_number_of_images)).astype(str)
 
     luminosity_distance_list = np.char.add("dl", luminosity_distance_list)
