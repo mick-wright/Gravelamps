@@ -82,7 +82,7 @@ def get_lens_parameters(waveform_arguments):
     time_delay_list = np.array(range(1, max_number_of_images-1)).astype(str)
     phase_list = np.array(range(max_number_of_images)).astype(str)
 
-    luminosity_distance_list = np.char.add("dL", luminosity_distance_list)
+    luminosity_distance_list = np.char.add("dl", luminosity_distance_list)
     time_delay_list = np.char.add("dt", time_delay_list)
     phase_list = np.char.add("n", phase_list)
 
