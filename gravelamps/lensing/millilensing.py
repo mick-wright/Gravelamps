@@ -152,7 +152,7 @@ def amplification_factor(frequency_array,
 
         if number_of_images == 2:
             luminossity_distance_term = luminosity_distances[0]/luminosity_distances[1]
-            time_delay_term = dimensionless_frequency_array * images_times[0]
+            time_delay_term = dimensionless_frequency_array * image_times[0]
             morse_phase_term = 1j * morse_phases[1] * np.pi
 
             amplification_factor_array += luminosity_distance_term\
