@@ -95,7 +95,8 @@ setuptools.setup(
     packages = [
         "gravelamps",
         "gravelamps.core",
-        "gravelamps.lensing"
+        "gravelamps.lensing",
+        "gravelamps.prior"
     ],
     include_package_data=True,
     package_data = {

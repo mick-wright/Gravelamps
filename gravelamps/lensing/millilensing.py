@@ -47,7 +47,7 @@ def gather_parameter_lists(lens_parameters, parameters):
     phases = []
 
     for parameter in lens_parameters:
-        if parameter.startswith("dL"):
+        if parameter.startswith("dl"):
             luminosity_distances.append(parameters[parameter])
         elif parameter.startswith("dt"):
             image_times.append(parameters[parameter])
@@ -79,10 +79,10 @@ def get_lens_parameters(waveform_arguments):
     max_number_of_images = waveform_arguments["millilensing_kmax"]
 
     luminosity_distance_list = np.array(range(1, max_number_of_images)).astype(str)
-    time_delay_list = np.array(range(1, max_number_of_images-1)).astype(str)
+    time_delay_list = np.array(range(1, max_number_of_images)).astype(str)
     phase_list = np.array(range(max_number_of_images)).astype(str)
 
-    luminosity_distance_list = np.char.add("dL", luminosity_distance_list)
+    luminosity_distance_list = np.char.add("dl", luminosity_distance_list)
     time_delay_list = np.char.add("dt", time_delay_list)
     phase_list = np.char.add("n", phase_list)
 
@@ -150,12 +150,20 @@ def amplification_factor(frequency_array,
         dimensionless_frequency_array = frequency_to_dimensionless_frequency(frequency_array)
         time_delays = np.cumsum(image_times)
 
-        for idx in range(1, number_of_images):
-            luminosity_distance_term = luminosity_distances[0]/luminosity_distances[idx]
-            time_delay_term = dimensionless_frequency_array * time_delays[idx-1]
-            morse_phase_term = 1j * morse_phases[idx] * np.pi
+        if number_of_images == 2:
+            luminosity_distance_term = luminosity_distances[0]/luminosity_distances[1]
+            time_delay_term = dimensionless_frequency_array * image_times
+            morse_phase_term = 1j * morse_phases[1] * np.pi
 
             amplification_factor_array += luminosity_distance_term\
-                                          * np.exp(time_delay_term - morse_phase_term)
+                                        * np.exp(time_delay_term - morse_phase_term)
+        else:
+            for idx in range(1, number_of_images):
+                luminosity_distance_term = luminosity_distances[0]/luminosity_distances[idx]
+                time_delay_term = dimensionless_frequency_array * time_delays[idx-1]
+                morse_phase_term = 1j * morse_phases[idx] * np.pi
+
+                amplification_factor_array += luminosity_distance_term\
+                                            * np.exp(time_delay_term - morse_phase_term)
 
     return amplification_factor_array
