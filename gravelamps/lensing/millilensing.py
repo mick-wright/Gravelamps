@@ -47,7 +47,7 @@ def gather_parameter_lists(lens_parameters, parameters):
     phases = []
 
     for parameter in lens_parameters:
-        if parameter.startswith("dL"):
+        if parameter.startswith("dl"):
             luminosity_distances.append(parameters[parameter])
         elif parameter.startswith("dt"):
             image_times.append(parameters[parameter])
