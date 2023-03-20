@@ -27,8 +27,6 @@ Contributors: Martin Hendry,
 
 from pkg_resources import get_distribution, DistributionNotFound
 
-import asimov
-
 from .core import conversion, file_handling, gravelog, graveparser, module_handling
 from . import lensing
 from . import inference
