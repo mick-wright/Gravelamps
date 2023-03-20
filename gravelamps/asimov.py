@@ -53,6 +53,9 @@ class Gravelamps(Pipeline):
 
     """
 
+    name = "Gravelamps"
+    status = {"wait", "stuck", "stopped", "running", "finished"}
+
     def __init__(self, production, category=None):
         super(Gravelamps, self).__init__(production, category)
         self.logger.info("Using the Gravelamps pipeline")
