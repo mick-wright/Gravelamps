@@ -1,17 +1,17 @@
-image: python:3.9
+#image: python:3.9
 
-stages:
-  - docs
+#stages:
+#  - docs
 
-pages:
-  stage: docs
-  script:
-    - pip install -r docs-requirements.txt
-    - pip install -r requirements.txt
-    - pip install .
-    - sphinx-build -b html docs public
-  artifacts:
-    paths:
-      - public
-  only:
-    - o4-development
+#pages:
+#  stage: docs
+#  script:
+#    - pip install -r docs-requirements.txt
+#    - pip install -r requirements.txt
+#    - pip install .
+#    - sphinx-build -b html docs public
+#  artifacts:
+#    paths:
+#      - public
+#  only:
+#    - o4-development
