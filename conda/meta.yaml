@@ -1,0 +1,63 @@
+{% set name = "gravelamps" %}
+{% set version = "2.3.1" %}
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+source:
+  url: https://git.ligo.org/mick.wright/Gravelamps/-/archive/{{ version }}/Gravelamps-{{ version }}.tar.gz
+  sha256: 48bd153a2f42d44bbd3d182b4a0b337a25529f4acd5462d2ff6e35e03fc60a11
+
+build:
+  entry_points:
+    - gravelamps_inference=gravelamps.inference:main
+    - gravelamps_generate_lens=gravelamps.generate_lens:main
+    - gravelamps_generate_interpolator_data=gravelamps.lensing.generic:main
+  script: {{ PYTHON }} -m pip install . -vv
+  number: 1
+  skip: true  # [not linux or py<=39]
+
+requirements:
+  build:
+    - {{ compiler('cxx') }}
+    - make
+    - libgomp  # [linux]
+  host:
+    - python
+    - setuptools-scm
+    - pip
+    - arb
+    - libflint
+    - boost-cpp
+  run:
+    - python
+    - asimov
+    - astropy
+    - bilby
+    - bilby_pipe
+    - python-htcondor
+    - numpy
+    - scipy
+
+test:
+  imports:
+    - gravelamps
+    - gravelamps.lensing.point
+  commands:
+    - pip check
+    - gravelamps_inference --help
+    - gravelamps_generate_lens --help
+    - gravelamps_generate_interpolator_data --help
+  requires:
+    - pip
+
+about:
+  home: https://git.ligo.org/mick.wright/Gravelamps
+  summary: Software package designed for running template based analysis of lensed gravitational wave signals to determine the lens profile model. Built on top of the parameter estimation framework, Bilby, and arbitrary precision library arb
+  license: MIT
+  license_file: LICENSE
+
+extra:
+  recipe-maintainers:
+    - mick-wright
