@@ -1,10 +1,15 @@
 image: python 3.11
 
+stages:
+  - build
+  - docs
+
 include:
   - project: computing/gitlab-ci-templates
     file: conda.yml
 
-test:
+build-package:
+  stage: build
   extends:
     - .conda:build
   script:
