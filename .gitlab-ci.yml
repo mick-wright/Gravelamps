@@ -8,7 +8,7 @@ test:
   script:
     - pip install -r docs-requirements.txt
     - sphinx-build -b html docs public
-  aritfacts:
+  artifacts:
     paths:
       - public
   only:
