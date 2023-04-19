@@ -1,17 +1,21 @@
-#image: python:3.9
+image: python:3.11
 
-#stages:
-#  - docs
+stages:
+  - docs
 
-#pages:
-#  stage: docs
-#  script:
-#    - pip install -r docs-requirements.txt
-#    - pip install -r requirements.txt
-#    - pip install .
-#    - sphinx-build -b html docs public
-#  artifacts:
-#    paths:
-#      - public
-#  only:
-#    - o4-development
+pages:
+  stage: docs
+  script:
+    - conda install -c conda-forge libgomp
+    - conda install -c conda-forge arb
+    - conda install -c conda-forge libgcc-ng
+    - conda install -c conda-forge libstdcxx-ng
+    - pip install -r docs-requirements.txt
+    - pip install -r requirements.txt
+    - pip install .
+    - sphinx-build -b html docs public
+  artifacts:
+    paths:
+      - public
+  only:
+    - o4-development
