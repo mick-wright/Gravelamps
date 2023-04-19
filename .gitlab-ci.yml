@@ -1,3 +1,5 @@
+image: python 3.11
+
 include:
   - project: computing/gitlab-ci-templates
     file: conda.yml
