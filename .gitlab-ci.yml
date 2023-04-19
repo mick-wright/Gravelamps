@@ -8,4 +8,4 @@ test:
   extends:
     - .conda:build
   script:
-    conda-build gravelamps
+    - !reference [".conda:build", script]
