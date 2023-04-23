@@ -64,7 +64,7 @@ pages:
     - !reference [".conda:base", before_script]
     - conda create --name gravelamps-docs python
   script:
-    - conda activate gravelamps-docs-python
+    - conda activate gravelamps-docs
     - conda install conda-bld/linux-64/*.tar.bz2
     - pip install -r docs-requirements.txt
     - sphinx-build html docs public
