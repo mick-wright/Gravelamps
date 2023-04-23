@@ -65,6 +65,7 @@ pages:
     - conda create --name gravelamps-docs python=3.10
   script:
     - conda activate gravelamps-docs
+    - conda install -c gcc
     - conda install -c conda-forge arb
     - pip install -r requirements.txt
     - pip install -r docs-requirements.txt
