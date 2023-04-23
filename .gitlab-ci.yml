@@ -65,7 +65,7 @@ pages:
     - conda create --name gravelamps-docs python
   script:
     - conda activate gravelamps-docs
-    - conda install conda-bld/linux-64/*.tar.bz2
+    - conda install --use-local gravelamps
     - pip install -r docs-requirements.txt
     - sphinx-build docs public
   artifacts:
