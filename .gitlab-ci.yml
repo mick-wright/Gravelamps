@@ -11,6 +11,24 @@ include:
 build-package:
   stage: build
   extends:
-    - .conda:build
+    - .conda:base
+  variables:
+    CONDA_RECIPE_DIR: "${CI_PROJECT_DIR}"/conda"
+    CONDA_BUILD_OPTIONS: ""
+    MAMBABUILD: "false"
+    NEED_WRITABLE_BASE: "true"
   script:
-    - !reference [".conda:build", script]
+    - *define-retry
+    - if which mamba &>/dev/null; then
+          CONDA_OR_MAMBA="mamba";
+      else
+          CONDA_OR_MAMBA="conda";
+      fi
+    - retry ${CONDA_OR_MAMBA} update --name base --quiet yes
+          conda
+          ${CONDA_OR_MAMBA}
+    - retry ${CONDA_OR_MAMBA} install --name base --quiet
+          conda-build
+          conda-verify
+    - if ${MAMBABUILD}; then BUILDER="mambabuild"; else BUILDER="build"; fi
+    - xargs -t conda ${BUILDER} conda <<< ${CONDA_BUILD_OPTIONS}
