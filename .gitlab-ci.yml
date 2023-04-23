@@ -51,3 +51,25 @@ build-package:
           conda-verify
     - if ${MAMBABUILD}; then BUILDER="mambabuild"; else BUILDER="build"; fi
     - xargs -t conda ${BUILDER} conda <<< ${CONDA_BUILD_OPTIONS}
+  artifacts:
+    paths:
+      - conda-bld/**/*.conda
+      - conda-bld/**/*.tar.bz2
+
+pages:
+  stage: docs
+  extends:
+    - .conda:base
+  before_script:
+    - !reference [".conda:base", before_script]
+    - conda create --name gravelamps-docs python
+  script:
+    - conda activate gravelamps-docs-python
+    - conda install conda-bld/linux-64/*.tar.bz2
+    - pip install -r docs-requirements.txt
+    - sphinx-build html docs public
+  artifacts:
+    paths:
+      - public
+  only:
+    - o4-development
