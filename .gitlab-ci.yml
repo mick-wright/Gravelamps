@@ -68,6 +68,8 @@ pages:
     - conda install conda-bld/linux-64/*.tar.bz2
     - pip install -r docs-requirements.txt
     - sphinx-build html docs
+  after_script:
+    - mv docs/build/html/ ./public/
   artifacts:
     paths:
       - public
