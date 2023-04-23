@@ -62,11 +62,13 @@ pages:
     - .conda:base
   before_script:
     - !reference [".conda:base", before_script]
-    - conda create --name gravelamps-docs python
+    - conda create --name gravelamps-docs python=3.10
   script:
     - conda activate gravelamps-docs
-    - conda install --use-local gravelamps
+    - conda install -c conda-forge arb
+    - pip install -r requirements.txt
     - pip install -r docs-requirements.txt
+    - conda install conda-bld/linux-64/*.tar.bz2
     - sphinx-build docs public
   artifacts:
     paths:
