@@ -1,4 +1,23 @@
-image: python 3.11
+image: igwn/base:conda
+
+.retry: &define-retry |
+  retry() {
+    local n=1
+    local max=3
+    local delay=15
+    while true; do
+      "$@" && break || {
+        if [[ $n -lt $max ]]; then
+          ((n++))
+          echo "Command failed. Attempt $n/$max:"
+          sleep $delay;
+        else
+          echo "The command has failed after $n attempts." 1>&2
+          exit 1
+        fi
+    }
+    done
+  }
 
 stages:
   - build
@@ -13,7 +32,7 @@ build-package:
   extends:
     - .conda:base
   variables:
-    CONDA_RECIPE_DIR: "${CI_PROJECT_DIR}"/conda"
+    CONDA_RECIPE_DIR: "${CI_PROJECT_DIR}/conda"
     CONDA_BUILD_OPTIONS: ""
     MAMBABUILD: "false"
     NEED_WRITABLE_BASE: "true"
