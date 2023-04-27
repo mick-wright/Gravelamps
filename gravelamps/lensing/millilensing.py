@@ -43,7 +43,7 @@ def gather_parameter_lists(lens_parameters, parameters):
     """
 
     luminosity_distances = [parameters["luminosity_distance"]]
-    image_times = []
+    image_times = [0]
     phases = []
 
     for parameter in lens_parameters:
