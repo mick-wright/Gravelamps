@@ -155,15 +155,21 @@ def amplification_factor(frequency_array,
             time_delay_term = np.outer(dimensionless_frequency_array, image_times[1])
             morse_phase_term = 1j * morse_phases[1] * np.pi
 
-            amplification_factor_array += luminosity_distance_term\
-                                        * np.exp(time_delay_term - morse_phase_term)
+            exp_term = np.exp(time_delay_term - morse_phase_term)
+            image_contribution = luminosity_distance_term * exp_term
+
+            amplification_factor_array = np.add(amplification_factor_array,
+                                                image_contribution.flatten())
         else:
             for idx in range(1, number_of_images):
                 luminosity_distance_term = luminosity_distances[0]/luminosity_distances[idx]
                 time_delay_term = np.outer(dimensionless_frequency_array, time_delays[idx])
                 morse_phase_term = 1j * morse_phases[idx] * np.pi
 
-                amplification_factor_array += luminosity_distance_term\
-                                            * np.exp(time_delay_term - morse_phase_term)
+                exp_term = np.exp(time_delay_term - morse_phase_term)
+                image_contribution = luminosity_distance_term * exp_term
+
+                amplification_factor_array = np.add(amplification_factor_array,
+                                                    image_contribution.flatten())
 
     return amplification_factor_array
