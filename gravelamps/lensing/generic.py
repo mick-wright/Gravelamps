@@ -122,6 +122,8 @@ def get_condor_config(config, args, output_directories, model, file_dict):
 
     dict_string = str(base_dict).replace("'", "####").replace(" ", "")
     default_condor_settings["arguments"] = f"{model} {dict_string} {os.path.abspath(args.ini)}"
+    if args.injection:
+        default_condor_settings["arguments"] = f"-i {default_condor_settings['arguments']}"
 
     default_condor_settings["transfer_input_files"] =\
         f"{base_dict['dimensionless_frequency']}, {base_dict['source_position']},"
