@@ -51,7 +51,7 @@ In addition, Gravelamps is very much built on top of existing frameworks, in par
 
 .. toctree::
    :maxdepth: 1
-   :caption: Indices
+   :caption: Code Index
 
    API Reference <autoapi/gravelamps/index>
 
