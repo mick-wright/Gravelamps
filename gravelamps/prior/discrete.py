@@ -34,9 +34,9 @@ class ImageNumber(Categorical):
     def __init__(self, ncategories, name="num_images", 
                  latex_label="$n_{\mathrm{signals}}$", unit=None):
         super().__init__(ncategories, name=name, latex_label=latex_label, unit=unit)
-        maximum = ncategories
+        maximum = ncategories + 1
         minimum = 1
-        self.categories = np.arange(self.minimum, self.maximum+1)
+        self.categories = np.arange(self.minimum, self.maximum)
 
 
 class UniformMorse(Categorical):
