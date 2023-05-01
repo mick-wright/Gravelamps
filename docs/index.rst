@@ -2,6 +2,11 @@
 Gravelamps Overview
 ===================
 
+.. image:: https://img.shields.io/badge/Anaconda.org-2.3.1-blue.svg?style=flat-round
+   :target: https://anaconda.org/conda-forge/gravelamps
+.. image:: https://git.ligo.org/mick.wright/Gravelamps/badges/o4-development/pipeline.svg
+   :target: https://git.ligo.org/mick.wright/Gravelamps
+
 Gravelamps
 ==========
 
@@ -37,6 +42,7 @@ In addition, Gravelamps is very much built on top of existing frameworks, in par
    :maxdepth: 1
    :caption: Contents
 
+   installation
    generate-lens
    inference
    ini
