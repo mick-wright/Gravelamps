@@ -2,10 +2,10 @@
 Installation
 ============
 
-Conda Instllation
-=================
+Conda Installation
+==================
 
-The simplest means of installing Gravelamps is via the conda python package manager, specifically in the conda-forge channel. To install Gravelamps in this manner from a conda enviornment run::
+The simplest means of installing Gravelamps is via the conda python package manager, specifically in the conda-forge channel. To install Gravelamps in this manner from a conda environment run::
 
         $ conda install -c conda-forge gravelamps
 
@@ -18,7 +18,7 @@ Manual installation whilst more difficult has been written to be as easily done 
 
         $ git clone git@git.ligo.org:mick.wright/Gravelamps.git
 
-From this point, ensure that you have all of the necessary dependencies to build Gravelamps. These dependencies are:
+Before proceeding with the installation, ensure that you have all of the necessary dependencies to build Gravelamps. These dependencies are:
 
         #. ``GNU make``
         #. ``g++``
