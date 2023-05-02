@@ -46,6 +46,8 @@ If Gravelamps has been useful for the production of scientific work, a citation 
 	         journal = {The Astrophysical Journal},
 	}
 
+In addition, Gravelamps is very much built on top of existing frameworks, in particular `bilby`, `bilby_pipe`, and `arb`. Please also consider following the citation guidelines of these and all of Gravelamps' depencies.
+
 # Contributing to Gravelamps
 
 The developers of Gravelamps welcome additional contribution. We particularly encourage the addition of lens models should you have need to write one. 
