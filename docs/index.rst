@@ -47,11 +47,11 @@ In addition, Gravelamps is very much built on top of existing frameworks, in par
    installation
    generate-lens
    inference
-   ini
 
 .. toctree::
    :maxdepth: 1
-   :caption: Code Index
+   :caption: Code Description and Configuration
 
+   ini
    API Reference <autoapi/gravelamps/index>
 
