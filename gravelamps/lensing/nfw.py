@@ -59,7 +59,6 @@ generate_interpolator_data
 from collections.abc import Callable
 
 import ctypes
-import os
 
 from importlib.resources import files
 
@@ -73,7 +72,7 @@ from gravelamps.lensing.generic import get_additional_arguments
 #The following loads in the DLL containing the C++ functions for the direct implementations for
 #goemetric optics runs. It then sets the argument and result types accordingly
 
-_cdll = ctypes.CDLL(importlib.resources.files('gravelamps').joinpath('model/lib/libnfw.so'))
+_cdll = ctypes.CDLL(files('gravelamps').joinpath('model/lib/libnfw.so'))
 
 _cdll.PyPhase.argtypes = (ctypes.c_double, ctypes.c_double)
 _cdll.PyPhase.restype = ctypes.c_double
@@ -415,12 +414,20 @@ def generate_interpolator_data(config, args, file_dict):
                                                     _additional_argument_types)
 
     gravelogger.info("Generating Lens Interpolator Data")
-    _cdll.GenerateLensData(ctypes.c_char_p(file_dict["dimensionless_frequency"].encode("utf-8")),
-                           ctypes.c_char_p(file_dict["source_position"].encode("utf-8")),
-                           ctypes.c_char_p(file_dict["amplification_factor_real"].encode("utf-8")),
-                           ctypes.c_char_p(file_dict["amplification_factor_imag"].encode("utf-8")),
-                           ctypes.c_double(additional_arguments[0]),
-                           ctypes.c_double(additional_arguments[1]),
-                           ctypes.c_int(additional_arguments[2]),
-                           ctypes.c_int(additional_arguments[3]))
-    gravelogger.info("Lens Interpolator Data Generated")
+    res = _cdll.GenerateLensData(
+        ctypes.c_char_p(file_dict["dimensionless_frequency"].encode("utf-8")),
+        ctypes.c_char_p(file_dict["source_position"].encode("utf-8")),
+        ctypes.c_char_p(file_dict["amplification_factor_real"].encode("utf-8")),
+        ctypes.c_char_p(file_dict["amplification_factor_imag"].encode("utf-8")),
+        ctypes.c_double(additional_arguments[0]),
+        ctypes.c_double(additional_arguments[1]),
+        ctypes.c_int(additional_arguments[2]),
+        ctypes.c_int(additional_arguments[3]))
+    res = int(res)
+
+    if res == 85:
+        gravelogger.info("Checkpoint instruction receieved")
+    else:
+        gravelogger.info("Lens Interpolator Data Generated")
+
+    return res

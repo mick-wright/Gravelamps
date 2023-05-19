@@ -114,10 +114,17 @@ def generate_interpolator_data(config,
                                                     _additional_argument_types)
 
     gravelogger.info("Generating Lens Interpolator Data")
-    _cdll.GenerateLensData(ctypes.c_char_p(file_dict["dimensionless_frequency"].encode("utf-8")),
-                           ctypes.c_char_p(file_dict["source_position"].encode("utf-8")),
-                           ctypes.c_char_p(file_dict["amplification_factor_real"].encode("utf-8")),
-                           ctypes.c_char_p(file_dict["amplification_factor_imag"].encode("utf-8")),
-                           ctypes.c_int(additional_arguments[0]),
-                           ctypes.c_int(additional_arguments[1]))
-    gravelogger.info("Lens Interpolator Data Generated")
+    res = _cdll.GenerateLensData(
+        ctypes.c_char_p(file_dict["dimensionless_frequency"].encode("utf-8")),
+        ctypes.c_char_p(file_dict["source_position"].encode("utf-8")),
+        ctypes.c_char_p(file_dict["amplification_factor_real"].encode("utf-8")),
+        ctypes.c_char_p(file_dict["amplification_factor_imag"].encode("utf-8")),
+        ctypes.c_int(additional_arguments[0]),
+        ctypes.c_int(additional_arguments[1]))
+    res = int(res)
+
+    if res == 85:
+        gravelogger.info("Checkpoint instruction received")
+    else:
+        gravelogger.info("Data Generation Complete")
+    return res

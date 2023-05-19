@@ -5,6 +5,13 @@
 
 #include "src/sis.h"
 
+volatile sig_atomic_t checkpoint_flag = 0;
+
+// Checkpoint signal handler
+void checkpoint_sig_handler(int signum) {
+    checkpoint_flag = 85;
+}
+
 // Function takes in values of dimensionless frequency and source position and
 // calculates the amplification factor for the model using either wave or
 // geometric optics depending upon whether the dimensionless frequency is above
@@ -92,6 +99,9 @@ int GenerateLensData(char* dimensionless_frequency_file,
                      int summation_upper_limit_int,
                      int precision_int,
                      int geo_switch_int) {
+    std::signal(SIGALRM, checkpoint_sig_handler);
+    std::signal(SIGINT, checkpoint_sig_handler);
+
     slong summation_upper_limit = summation_upper_limit_int;
     slong precision = precision_int;
     slong geo_switch = geo_switch_int;
@@ -127,8 +137,15 @@ int GenerateLensData(char* dimensionless_frequency_file,
     // using either wave or geometric optics as determined by the geo_switch
     // value. This is done with parallel threading
     for (int i=0; i < source_position_size; i++) {
-        #pragma omp parallel for ordered schedule(dynamic)
+        if (checkpoint_flag == 85) {
+            std::cout << "Received checkpoint instruction" << std::endl;
+            return checkpoint_flag;
+        }
+        #pragma omp parallel for ordered schedule(dynamic) shared(checkpoint_flag)
         for (int j=0; j < dimensionless_frequency_size; j++) {
+            if (checkpoint_flag == 85) {
+                continue;
+            }
             if (amplification_factor_real[i][j] != 0.0
                 && amplification_factor_imag[i][j] != 0.0) {
                     {}
@@ -163,5 +180,9 @@ int GenerateLensData(char* dimensionless_frequency_file,
             " of " << source_position_size << std::endl;
     }
 
-    return 0;
+    if (checkpoint_flag == 85) {
+        return 85;
+    } else {
+        return 0;
+    }
 }

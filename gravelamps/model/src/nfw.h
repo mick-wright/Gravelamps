@@ -22,6 +22,7 @@
 #include <string>
 #include <functional>
 #include <sstream>
+#include <csignal>
 
 #include <boost/math/tools/roots.hpp>
 #include <boost/math/tools/minima.hpp>

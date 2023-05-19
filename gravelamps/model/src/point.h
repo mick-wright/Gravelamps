@@ -21,6 +21,7 @@
 #include <sstream>
 #include <complex>
 #include <iomanip>
+#include <csignal>
 
 #include "./utils.h"
 

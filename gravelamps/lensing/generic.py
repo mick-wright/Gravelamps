@@ -9,6 +9,8 @@ Written by Mick Wright 2022
 
 Routines
 --------
+checkpoint_signal_handler
+    Exits with checkpointing exit code (85) when receiving checkpoint signal
 get_additional_arguments
     Retrieves required additional arguments for model specific lens generation
 get_condor_config
@@ -27,7 +29,7 @@ import sys
 import htcondor
 import numpy as np
 
-from gravelamps.core.file_handling import get_config, get_output_directories
+from gravelamps.core.file_handling import get_config
 from gravelamps.core.gravelog import gravelogger, setup_logger
 from gravelamps.core.graveparser import create_graveparser
 
@@ -110,6 +112,11 @@ def get_condor_config(config, args, output_directories, model, file_dict):
         "request_cpus": "16",
         "request_memory": "8 GB",
         "request_disk": "2 GB",
+        "+WantCheckpointSignal": "TRUE",
+        "+CheckpointSig": 14,
+        "checkpoint_exit_code": 85,
+        "stream_output": "TRUE",
+        "stream_error": "TRUE"
         }
 
     base_dict = {}
@@ -127,6 +134,8 @@ def get_condor_config(config, args, output_directories, model, file_dict):
 
     default_condor_settings["transfer_input_files"] =\
         f"{base_dict['dimensionless_frequency']}, {base_dict['source_position']},"
+    default_condor_settings["transfer_output_files"] = \
+        f"{base_dict['amplification_factor_real']}, {base_dict['amplification_factor_imag']}"
 
     user_condor_settings = dict(config.items("condor_settings"))
     if "accounting_group" not in user_condor_settings:
@@ -199,10 +208,13 @@ def generate_interpolator_data(config, args, model, file_dict):
     AttributeError
         Occurs when no data generation functions exist within model module
     """
+
+    res = 0
+
     interpolator_module = importlib.import_module(model)
 
     if hasattr(interpolator_module, "generate_interpolator_data"):
-        interpolator_module.generate_interpolator_data(config, args, file_dict)
+        res = interpolator_module.generate_interpolator_data(config, args, file_dict)
     elif hasattr(interpolator_module, "amplification_factor"):
         gravelogger.info(("No specific interpolator generator function, using amplification_factor"\
                           " to generate data"))
@@ -221,6 +233,8 @@ def generate_interpolator_data(config, args, model, file_dict):
         np.savetxt(file_dict["amplification_factor_imag"], imag_array)
     else:
         raise AttributeError(f"No data generating functions found in {model}")
+
+    return res
 
 def main():
     """
@@ -248,7 +262,11 @@ def main():
 
     print(file_dict)
 
-    generate_interpolator_data(config, args, args.model, file_dict)
+    res = generate_interpolator_data(config, args, args.model, file_dict)
+    res = int(res)
+
+    return res
 
 if __name__ == "__main__":
-    main()
+    result = main()
+    sys.exit(result)
